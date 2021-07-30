@@ -33,7 +33,13 @@ object SuggestionEngine {
 
     @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return items[hmsNr]?.suggestions?.map { it.value }?.sortedByDescending { it.occurancesInSoknader }?.subList(0, 40) ?: listOf()
+        return items[hmsNr]?.suggestions?.map { it.value }?.sortedByDescending { it.occurancesInSoknader }?.take(40) ?: listOf()
+    }
+
+    // Mostly useful for testing (cleanup between tests)
+    @Synchronized
+    fun discardDataset() {
+        items.clear()
     }
 }
 

@@ -9,12 +9,14 @@ import kotlin.test.assertEquals
 internal class SuggestionEngineTest {
     @Test
     fun `No suggestions available for item`() {
+        SuggestionEngine.discardDataset()
         val suggestions = SuggestionEngine.suggestionsForHmsNr("1234")
-        assertEquals(suggestions.size, 0)
+        assertEquals(0, suggestions.size)
     }
 
     @Test
     fun `A single suggestion is available`() {
+        SuggestionEngine.discardDataset()
         SuggestionEngine.learnFromSoknad(
             listOf(
                 Hjelpemiddel(
@@ -31,14 +33,15 @@ internal class SuggestionEngineTest {
         )
 
         val suggestions = SuggestionEngine.suggestionsForHmsNr("1234")
-        assertEquals(suggestions.size, 1)
-        assertEquals(suggestions[0].hmsNr, "4321")
-        assertEquals(suggestions[0].title, "Tilbehør 1")
-        assertEquals(suggestions[0].occurancesInSoknader, 1)
+        assertEquals(1, suggestions.size)
+        assertEquals("4321", suggestions[0].hmsNr)
+        assertEquals("Tilbehør 1", suggestions[0].title)
+        assertEquals(1, suggestions[0].occurancesInSoknader)
     }
 
     @Test
     fun `Multiple suggestions and priority is correct`() {
+        SuggestionEngine.discardDataset()
         SuggestionEngine.learnFromSoknad(
             listOf(
                 Hjelpemiddel(
@@ -75,9 +78,9 @@ internal class SuggestionEngineTest {
         )
 
         val suggestions = SuggestionEngine.suggestionsForHmsNr("1234")
-        assertEquals(suggestions.size, 2)
-        assertEquals(suggestions[0].hmsNr, "5678")
-        assertEquals(suggestions[0].title, "Tilbehør 2")
-        assertEquals(suggestions[0].occurancesInSoknader, 2)
+        assertEquals(2, suggestions.size)
+        assertEquals("5678", suggestions[0].hmsNr)
+        assertEquals("Tilbehør 2", suggestions[0].title)
+        assertEquals(2, suggestions[0].occurancesInSoknader)
     }
 }
