@@ -33,7 +33,7 @@ object SuggestionEngine {
 
     @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return items[hmsNr]?.suggestions?.map { it.value }?.sortedByDescending { it.occurancesInSoknader } ?: listOf()
+        return items[hmsNr]?.suggestions?.map { it.value }?.sortedByDescending { it.occurancesInSoknader }?.subList(0, 40) ?: listOf()
     }
 }
 
