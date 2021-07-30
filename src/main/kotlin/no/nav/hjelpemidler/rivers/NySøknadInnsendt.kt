@@ -21,6 +21,6 @@ internal class NySøknadInnsendt(
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
-        logg.info("onPacket: nySoknad: received (fullmakt=${packet["signatur"].toString() == "FULLMAKT"})")
+        logg.info("onPacket: nySoknad: received (signatur=${packet["signatur"]})")
     }
 }
