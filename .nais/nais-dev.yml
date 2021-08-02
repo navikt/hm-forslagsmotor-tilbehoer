@@ -25,6 +25,9 @@ spec:
     enabled: true
   kafka:
     pool: nav-dev
+  azure:
+    application:
+      enabled: true
   prometheus:
     enabled: true  # default: false. Pod will now be scraped for metrics by Prometheus.
     path: /metrics # Path where prometheus metrics are served.

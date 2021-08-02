@@ -24,6 +24,9 @@ internal object Configuration {
             "kafka.reset.policy" to "latest",
 
             "application.http.port" to "8080",
+
+            "AZURE_TENANT_BASEURL" to "https://login.microsoftonline.com",
+            "AZURE_AD_SCOPE" to "api://prod-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
         )
     )
 
@@ -38,6 +41,9 @@ internal object Configuration {
             "kafka.reset.policy" to "latest",
 
             "application.http.port" to "8080",
+
+            "AZURE_TENANT_BASEURL" to "https://login.microsoftonline.com",
+            "AZURE_AD_SCOPE" to "api://dev-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
         )
     )
 
@@ -58,6 +64,12 @@ internal object Configuration {
             "KAFKA_KEYSTORE_PATH" to "",
             "KAFKA_TRUSTSTORE_PATH" to "",
             "KAFKA_CREDSTORE_PASSWORD" to "",
+
+            "AZURE_TENANT_BASEURL" to "http://localhost:9099",
+            "AZURE_APP_TENANT_ID" to "123",
+            "AZURE_APP_CLIENT_ID" to "123",
+            "AZURE_APP_CLIENT_SECRET" to "dummy",
+            "AZURE_AD_SCOPE" to "123",
         )
     )
 
@@ -72,6 +84,14 @@ internal object Configuration {
         "KAFKA_CREDSTORE_PASSWORD" to config()[Key("KAFKA_CREDSTORE_PASSWORD", stringType)],
         "HTTP_PORT" to config()[Key("application.http.port", stringType)],
     ) + System.getenv().filter { it.key.startsWith("NAIS_") }
+
+    val azureAD: Map<String, String> = mapOf(
+        "AZURE_TENANT_BASEURL" to config()[Key("AZURE_TENANT_BASEURL", stringType)],
+        "AZURE_APP_TENANT_ID" to config()[Key("AZURE_APP_TENANT_ID", stringType)],
+        "AZURE_APP_CLIENT_ID" to config()[Key("AZURE_APP_CLIENT_ID", stringType)],
+        "AZURE_APP_CLIENT_SECRET" to config()[Key("AZURE_APP_CLIENT_SECRET", stringType)],
+        "AZURE_AD_SCOPE" to config()[Key("AZURE_AD_SCOPE", stringType)],
+    )
 
     val application: Map<String, String> = mapOf(
         "APP_PROFILE" to config()[Key("application.profile", stringType)],
