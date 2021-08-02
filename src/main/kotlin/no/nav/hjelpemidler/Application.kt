@@ -5,10 +5,13 @@ import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
+import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 
 private val logg = KotlinLogging.logger {}
 
 fun main() {
+    SuggestionEngine.causeInit()
+
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .build().apply {
             NySøknadInnsendt(this)

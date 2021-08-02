@@ -28,6 +28,10 @@ object SuggestionEngine {
     }
 
     @Synchronized
+    fun causeInit() {
+    }
+
+    @Synchronized
     fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>) {
         for (hjelpemiddel in hjelpemidler) {
             if (!items.containsKey(hjelpemiddel.hmsNr)) {
