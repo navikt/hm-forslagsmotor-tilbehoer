@@ -72,6 +72,7 @@ object SuggestionEngine {
     }
 
     private fun getInitialDataset(): List<Hjelpemiddel> {
+        // Generate azure ad token
         if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
             val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE"]!!)
             azToken = token.accessToken
@@ -80,8 +81,7 @@ object SuggestionEngine {
         }
         val authToken = azToken!!
 
-        logg.info("DEBUG: authToken=$authToken")
-
+        // Make request
         val request: HttpRequest = HttpRequest.newBuilder()
             .uri(URI.create("http://hm-soknadsbehandling-db/api/forslagsmotor/tilbehoer/datasett"))
             .timeout(Duration.ofMinutes(1))
@@ -91,9 +91,13 @@ object SuggestionEngine {
             .GET()
             .build()
 
-        val rawJson: HttpResponse<String> = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
-        logg.info("DEBUG: rawJSON=$rawJson, statusCode=${rawJson.statusCode()} headers=${rawJson.headers()} body=${rawJson.body()}")
-        return jacksonObjectMapper().readValue<Array<Hjelpemiddel>>(rawJson.body()).asList()
+        val response: HttpResponse<String> = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
+        if (response.statusCode() != 200) {
+            logg.info("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
+            return listOf()
+        }
+
+        return jacksonObjectMapper().readValue<Array<Hjelpemiddel>>(response.body()).asList()
     }
 }
 
