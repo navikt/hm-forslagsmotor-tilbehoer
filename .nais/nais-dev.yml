@@ -31,6 +31,10 @@ spec:
   prometheus:
     enabled: true  # default: false. Pod will now be scraped for metrics by Prometheus.
     path: /metrics # Path where prometheus metrics are served.
+  accessPolicy:
+    outbound:
+      rules:
+        - application: hm-soknadsbehandling-db
 #  envFrom:
 #    - secret: srvhm-dittnav-secret
 #      # secret will be made available as environment variables
