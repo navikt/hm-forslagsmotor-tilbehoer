@@ -1,7 +1,9 @@
 package no.nav.hjelpemidler.suggestionengine
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.jsonMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import java.net.URI
@@ -10,6 +12,8 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 import java.time.LocalDateTime
+
+private val logg = KotlinLogging.logger {}
 
 object SuggestionEngine {
     private val items = mutableMapOf<String, Item>()
@@ -20,10 +24,10 @@ object SuggestionEngine {
 
     init {
         if (Configuration.application["APP_PROFILE"]!! != "local") {
-            println("Loading initial dataset for Suggestion Engine.")
+            logg.info("Loading initial dataset for Suggestion Engine.")
             val initialDataset = getInitialDataset()
             learnFromSoknad(initialDataset)
-            println("Suggestion engine ínitial dataset loaded (count=${items.size})")
+            logg.info("Suggestion engine ínitial dataset loaded (count=${items.size})")
         }
     }
 
@@ -33,6 +37,7 @@ object SuggestionEngine {
 
     @Synchronized
     fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>) {
+        logg.info("Learning from Søknad.")
         for (hjelpemiddel in hjelpemidler) {
             if (!items.containsKey(hjelpemiddel.hmsNr)) {
                 items[hjelpemiddel.hmsNr] = Item(mutableMapOf())
@@ -56,12 +61,14 @@ object SuggestionEngine {
 
     @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
+        logg.info("Suggestions for hmsnr=$hmsNr.")
         return items[hmsNr]?.suggestions?.map { it.value }?.sortedByDescending { it.occurancesInSoknader }?.take(40) ?: listOf()
     }
 
     // Mostly useful for testing (cleanup between tests)
     @Synchronized
     fun discardDataset() {
+        logg.info("Discarding dataset.")
         items.clear()
     }
 
@@ -74,6 +81,8 @@ object SuggestionEngine {
         }
         val authToken = azToken!!
 
+        logg.info("DEBUG: authToken=$authToken")
+
         val request: HttpRequest = HttpRequest.newBuilder()
             .uri(URI.create("http://hm-soknadsbehandling-db/api/forslagsmotor/tilbehoer/datasett"))
             .timeout(Duration.ofMinutes(1))
@@ -84,6 +93,7 @@ object SuggestionEngine {
             .build()
 
         val rawJson: HttpResponse<String> = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
+        logg.info("DEBUG: rawJSON=$rawJson, statusCode=${rawJson.statusCode()} headers=${rawJson.headers()} body=${rawJson.body()}")
         return jacksonObjectMapper().readValue<Array<Hjelpemiddel>>(rawJson.body()).asList()
     }
 }
