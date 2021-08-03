@@ -58,7 +58,7 @@ class AivenMetrics {
     }
 
     fun productWasSuggested(wasSuggested: Int) {
-        writeEvent(PRODUCT_WAS_SUGGESTED, fields = mapOf("count" to wasSuggested.toLong()), tags = emptyMap())
+        writeEvent(PRODUCT_WAS_SUGGESTED, fields = mapOf("count" to 1L), tags = mapOf("index" to wasSuggested.toString()))
     }
 
     fun productWasNotSuggestedAtAll() {
