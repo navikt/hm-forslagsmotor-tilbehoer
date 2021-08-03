@@ -35,6 +35,8 @@ spec:
     outbound:
       rules:
         - application: hm-soknadsbehandling-db
+  envFrom:
+    - secret: hm-influxdb-secret
 #  envFrom:
 #    - secret: srvhm-dittnav-secret
 #      # secret will be made available as environment variables
