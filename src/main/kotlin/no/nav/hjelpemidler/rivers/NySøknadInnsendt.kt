@@ -30,7 +30,7 @@ internal class NySøknadInnsendt(
         logg.info("onPacket: nySoknad: received (signatur=${packet["signatur"].textValue()})")
 
         // Parse packet to relevant data
-        val rawJson: String = packet["data"].textValue()
+        val rawJson: String = packet["soknad"].toString()
         val list = objectMapper.readValue<Soknad>(rawJson).soknad.hjelpemidler.hjelpemiddelListe.toList()
 
         AivenMetrics().soknadProcessed(list.size)
