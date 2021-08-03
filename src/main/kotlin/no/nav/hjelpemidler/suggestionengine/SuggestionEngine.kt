@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -27,6 +28,7 @@ object SuggestionEngine {
             val initialDataset = getInitialDataset()
             learnFromSoknad(initialDataset)
             logg.info("Suggestion engine ínitial dataset loaded (count=${items.size})")
+            AivenMetrics().initieltDatasettStoerelse(items.size.toLong())
         }
     }
 
@@ -72,7 +74,7 @@ object SuggestionEngine {
     }
 
     private fun getInitialDataset(): List<Hjelpemiddel> {
-        // Generate azure ad token
+        // Generate azure ad token for authorization header
         if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
             val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE"]!!)
             azToken = token.accessToken

@@ -45,6 +45,26 @@ class AivenMetrics {
         writeEvent(INITIELT_DATASETT_STOERELSE, fields = mapOf("antall" to antall), tags = emptyMap())
     }
 
+    fun soknadProcessed(size: Int) {
+        writeEvent(SOKNAD_PROCESSED, fields = mapOf("count" to 1L), tags = mapOf("size" to size.toString()))
+    }
+
+    fun productWithoutAccessories() {
+        writeEvent(PRODUCT_WITHOUT_ACCESSORIES, fields = mapOf("count" to 1L), tags = emptyMap())
+    }
+
+    fun productWithoutSuggestions() {
+        writeEvent(PRODUCT_WITHOUT_SUGGESTIONS, fields = mapOf("count" to 1L), tags = emptyMap())
+    }
+
+    fun productWasSuggested(wasSuggested: Int) {
+        writeEvent(PRODUCT_WAS_SUGGESTED, fields = mapOf("count" to wasSuggested.toLong()), tags = emptyMap())
+    }
+
+    fun productWasNotSuggestedAtAll() {
+        writeEvent(PRODUCT_WAS_NOT_SUGGESTED_AT_ALL, fields = mapOf("count" to 1L), tags = emptyMap())
+    }
+
     companion object {
         private val DEFAULT_TAGS: Map<String, String> = mapOf(
             "application" to (Configuration.application["NAIS_APP_NAME"] ?: "hm-forslagsmotor-tilbehoer"),
@@ -55,5 +75,10 @@ class AivenMetrics {
         private const val PREFIX = "hm-forslagsmotor-tilbehoer"
         const val EXAMPLE1 = "$PREFIX.EXAMPLE1"
         const val INITIELT_DATASETT_STOERELSE = "$PREFIX.initielt.datasett.stoerelse"
+        const val SOKNAD_PROCESSED = "$PREFIX.soknad.processed"
+        const val PRODUCT_WITHOUT_ACCESSORIES = "$PREFIX.product.without.accessories"
+        const val PRODUCT_WITHOUT_SUGGESTIONS = "$PREFIX.product.without.suggestions"
+        const val PRODUCT_WAS_SUGGESTED = "$PREFIX.product.was.suggested"
+        const val PRODUCT_WAS_NOT_SUGGESTED_AT_ALL = "$PREFIX.product.was.not.suggested.at.all"
     }
 }
