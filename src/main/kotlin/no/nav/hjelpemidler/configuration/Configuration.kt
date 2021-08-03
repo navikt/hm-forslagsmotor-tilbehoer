@@ -93,6 +93,14 @@ internal object Configuration {
         "AZURE_AD_SCOPE" to config()[Key("AZURE_AD_SCOPE", stringType)],
     )
 
+    val influxDB: Map<String, String> = mapOf(
+        "INFLUX_HOST" to config()[Key("INFLUX_HOST", stringType)],
+        "INFLUX_PORT" to config()[Key("INFLUX_PORT", stringType)],
+        "INFLUX_DATABASE_NAME" to config()[Key("INFLUX_DATABASE_NAME", stringType)],
+        "INFLUX_USER" to config()[Key("INFLUX_USER", stringType)],
+        "INFLUX_PASSWORD" to config()[Key("INFLUX_PASSWORD", stringType)],
+    )
+
     val application: Map<String, String> = mapOf(
         "APP_PROFILE" to config()[Key("application.profile", stringType)],
         "SENSU_URL" to config()[Key("SENSU_URL", stringType)],
