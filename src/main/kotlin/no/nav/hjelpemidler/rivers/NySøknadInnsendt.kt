@@ -33,7 +33,7 @@ internal class NySøknadInnsendt(
         val rawJson: String = packet["data"].textValue()
         val list = objectMapper.readValue<Soknad>(rawJson).soknad.hjelpemidler.hjelpemiddelListe.toList()
 
-       AivenMetrics().soknadProcessed(list.size)
+        AivenMetrics().soknadProcessed(list.size)
 
         // Create metrics based on data
         for (product in list) {
