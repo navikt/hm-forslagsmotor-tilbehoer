@@ -9,6 +9,7 @@ val logging_version: String by project
 val konfig_version: String by project
 val kafka_version: String by project
 val influxdb_version: String by project
+val influxdb_aiven_version: String by project
 val unleash_version: String by project
 val ktlint_version: String by project
 val junit_version: String by project
@@ -41,6 +42,7 @@ dependencies {
     implementation("io.github.microutils:kotlin-logging:$logging_version")
     implementation("org.apache.kafka:kafka-clients:$kafka_version")
     implementation("org.influxdb:influxdb-java:$influxdb_version")
+    implementation("com.influxdb:influxdb-client-kotlin:$influxdb_aiven_version")
     implementation("no.finn.unleash:unleash-client-java:$unleash_version")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
