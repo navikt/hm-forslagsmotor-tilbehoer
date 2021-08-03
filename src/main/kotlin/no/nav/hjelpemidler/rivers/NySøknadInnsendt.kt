@@ -1,5 +1,6 @@
 package no.nav.hjelpemidler.rivers
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
@@ -20,6 +21,8 @@ internal class NySøknadInnsendt(
     private val objectMapper = jacksonObjectMapper()
 
     init {
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
         River(rapidsConnection).apply {
             validate { it.demandValue("eventName", "nySoknad") }
             validate { it.requireKey("signatur", "soknad") }
