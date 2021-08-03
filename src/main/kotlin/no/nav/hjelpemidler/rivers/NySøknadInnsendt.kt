@@ -21,7 +21,7 @@ internal class NySøknadInnsendt(
     private val objectMapper = jacksonObjectMapper()
 
     init {
-        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
         River(rapidsConnection).apply {
             validate { it.demandValue("eventName", "nySoknad") }
