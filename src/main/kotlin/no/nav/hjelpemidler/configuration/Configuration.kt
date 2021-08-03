@@ -70,6 +70,12 @@ internal object Configuration {
             "AZURE_APP_CLIENT_ID" to "123",
             "AZURE_APP_CLIENT_SECRET" to "dummy",
             "AZURE_AD_SCOPE" to "123",
+
+            "INFLUX_HOST" to "abc",
+            "INFLUX_PORT" to "abc",
+            "INFLUX_DATABASE_NAME" to "abc",
+            "INFLUX_USER" to "abc",
+            "INFLUX_PASSWORD" to "abc",
         )
     )
 
