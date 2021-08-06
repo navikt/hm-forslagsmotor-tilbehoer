@@ -48,6 +48,10 @@ dependencies {
 
     implementation("io.ktor:ktor-client-jackson:$ktor_version")
     implementation("io.ktor:ktor-jackson:$ktor_version")
+    implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
+    implementation("io.ktor:ktor-client-apache:$ktor_version")
+    implementation("io.ktor:ktor-auth:$ktor_version")
+    implementation("io.ktor:ktor-auth-jwt:$ktor_version")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")
