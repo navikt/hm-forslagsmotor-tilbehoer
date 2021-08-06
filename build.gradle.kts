@@ -15,6 +15,7 @@ val ktlint_version: String by project
 val junit_version: String by project
 val kotest_version: String by project
 val kotlin_test_version: String by project
+val ktor_version: String by project
 
 plugins {
     application
@@ -44,6 +45,9 @@ dependencies {
     implementation("org.influxdb:influxdb-java:$influxdb_version")
     implementation("com.influxdb:influxdb-client-kotlin:$influxdb_aiven_version")
     implementation("no.finn.unleash:unleash-client-java:$unleash_version")
+
+    implementation("io.ktor:ktor-client-jackson:$ktor_version")
+    implementation("io.ktor:ktor-jackson:$ktor_version")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")

@@ -1,6 +1,10 @@
 package no.nav.hjelpemidler
 
 import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.features.ContentNegotiation
+import io.ktor.http.ContentType
+import io.ktor.jackson.JacksonConverter
 import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.routing
@@ -18,6 +22,9 @@ fun main() {
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .withKtorModule {
+            install(ContentNegotiation) {
+                register(ContentType.Application.Json, JacksonConverter())
+            }
             routing {
                 get("/suggestion/{hmsNr}") {
                     // TODO: Authentication: tokenX, m2m or on-behalf-of?
