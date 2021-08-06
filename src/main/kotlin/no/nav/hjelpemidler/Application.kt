@@ -26,7 +26,7 @@ fun main() {
                 register(ContentType.Application.Json, JacksonConverter())
             }
             routing {
-                get("/suggestion/{hmsNr}") {
+                get("/suggestions/{hmsNr}") {
                     // TODO: Authentication: tokenX, m2m or on-behalf-of?
                     val hmsNr = call.parameters["hmsNr"]!!
                     call.respond(SuggestionEngine.suggestionsForHmsNr(hmsNr))
