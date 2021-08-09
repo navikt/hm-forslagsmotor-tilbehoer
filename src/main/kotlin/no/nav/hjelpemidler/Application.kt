@@ -13,7 +13,9 @@ import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
+import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 
 private val logg = KotlinLogging.logger {}
@@ -31,7 +33,22 @@ fun main() {
                 authenticate("tokenX") {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
-                        call.respond(SuggestionEngine.suggestionsForHmsNr(hmsNr))
+                        val results: MutableList<Suggestion> = mutableListOf()
+                        for (suggestion in SuggestionEngine.suggestionsForHmsNr(hmsNr)) {
+                            var altTitle = ""
+                            try {
+                                altTitle = Oebs.GetTitleForHmsNr(suggestion.hmsNr)
+                            }catch (e: Exception) {
+                                logg.warn("Unable to fetch oebs alternative title for accessory suggestion (hmsNr=${suggestion.hmsNr}): $e")
+                                e.printStackTrace()
+                            }
+                            results.add(Suggestion(
+                                hmsNr = suggestion.hmsNr,
+                                title = if (altTitle.isNotEmpty()) altTitle else suggestion.title,
+                                occurancesInSoknader =  suggestion.occurancesInSoknader,
+                            ))
+                        }
+                        call.respond(results)
                     }
                 }
             }

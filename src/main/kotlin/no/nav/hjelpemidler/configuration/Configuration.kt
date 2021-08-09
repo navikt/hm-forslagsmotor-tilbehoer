@@ -18,6 +18,7 @@ internal object Configuration {
             "application.profile" to "prod",
             "SENSU_URL" to "https://digihot-proxy.prod-fss-pub.nais.io/sensu",
             "unleash.url" to "https://unleash.nais.io/api/",
+            "OEBS_API_PROXY_URL" to "hm-oebs-api-proxy.prod-fss-pub.nais.io",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-prod",
             "kafka.topic" to "teamdigihot.hm-soknadsbehandling-v1",
@@ -26,7 +27,8 @@ internal object Configuration {
             "application.http.port" to "8080",
 
             "AZURE_TENANT_BASEURL" to "https://login.microsoftonline.com",
-            "AZURE_AD_SCOPE" to "api://prod-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
+            "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "api://prod-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
+            "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://prod-fss.teamdigihot.hm-oebs-api-proxy/.default",
         )
     )
 
@@ -35,6 +37,7 @@ internal object Configuration {
             "application.profile" to "dev",
             "SENSU_URL" to "https://digihot-proxy.dev-fss-pub.nais.io/sensu",
             "unleash.url" to "https://unleash.nais.io/api/",
+            "OEBS_API_PROXY_URL" to "hm-oebs-api-proxy.dev-fss-pub.nais.io",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-dev",
             "kafka.topic" to "teamdigihot.hm-soknadsbehandling-v1",
@@ -43,7 +46,8 @@ internal object Configuration {
             "application.http.port" to "8080",
 
             "AZURE_TENANT_BASEURL" to "https://login.microsoftonline.com",
-            "AZURE_AD_SCOPE" to "api://dev-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
+            "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "api://dev-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
+            "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://dev-fss.teamdigihot.hm-oebs-api-proxy/.default",
         )
     )
 
@@ -52,6 +56,7 @@ internal object Configuration {
             "application.profile" to "local",
             "SENSU_URL" to "http://localhost:8456/sensu",
             "unleash.url" to "https://unleash.nais.io/api/",
+            "OEBS_API_PROXY_URL" to "http://localhost:8456/oebs-api-proxy",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-local",
             "kafka.topic" to "teamdigihot.hm-soknadsbehandling-v1",
@@ -69,7 +74,8 @@ internal object Configuration {
             "AZURE_APP_TENANT_ID" to "123",
             "AZURE_APP_CLIENT_ID" to "123",
             "AZURE_APP_CLIENT_SECRET" to "dummy",
-            "AZURE_AD_SCOPE" to "123",
+            "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "123",
+            "AZURE_AD_SCOPE_OEBSAPIPROXY" to "123",
 
             "INFLUX_HOST" to "abc",
             "INFLUX_PORT" to "abc",
@@ -99,7 +105,9 @@ internal object Configuration {
         "AZURE_APP_TENANT_ID" to config()[Key("AZURE_APP_TENANT_ID", stringType)],
         "AZURE_APP_CLIENT_ID" to config()[Key("AZURE_APP_CLIENT_ID", stringType)],
         "AZURE_APP_CLIENT_SECRET" to config()[Key("AZURE_APP_CLIENT_SECRET", stringType)],
-        "AZURE_AD_SCOPE" to config()[Key("AZURE_AD_SCOPE", stringType)],
+
+        "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to config()[Key("AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB", stringType)],
+        "AZURE_AD_SCOPE_OEBSAPIPROXY" to config()[Key("AZURE_AD_SCOPE_OEBSAPIPROXY", stringType)],
     )
 
     val tokenX: Map<String, String> = mapOf(
@@ -119,5 +127,6 @@ internal object Configuration {
         "APP_PROFILE" to config()[Key("application.profile", stringType)],
         "SENSU_URL" to config()[Key("SENSU_URL", stringType)],
         "UNLEASH_URL" to config()[Key("unleash.url", stringType)],
+        "OEBS_API_PROXY_URL" to config()[Key("OEBS_API_PROXY_URL", stringType)],
     ) + System.getenv().filter { it.key.startsWith("NAIS_") }
 }

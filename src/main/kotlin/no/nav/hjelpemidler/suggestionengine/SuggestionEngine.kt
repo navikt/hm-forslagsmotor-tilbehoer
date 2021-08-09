@@ -49,7 +49,7 @@ object SuggestionEngine {
                 if (!suggestions.contains(tilbehoer.hmsnr)) {
                     suggestions[tilbehoer.hmsnr] = Suggestion(
                         tilbehoer.hmsnr,
-                        tilbehoer.navn, // FIXME: Must be fetched from OEBS or other quality source
+                        tilbehoer.navn, // FIXME: Must be fetched from OEBS or other quality source (hmdb?)
                         0,
                     )
                 }
@@ -76,7 +76,7 @@ object SuggestionEngine {
     private fun getInitialDataset(): List<Hjelpemiddel> {
         // Generate azure ad token for authorization header
         if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
-            val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE"]!!)
+            val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!)
             azToken = token.accessToken
             azTokenTimeout = LocalDateTime.now()
                 .plusSeconds(token.expiresIn - 60 /* 60s leeway => renew 60s before token expiration */)
