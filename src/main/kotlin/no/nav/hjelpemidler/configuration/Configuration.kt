@@ -77,8 +77,8 @@ internal object Configuration {
             "INFLUX_USER" to "abc",
             "INFLUX_PASSWORD" to "abc",
 
-            "AZURE_APP_WELL_KNOWN_URL" to "abc",
-            "AZURE_APP_CLIENT_ID" to "abc",
+            "TOKEN_X_WELL_KNOWN_URL" to "abc",
+            "TOKEN_X_CLIENT_ID" to "abc",
         )
     )
 
@@ -100,9 +100,11 @@ internal object Configuration {
         "AZURE_APP_CLIENT_ID" to config()[Key("AZURE_APP_CLIENT_ID", stringType)],
         "AZURE_APP_CLIENT_SECRET" to config()[Key("AZURE_APP_CLIENT_SECRET", stringType)],
         "AZURE_AD_SCOPE" to config()[Key("AZURE_AD_SCOPE", stringType)],
+    )
 
-        // Used for server side authentication
-        "AZURE_APP_WELL_KNOWN_URL" to config()[Key("AZURE_APP_WELL_KNOWN_URL", stringType)],
+    val tokenX: Map<String, String> = mapOf(
+        "TOKEN_X_CLIENT_ID" to config()[Key("TOKEN_X_CLIENT_ID", stringType)],
+        "TOKEN_X_WELL_KNOWN_URL" to config()[Key("TOKEN_X_WELL_KNOWN_URL", stringType)],
     )
 
     val influxDB: Map<String, String> = mapOf(

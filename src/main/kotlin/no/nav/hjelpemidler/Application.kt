@@ -28,7 +28,7 @@ fun main() {
                 register(ContentType.Application.Json, JacksonConverter())
             }
             routing {
-                authenticate("aad") {
+                authenticate("tokenX") {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
                         call.respond(SuggestionEngine.suggestionsForHmsNr(hmsNr))
