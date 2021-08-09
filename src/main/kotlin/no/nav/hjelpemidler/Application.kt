@@ -38,15 +38,17 @@ fun main() {
                             var altTitle = ""
                             try {
                                 altTitle = Oebs.GetTitleForHmsNr(suggestion.hmsNr)
-                            }catch (e: Exception) {
+                            } catch (e: Exception) {
                                 logg.warn("Unable to fetch oebs alternative title for accessory suggestion (hmsNr=${suggestion.hmsNr}): $e")
                                 e.printStackTrace()
                             }
-                            results.add(Suggestion(
-                                hmsNr = suggestion.hmsNr,
-                                title = if (altTitle.isNotEmpty()) altTitle else suggestion.title,
-                                occurancesInSoknader =  suggestion.occurancesInSoknader,
-                            ))
+                            results.add(
+                                Suggestion(
+                                    hmsNr = suggestion.hmsNr,
+                                    title = if (altTitle.isNotEmpty()) altTitle else suggestion.title,
+                                    occurancesInSoknader = suggestion.occurancesInSoknader,
+                                )
+                            )
                         }
                         call.respond(results)
                     }
