@@ -42,5 +42,7 @@ spec:
     outbound:
       rules:
         - application: hm-soknadsbehandling-db
+      external:
+        - host: hm-oebs-api-proxy.dev-fss-pub.nais.io
   envFrom:
     - secret: hm-influxdb-secret
