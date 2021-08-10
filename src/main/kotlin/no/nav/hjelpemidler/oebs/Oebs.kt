@@ -32,7 +32,7 @@ object Oebs {
         // Make request
         val baseurl = Configuration.application["OEBS_API_PROXY_URL"]!!
         val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("http://$baseurl/getTitleForHmsNr/$hmsNr"))
+            .uri(URI.create("https://$baseurl/getTitleForHmsNr/$hmsNr"))
             .timeout(Duration.ofMinutes(1))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
