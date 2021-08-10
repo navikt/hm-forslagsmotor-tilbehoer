@@ -51,6 +51,6 @@ object Oebs {
 }
 
 data class ResponseGetTitleForHmsNr(
-    val hmsNr: Int,
+    val hmsNr: String,
     val title: String,
 )

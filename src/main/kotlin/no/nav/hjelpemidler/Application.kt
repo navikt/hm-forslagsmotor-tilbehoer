@@ -17,6 +17,7 @@ import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
 
 private val logg = KotlinLogging.logger {}
 
@@ -33,7 +34,7 @@ fun main() {
                 authenticate("tokenX") {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
-                        val results: MutableList<Suggestion> = mutableListOf()
+                        val results: MutableList<SuggestionFrontendFiltered> = mutableListOf()
                         for (suggestion in SuggestionEngine.suggestionsForHmsNr(hmsNr)) {
                             var altTitle = ""
                             try {
@@ -47,7 +48,7 @@ fun main() {
                                     hmsNr = suggestion.hmsNr,
                                     title = if (altTitle.isNotEmpty()) altTitle else suggestion.title,
                                     occurancesInSoknader = suggestion.occurancesInSoknader,
-                                )
+                                ).toFrontendFiltered()
                             )
                         }
                         call.respond(results)

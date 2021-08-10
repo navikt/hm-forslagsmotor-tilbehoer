@@ -119,6 +119,15 @@ data class Suggestion(
     val title: String,
 
     var occurancesInSoknader: Int,
+) {
+    fun toFrontendFiltered(): SuggestionFrontendFiltered {
+        return SuggestionFrontendFiltered(hmsNr, title)
+    }
+}
+
+data class SuggestionFrontendFiltered(
+    val hmsNr: String,
+    val title: String,
 )
 
 private class Item(
