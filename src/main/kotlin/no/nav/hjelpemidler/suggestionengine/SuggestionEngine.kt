@@ -52,7 +52,7 @@ object SuggestionEngine {
                     try {
                         description = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
                         logg.info("DEBUG: found oebs description: $description")
-                    }catch (e: Exception) {
+                    } catch (e: Exception) {
                         logg.error("error: failed to get title for hmsnr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }

@@ -13,7 +13,6 @@ import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
-import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
