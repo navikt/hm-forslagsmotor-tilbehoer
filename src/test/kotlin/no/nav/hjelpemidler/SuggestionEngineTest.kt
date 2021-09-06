@@ -35,7 +35,7 @@ internal class SuggestionEngineTest {
         val suggestions = SuggestionEngine.suggestionsForHmsNr("1234")
         assertEquals(1, suggestions.size)
         assertEquals("4321", suggestions[0].hmsNr)
-        assertEquals("Tilbehør 1", suggestions[0].title)
+        assertEquals("(beskrivelse utilgjengelig)", suggestions[0].title)
         assertEquals(1, suggestions[0].occurancesInSoknader)
     }
 
@@ -80,7 +80,7 @@ internal class SuggestionEngineTest {
         val suggestions = SuggestionEngine.suggestionsForHmsNr("1234")
         assertEquals(2, suggestions.size)
         assertEquals("5678", suggestions[0].hmsNr)
-        assertEquals("Tilbehør 2", suggestions[0].title)
+        assertEquals("(beskrivelse utilgjengelig)", suggestions[0].title)
         assertEquals(2, suggestions[0].occurancesInSoknader)
     }
 }
