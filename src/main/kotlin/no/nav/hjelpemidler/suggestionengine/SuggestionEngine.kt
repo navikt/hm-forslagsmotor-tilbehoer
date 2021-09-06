@@ -51,9 +51,8 @@ object SuggestionEngine {
                     var description = "(beskrivelse utilgjengelig)"
                     try {
                         description = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
-                        logg.info("DEBUG: found oebs description: $description")
                     } catch (e: Exception) {
-                        logg.error("error: failed to get title for hmsnr from hm-oebs-api-proxy")
+                        logg.warn("warn: failed to get title for hmsnr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }
                     // TODO: If we have the product in our dataset from hmdb, use that as a source of description instead.
