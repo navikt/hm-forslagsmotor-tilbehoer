@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.metrics.AivenMetrics
+import no.nav.hjelpemidler.oebs.Oebs
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -47,9 +48,18 @@ object SuggestionEngine {
             val suggestions = items[hjelpemiddel.hmsNr]!!.suggestions
             for (tilbehoer in hjelpemiddel.tilbehorListe) {
                 if (!suggestions.contains(tilbehoer.hmsnr)) {
+                    var description = "(beskrivelse utilgjengelig)"
+                    try {
+                        description = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
+                        logg.info("DEBUG: found oebs description: $description")
+                    }catch (e: Exception) {
+                        logg.error("error: failed to get title for hmsnr from hm-oebs-api-proxy")
+                        e.printStackTrace()
+                    }
+                    // TODO: If we have the product in our dataset from hmdb, use that as a source of description instead.
                     suggestions[tilbehoer.hmsnr] = Suggestion(
                         tilbehoer.hmsnr,
-                        tilbehoer.navn, // FIXME: Must be fetched from OEBS or other quality source (hmdb?)
+                        description,
                         0,
                     )
                 }

@@ -36,17 +36,10 @@ fun main() {
                         val hmsNr = call.parameters["hmsNr"]!!
                         val results: MutableList<SuggestionFrontendFiltered> = mutableListOf()
                         for (suggestion in SuggestionEngine.suggestionsForHmsNr(hmsNr)) {
-                            var altTitle = ""
-                            try {
-                                altTitle = Oebs.GetTitleForHmsNr(suggestion.hmsNr)
-                            } catch (e: Exception) {
-                                logg.warn("Unable to fetch oebs alternative title for accessory suggestion (hmsNr=${suggestion.hmsNr}): $e")
-                                e.printStackTrace()
-                            }
                             results.add(
                                 Suggestion(
                                     hmsNr = suggestion.hmsNr,
-                                    title = if (altTitle.isNotEmpty()) altTitle else suggestion.title,
+                                    title = suggestion.title,
                                     occurancesInSoknader = suggestion.occurancesInSoknader,
                                 ).toFrontendFiltered()
                             )
