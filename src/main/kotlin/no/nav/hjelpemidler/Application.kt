@@ -13,6 +13,7 @@ import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
@@ -45,6 +46,18 @@ fun main() {
                         }
                         call.respond(results)
                     }
+                    get("/nameLookup/{hmsNr}") {
+                        val hmsNr = call.parameters["hmsNr"]!!
+                        val result: NameLookup = try {
+                            val name = Oebs.GetTitleForHmsNr(hmsNr)
+                            NameLookup(name, null)
+                        } catch (e: Exception) {
+                            logg.info("warn: failed to find title for hmsNr=$hmsNr")
+                            e.printStackTrace()
+                            NameLookup(null, "produkt ikke funnet")
+                        }
+                        call.respond(result)
+                    }
                 }
             }
         }
@@ -74,3 +87,8 @@ fun main() {
 
     logg.debug("Debug: After rapid start, end of main func")
 }
+
+data class NameLookup (
+    val name: String?,
+    val error: String?,
+)
