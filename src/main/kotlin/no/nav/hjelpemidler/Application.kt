@@ -5,6 +5,7 @@ import io.ktor.application.install
 import io.ktor.auth.authenticate
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.JacksonConverter
 import io.ktor.response.respond
 import io.ktor.routing.get
@@ -48,15 +49,13 @@ fun main() {
                     }
                     get("/nameLookup/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
-                        val result: NameLookup = try {
-                            val name = Oebs.GetTitleForHmsNr(hmsNr)
-                            NameLookup(name, null)
+                        try {
+                            call.respond(NameLookup(Oebs.GetTitleForHmsNr(hmsNr), null))
                         } catch (e: Exception) {
                             logg.info("warn: failed to find title for hmsNr=$hmsNr")
                             e.printStackTrace()
-                            NameLookup(null, "produkt ikke funnet")
+                            call.respond(HttpStatusCode.NotFound, NameLookup(null, "produkt ikke funnet"))
                         }
-                        call.respond(result)
                     }
                 }
             }
@@ -88,7 +87,7 @@ fun main() {
     logg.debug("Debug: After rapid start, end of main func")
 }
 
-data class NameLookup (
+data class NameLookup(
     val name: String?,
     val error: String?,
 )
