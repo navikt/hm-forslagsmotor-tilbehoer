@@ -117,7 +117,7 @@ internal class SuggestionEngineTest {
 
         val suggestions2 = SuggestionEngine.suggestionsForHmsNr("54321")
         assertEquals(1, suggestions2.size)
-        assertEquals("123451", suggestions2[0].hmsNr)
+        assertEquals("12345", suggestions2[0].hmsNr)
         assertEquals("(beskrivelse utilgjengelig)", suggestions2[0].title)
         assertEquals(5, suggestions2[0].occurancesInSoknader)
     }
