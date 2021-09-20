@@ -5,7 +5,6 @@ import io.ktor.application.install
 import io.ktor.auth.authenticate
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.JacksonConverter
 import io.ktor.response.respond
 import io.ktor.routing.get
@@ -54,7 +53,7 @@ fun main() {
                         } catch (e: Exception) {
                             logg.info("warn: failed to find title for hmsNr=$hmsNr")
                             e.printStackTrace()
-                            call.respond(HttpStatusCode.NotFound, NameLookup(null, "produkt ikke funnet"))
+                            call.respond(NameLookup(null, "produkt ikke funnet"))
                         }
                     }
                 }
