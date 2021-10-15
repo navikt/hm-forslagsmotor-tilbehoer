@@ -63,7 +63,7 @@ object SuggestionEngine {
                     )
                 }
 
-                // TODO: Consider if quantity is a good measure here, or if occurances only counts as one no matter how many was requested.
+                // TODO: Consider if quantity is a good measure here, or if occurrences only counts as one no matter how many was requested.
                 suggestions[tilbehoer.hmsnr]!!.occurancesInSoknader += 1
             }
         }
