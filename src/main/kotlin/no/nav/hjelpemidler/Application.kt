@@ -50,14 +50,14 @@ fun main() {
                         }
                         call.respond(results)
                     }
-                    get("/nameLookup/{hmsNr}") {
+                    get("/lookup-accessory-name/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
                         try {
-                            call.respond(NameLookup(Oebs.GetTitleForHmsNr(hmsNr), null))
+                            call.respond(LookupAccessoryName(Oebs.GetTitleForHmsNr(hmsNr), null))
                         } catch (e: Exception) {
                             logg.info("warn: failed to find title for hmsNr=$hmsNr")
                             e.printStackTrace()
-                            call.respond(NameLookup(null, "produkt ikke funnet"))
+                            call.respond(LookupAccessoryName(null, "produkt ikke funnet"))
                         }
                     }
                 }
@@ -90,7 +90,7 @@ fun main() {
     logg.debug("Debug: After rapid start, end of main func")
 }
 
-data class NameLookup(
+data class LookupAccessoryName(
     val name: String?,
     val error: String?,
 )
