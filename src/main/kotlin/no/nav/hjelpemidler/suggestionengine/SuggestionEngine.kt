@@ -23,7 +23,8 @@ object SuggestionEngine {
     private var azTokenTimeout: LocalDateTime? = null
     private var azToken: String? = null
 
-    init {
+    @Synchronized
+    fun causeInit() {
         if (Configuration.application["APP_PROFILE"]!! != "local") {
             logg.info("Loading initial dataset for Suggestion Engine.")
             val initialDataset = getInitialDataset()
@@ -31,10 +32,6 @@ object SuggestionEngine {
             logg.info("Suggestion engine ínitial dataset loaded (count=${items.size})")
             AivenMetrics().initieltDatasettStoerelse(items.size.toLong())
         }
-    }
-
-    @Synchronized
-    fun causeInit() {
     }
 
     @Synchronized

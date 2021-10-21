@@ -18,11 +18,15 @@ import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
+import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
 
 fun main() {
-    SuggestionEngine.causeInit()
+    thread(isDaemon = true) {
+        logg.info("Causing init of Suggestion Engine in separate thread")
+        SuggestionEngine.causeInit()
+    }
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .withKtorModule {
