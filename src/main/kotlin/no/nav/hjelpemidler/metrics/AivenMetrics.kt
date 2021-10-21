@@ -41,8 +41,16 @@ class AivenMetrics {
         writeEvent(EXAMPLE1, fields = mapOf("counter" to 1L), tags = emptyMap())
     }
 
-    fun initieltDatasettStoerelse(antall: Long) {
-        writeEvent(INITIELT_DATASETT_STOERELSE, fields = mapOf("antall" to antall), tags = emptyMap())
+    fun totalProductsWithAccessorySuggestions(antall: Long) {
+        writeEvent(TOTAL_PRODUCTS_WITH_ACCESSORY_SUGGESTIONS, fields = mapOf("antall" to antall), tags = emptyMap())
+    }
+
+    fun totalAccessorySuggestions(antall: Long) {
+        writeEvent(TOTAL_ACCESSORY_SUGGESTIONS, fields = mapOf("antall" to antall), tags = emptyMap())
+    }
+
+    fun totalAccessoriesWithoutADescription(antall: Long) {
+        writeEvent(TOTAL_ACCESSORIES_WITHOUT_A_DESCRIPTION, fields = mapOf("antall" to antall), tags = emptyMap())
     }
 
     fun soknadProcessed(size: Int) {
@@ -74,7 +82,10 @@ class AivenMetrics {
 
         private const val PREFIX = "hm-forslagsmotor-tilbehoer"
         const val EXAMPLE1 = "$PREFIX.EXAMPLE1"
-        const val INITIELT_DATASETT_STOERELSE = "$PREFIX.initielt.datasett.stoerelse"
+        // const val INITIELT_DATASETT_STOERELSE = "$PREFIX.initielt.datasett.stoerelse"
+        const val TOTAL_PRODUCTS_WITH_ACCESSORY_SUGGESTIONS = "$PREFIX.total.products.with.accessory.suggestions"
+        const val TOTAL_ACCESSORY_SUGGESTIONS = "$PREFIX.total.accessory.suggestions"
+        const val TOTAL_ACCESSORIES_WITHOUT_A_DESCRIPTION = "$PREFIX.total.accessories.without.a.description"
         const val SOKNAD_PROCESSED = "$PREFIX.soknad.processed"
         const val PRODUCT_WITHOUT_ACCESSORIES = "$PREFIX.product.without.accessories"
         const val PRODUCT_WITHOUT_SUGGESTIONS = "$PREFIX.product.without.suggestions"

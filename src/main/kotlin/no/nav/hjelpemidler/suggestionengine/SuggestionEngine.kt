@@ -23,14 +23,23 @@ object SuggestionEngine {
     private var azTokenTimeout: LocalDateTime? = null
     private var azToken: String? = null
 
+    private val noDescription = "(beskrivelse utilgjengelig)"
+
     @Synchronized
     fun causeInit() {
         if (Configuration.application["APP_PROFILE"]!! != "local") {
             logg.info("Loading initial dataset for Suggestion Engine.")
             val initialDataset = getInitialDataset()
             learnFromSoknad(initialDataset)
-            logg.info("Suggestion engine ínitial dataset loaded (count=${items.size})")
-            AivenMetrics().initieltDatasettStoerelse(items.size.toLong())
+
+            val totalProductsWithAccessorySuggestions = items.count()
+            val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.reduce { i, j -> i + j }
+            val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.reduce { i, j -> i + j }
+            logg.info("Suggestion engine ínitial dataset loaded (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
+
+            AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
         }
     }
 
@@ -45,7 +54,7 @@ object SuggestionEngine {
             val suggestions = items[hjelpemiddel.hmsNr]!!.suggestions
             for (tilbehoer in hjelpemiddel.tilbehorListe) {
                 if (!suggestions.contains(tilbehoer.hmsnr)) {
-                    var description = "(beskrivelse utilgjengelig)"
+                    var description = noDescription
                     try {
                         description = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
                     } catch (e: Exception) {
