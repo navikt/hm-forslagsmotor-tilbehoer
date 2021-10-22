@@ -29,13 +29,18 @@ object SuggestionEngine {
     @Synchronized
     fun causeInit() {
         if (Configuration.application["APP_PROFILE"]!! != "local") {
-            logg.info("Loading initial dataset for Suggestion Engine.")
+            logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
             val initialDataset = getInitialDataset()
+
+            logg.info("Loading initial dataset for Suggestion Engine into memory.")
             learnFromSoknad(initialDataset)
+
+            logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
             val totalProductsWithAccessorySuggestions = items.count()
             val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.reduce { i, j -> i + j }
             val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.reduce { i, j -> i + j }
+
             logg.info("Suggestion engine ínitial dataset loaded (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
 
             AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
