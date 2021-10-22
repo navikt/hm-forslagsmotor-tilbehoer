@@ -38,8 +38,8 @@ object SuggestionEngine {
             logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
             val totalProductsWithAccessorySuggestions = items.count()
-            val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.reduce { i, j -> i + j }
-            val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.reduce { i, j -> i + j }
+            val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
+            val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
 
             logg.info("Suggestion engine ínitial dataset loaded (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
 
