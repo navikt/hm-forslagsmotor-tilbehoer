@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 internal class SuggestionEngineTest {
+    private val noDescription = "(beskrivelse utilgjengelig)"
+
     @Test
     fun `No suggestions available for item`() {
         SuggestionEngine.discardDataset()
@@ -17,6 +19,12 @@ internal class SuggestionEngineTest {
     @Test
     fun `Fewer occurances than five results in no result, five or more occurances results in results`() {
         SuggestionEngine.discardDataset()
+        SuggestionEngine.fakeNameLookupTable(
+            mapOf(
+                "4321" to "Tilbehør 1",
+                "12345" to "Tilbehør 2",
+            )
+        )
         SuggestionEngine.learnFromSoknad(
             listOf(
                 Hjelpemiddel(
@@ -118,13 +126,18 @@ internal class SuggestionEngineTest {
         val suggestions2 = SuggestionEngine.suggestionsForHmsNr("54321")
         assertEquals(1, suggestions2.size)
         assertEquals("12345", suggestions2[0].hmsNr)
-        assertEquals("(beskrivelse utilgjengelig)", suggestions2[0].title)
+        assertEquals("Tilbehør 2", suggestions2[0].title)
         assertEquals(5, suggestions2[0].occurancesInSoknader)
     }
 
     @Test
     fun `A single suggestion is available based on five or more occurances`() {
         SuggestionEngine.discardDataset()
+        SuggestionEngine.fakeNameLookupTable(
+            mapOf(
+                "4321" to "Tilbehør 1",
+            )
+        )
         SuggestionEngine.learnFromSoknad(
             listOf(
                 Hjelpemiddel(
@@ -183,13 +196,19 @@ internal class SuggestionEngineTest {
         val suggestions = SuggestionEngine.suggestionsForHmsNr("1234")
         assertEquals(1, suggestions.size)
         assertEquals("4321", suggestions[0].hmsNr)
-        assertEquals("(beskrivelse utilgjengelig)", suggestions[0].title)
+        assertEquals("Tilbehør 1", suggestions[0].title)
         assertEquals(5, suggestions[0].occurancesInSoknader)
     }
 
     @Test
     fun `Multiple suggestions and priority is correct`() {
         SuggestionEngine.discardDataset()
+        SuggestionEngine.fakeNameLookupTable(
+            mapOf(
+                "4321" to "Tilbehør 1",
+                "5678" to "Tilbehør 2",
+            )
+        )
         SuggestionEngine.learnFromSoknad(
             listOf(
                 Hjelpemiddel(
@@ -288,7 +307,7 @@ internal class SuggestionEngineTest {
         val suggestions = SuggestionEngine.suggestionsForHmsNr("1234")
         assertEquals(2, suggestions.size)
         assertEquals("5678", suggestions[0].hmsNr)
-        assertEquals("(beskrivelse utilgjengelig)", suggestions[0].title)
+        assertEquals("Tilbehør 2", suggestions[0].title)
         assertEquals(6, suggestions[0].occurancesInSoknader)
     }
 }

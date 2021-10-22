@@ -18,6 +18,7 @@ private val logg = KotlinLogging.logger {}
 
 object SuggestionEngine {
     private val items = mutableMapOf<String, Item>()
+    private var fakeLookupTable: Map<String, String>? = null
 
     private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
     private var azTokenTimeout: LocalDateTime? = null
@@ -56,7 +57,11 @@ object SuggestionEngine {
                 if (!suggestions.contains(tilbehoer.hmsnr)) {
                     var description = noDescription
                     try {
-                        description = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
+                        description = if (fakeLookupTable == null) {
+                            Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
+                        } else {
+                            fakeLookupTable!![tilbehoer.hmsnr] ?: noDescription
+                        }
                     } catch (e: Exception) {
                         logg.warn("warn: failed to get title for hmsnr from hm-oebs-api-proxy")
                         e.printStackTrace()
@@ -86,6 +91,13 @@ object SuggestionEngine {
     fun discardDataset() {
         logg.info("Discarding dataset.")
         items.clear()
+        fakeLookupTable = null
+    }
+
+    // Mostly useful for testing (cleanup between tests)
+    @Synchronized
+    fun fakeNameLookupTable(lookupTable: Map<String, String>) {
+        fakeLookupTable = lookupTable
     }
 
     private fun getInitialDataset(): List<Hjelpemiddel> {
