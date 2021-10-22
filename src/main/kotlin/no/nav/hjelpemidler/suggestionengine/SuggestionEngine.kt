@@ -32,7 +32,7 @@ object SuggestionEngine {
             logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
             val initialDataset = getInitialDataset()
 
-            logg.info("Loading initial dataset for Suggestion Engine into memory.")
+            logg.info("Loading initial dataset for Suggestion Engine into memory (len=${initialDataset.count()}).")
             learnFromSoknad(initialDataset)
 
             logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
