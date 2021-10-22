@@ -38,6 +38,7 @@ fun main() {
                 authenticate("tokenX") {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
+                        logg.info("Request for suggestions for hmsnr=$hmsNr.")
                         val results: MutableList<SuggestionFrontendFiltered> = mutableListOf()
                         for (suggestion in SuggestionEngine.suggestionsForHmsNr(hmsNr)) {
                             results.add(
@@ -52,6 +53,7 @@ fun main() {
                     }
                     get("/lookup-accessory-name/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
+                        logg.info("Request for name lookup for hmsnr=$hmsNr.")
                         try {
                             call.respond(LookupAccessoryName(Oebs.GetTitleForHmsNr(hmsNr), null))
                         } catch (e: Exception) {

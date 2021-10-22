@@ -82,8 +82,12 @@ object SuggestionEngine {
 
     @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        logg.info("Suggestions for hmsnr=$hmsNr.")
         return items[hmsNr]?.suggestions?.map { it.value }?.filter { it.title != noDescription && it.occurancesInSoknader > 4 }?.sortedByDescending { it.occurancesInSoknader }?.take(20) ?: listOf()
+    }
+
+    @Synchronized
+    fun suggestionsForHmsNrWithNoDescription(hmsNr: String): List<Suggestion> {
+        return items[hmsNr]?.suggestions?.map { it.value }?.filter { it.occurancesInSoknader > 4 }?.sortedByDescending { it.occurancesInSoknader }?.take(20) ?: listOf()
     }
 
     // Mostly useful for testing (cleanup between tests)
