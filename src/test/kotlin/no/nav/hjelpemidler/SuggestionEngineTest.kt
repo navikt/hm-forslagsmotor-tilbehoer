@@ -34,6 +34,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -44,6 +45,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -54,6 +56,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -64,6 +67,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -74,6 +78,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "12345",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -84,6 +89,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "12345",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -94,6 +100,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "12345",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -104,6 +111,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "12345",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -114,6 +122,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "12345",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -147,6 +156,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -157,6 +167,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -167,6 +178,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -177,6 +189,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -187,6 +200,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         )
                     ),
                 ),
@@ -218,11 +232,13 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         ),
                         Tilbehoer(
                             hmsnr = "5678",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         ),
                     ),
                 ),
@@ -233,11 +249,13 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         ),
                         Tilbehoer(
                             hmsnr = "5678",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         ),
                     ),
                 ),
@@ -248,11 +266,13 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         ),
                         Tilbehoer(
                             hmsnr = "5678",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         ),
                     ),
                 ),
@@ -263,11 +283,13 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         ),
                         Tilbehoer(
                             hmsnr = "5678",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         ),
                     ),
                 ),
@@ -278,11 +300,13 @@ internal class SuggestionEngineTest {
                             hmsnr = "4321",
                             antall = 1,
                             navn = "Tilbehør 1",
+                            brukAvForslagsmotoren = null,
                         ),
                         Tilbehoer(
                             hmsnr = "5678",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         ),
                     ),
                 ),
@@ -298,6 +322,7 @@ internal class SuggestionEngineTest {
                             hmsnr = "5678",
                             antall = 1,
                             navn = "Tilbehør 2",
+                            brukAvForslagsmotoren = null,
                         ),
                     ),
                 )
