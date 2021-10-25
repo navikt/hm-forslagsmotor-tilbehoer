@@ -148,6 +148,12 @@ data class Tilbehoer(
     val hmsnr: String,
     val antall: Int,
     val navn: String,
+    val brukAvForslagsmotoren: BrukAvForslagsmotoren?,
+)
+
+data class BrukAvForslagsmotoren(
+    val lagtTilFraForslagsmotoren: Boolean,
+    val oppslagAvNavn: Boolean,
 )
 
 data class Suggestion(
