@@ -86,13 +86,18 @@ object SuggestionEngine {
     }
 
     @Synchronized
+    fun allSuggestionsForHmsNr(hmsNr: String): List<Suggestion> {
+        return items[hmsNr]?.suggestions?.map { it.value }?.sortedByDescending { it.occurancesInSoknader } ?: listOf()
+    }
+
+    @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return items[hmsNr]?.suggestions?.map { it.value }?.filter { it.title != noDescription && it.occurancesInSoknader > 4 }?.sortedByDescending { it.occurancesInSoknader }?.take(20) ?: listOf()
+        return allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 }
     }
 
     @Synchronized
     fun suggestionsForHmsNrWithNoDescription(hmsNr: String): List<Suggestion> {
-        return items[hmsNr]?.suggestions?.map { it.value }?.filter { it.occurancesInSoknader > 4 }?.sortedByDescending { it.occurancesInSoknader }?.take(20) ?: listOf()
+        return allSuggestionsForHmsNr(hmsNr).filter { it.occurancesInSoknader > 4 }
     }
 
     // Mostly useful for testing (cleanup between tests)

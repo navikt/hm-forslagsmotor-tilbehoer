@@ -45,7 +45,7 @@ internal class NySøknadInnsendt(
                 continue
             }
 
-            val suggestions = SuggestionEngine.suggestionsForHmsNrWithNoDescription(product.hmsNr)
+            val suggestions = SuggestionEngine.allSuggestionsForHmsNr(product.hmsNr)
             if (suggestions.isEmpty()) {
                 AivenMetrics().productWithoutSuggestions()
                 continue
