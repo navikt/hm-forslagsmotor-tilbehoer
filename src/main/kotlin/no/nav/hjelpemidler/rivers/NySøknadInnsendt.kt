@@ -34,7 +34,14 @@ internal class NySøknadInnsendt(
 
         // Parse packet to relevant data
         val rawJson: String = packet["soknad"].toString()
-        val list = objectMapper.readValue<Soknad>(rawJson).soknad.hjelpemidler.hjelpemiddelListe.toList()
+        val soknad = objectMapper.readValue<Soknad>(rawJson).soknad
+        val list = soknad.hjelpemidler.hjelpemiddelListe.toList()
+
+        val totalAccessoriesInApplication = list.map { it.tilbehorListe.map { it.antall }.fold(0) { a, b -> a + b } }.fold(0) { a, b -> a + b }
+        val partialOrFullUseOfSuggestionsOrLookup = list.any {
+            it.tilbehorListe.any { (it.brukAvForslagsmotoren?.lagtTilFraForslagsmotoren ?: false || it.brukAvForslagsmotoren?.oppslagAvNavn ?: false) }
+        }
+        AivenMetrics().totalAccessoriesInApplication(totalAccessoriesInApplication, partialOrFullUseOfSuggestionsOrLookup)
 
         AivenMetrics().soknadProcessed(list.size)
 
@@ -43,6 +50,14 @@ internal class NySøknadInnsendt(
             if (product.tilbehorListe.isEmpty()) {
                 AivenMetrics().productWithoutAccessories()
                 continue
+            }
+
+            // Record cases where the suggestions were not used but name lookup in oebs was
+            for (accessory in product.tilbehorListe) {
+                val bruk = accessory.brukAvForslagsmotoren ?: continue
+                if (!bruk.lagtTilFraForslagsmotoren && bruk.oppslagAvNavn) {
+                    AivenMetrics().productWithAccessoryManuallyAddedWithAutomaticNameLookup()
+                }
             }
 
             val suggestions = SuggestionEngine.allSuggestionsForHmsNr(product.hmsNr)
@@ -61,7 +76,8 @@ internal class NySøknadInnsendt(
                 }
 
                 if (wasSuggested >= 0) {
-                    AivenMetrics().productWasSuggested(wasSuggested)
+                    val forslagsmotorBrukt = accessory.brukAvForslagsmotoren?.lagtTilFraForslagsmotoren ?: false
+                    AivenMetrics().productWasSuggested(wasSuggested, forslagsmotorBrukt)
                 } else {
                     AivenMetrics().productWasNotSuggestedAtAll()
                 }

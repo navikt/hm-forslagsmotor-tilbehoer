@@ -53,6 +53,12 @@ class AivenMetrics {
         writeEvent(TOTAL_ACCESSORIES_WITHOUT_A_DESCRIPTION, fields = mapOf("antall" to antall), tags = emptyMap())
     }
 
+    fun totalAccessoriesInApplication(tilbehoerISoknadenTotalt: Int, partialOrFullUseOfSuggestionsOrLookup: Boolean) {
+        writeEvent(TOTAL_ACCESSORIES_IN_APPLICATION, fields = mapOf("count" to tilbehoerISoknadenTotalt.toLong()), tags = mapOf(
+            "partialOrFullUseOfSuggestionsOrLookup" to partialOrFullUseOfSuggestionsOrLookup.toString(),
+        ))
+    }
+
     fun soknadProcessed(size: Int) {
         writeEvent(SOKNAD_PROCESSED, fields = mapOf("count" to 1L), tags = mapOf("size" to size.toString()))
     }
@@ -65,8 +71,19 @@ class AivenMetrics {
         writeEvent(PRODUCT_WITHOUT_SUGGESTIONS, fields = mapOf("count" to 1L), tags = emptyMap())
     }
 
-    fun productWasSuggested(wasSuggested: Int) {
-        writeEvent(PRODUCT_WAS_SUGGESTED, fields = mapOf("count" to 1L), tags = mapOf("index" to wasSuggested.toString()))
+    fun productWithAccessoryManuallyAddedWithAutomaticNameLookup() {
+        writeEvent(PRODUCT_MANUALLY_ADDED_WITH_AUTO_NAMELOOKUP, fields = mapOf("count" to 1L), tags = emptyMap())
+    }
+
+    fun productWasSuggested(wasSuggested: Int, forslagsmotorBrukt: Boolean) {
+        writeEvent(
+            PRODUCT_WAS_SUGGESTED,
+            fields = mapOf("count" to 1L),
+            tags = mapOf(
+                "index" to wasSuggested.toString(),
+                "forslagsmotorBrukt" to forslagsmotorBrukt.toString(),
+            )
+        )
     }
 
     fun productWasNotSuggestedAtAll() {
@@ -86,9 +103,11 @@ class AivenMetrics {
         const val TOTAL_PRODUCTS_WITH_ACCESSORY_SUGGESTIONS = "$PREFIX.total.products.with.accessory.suggestions"
         const val TOTAL_ACCESSORY_SUGGESTIONS = "$PREFIX.total.accessory.suggestions"
         const val TOTAL_ACCESSORIES_WITHOUT_A_DESCRIPTION = "$PREFIX.total.accessories.without.a.description"
+        const val TOTAL_ACCESSORIES_IN_APPLICATION = "$PREFIX.total.accessories.in.application"
         const val SOKNAD_PROCESSED = "$PREFIX.soknad.processed"
         const val PRODUCT_WITHOUT_ACCESSORIES = "$PREFIX.product.without.accessories"
         const val PRODUCT_WITHOUT_SUGGESTIONS = "$PREFIX.product.without.suggestions"
+        const val PRODUCT_MANUALLY_ADDED_WITH_AUTO_NAMELOOKUP = "$PREFIX.product.manually.added.with.auto.namelookup"
         const val PRODUCT_WAS_SUGGESTED = "$PREFIX.product.was.suggested"
         const val PRODUCT_WAS_NOT_SUGGESTED_AT_ALL = "$PREFIX.product.was.not.suggested.at.all"
     }
