@@ -55,7 +55,7 @@ internal class NySøknadInnsendt(
             // Record cases where the suggestions were not used but name lookup in oebs was
             for (accessory in product.tilbehorListe) {
                 val bruk = accessory.brukAvForslagsmotoren ?: continue
-                if (!bruk.lagtTilFraForslagsmotoren && bruk.oppslagAvNavn) {
+                if (bruk.oppslagAvNavn) {
                     AivenMetrics().productWithAccessoryManuallyAddedWithAutomaticNameLookup()
                 }
             }
