@@ -54,9 +54,13 @@ class AivenMetrics {
     }
 
     fun totalAccessoriesInApplication(tilbehoerISoknadenTotalt: Int, partialOrFullUseOfSuggestionsOrLookup: Boolean) {
-        writeEvent(TOTAL_ACCESSORIES_IN_APPLICATION, fields = mapOf("count" to tilbehoerISoknadenTotalt.toLong()), tags = mapOf(
-            "partialOrFullUseOfSuggestionsOrLookup" to partialOrFullUseOfSuggestionsOrLookup.toString(),
-        ))
+        writeEvent(
+            TOTAL_ACCESSORIES_IN_APPLICATION,
+            fields = mapOf("count" to tilbehoerISoknadenTotalt.toLong()),
+            tags = mapOf(
+                "partialOrFullUseOfSuggestionsOrLookup" to partialOrFullUseOfSuggestionsOrLookup.toString(),
+            )
+        )
     }
 
     fun soknadProcessed(size: Int) {
