@@ -55,7 +55,7 @@ object SuggestionEngine {
                 for (intialDatasetSoknad in initialDataset) knownSoknadIds.add(intialDatasetSoknad.id)
 
                 logg.info("Loading initial dataset for Suggestion Engine into memory (len=${initialDataset.count()}).")
-                for (initialDatasetSoknad in initialDataset) learnFromSoknad(initialDatasetSoknad.hjelpemidler.hjelpemiddelListe)
+                initialDataset.forEachIndexed { index, initialDatasetSoknad -> learnFromSoknad(initialDatasetSoknad.hjelpemidler.hjelpemiddelListe, true, index, initialDataset.count()) }
 
                 logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
@@ -94,8 +94,12 @@ object SuggestionEngine {
     }
 
     @Synchronized
-    fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>) {
-        logg.info("Learning from Søknad.")
+    fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>, initialDataset: Boolean = false, index: Int = 0, total: Int = 0) {
+        if (initialDataset) {
+            logg.info("(" + (index + 1).toString() + "/$total) Learning from initial dataset Søknad.")
+        } else {
+            logg.info("Learning from new incoming Søknad.")
+        }
         for (hjelpemiddel in hjelpemidler) {
             if (!items.containsKey(hjelpemiddel.hmsNr)) {
                 items[hjelpemiddel.hmsNr] = Item(mutableMapOf())
