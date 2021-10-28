@@ -135,12 +135,19 @@ object SuggestionEngine {
                 items[hjelpemiddel.hmsNr] = Item(mutableMapOf())
             }
 
+            var testIndex = 1
+
             val suggestions = items[hjelpemiddel.hmsNr]!!.suggestions
             for (tilbehoer in hjelpemiddel.tilbehorListe) {
                 if (!suggestions.contains(tilbehoer.hmsnr)) {
                     var description = noDescription
                     try {
                         description = if (fakeLookupTable == null) {
+                            if (testIndex % 10 == 0) {
+                                testIndex++
+                                throw Exception("fake statusCode=502")
+                            }
+                            testIndex++
                             Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
                         } else {
                             fakeLookupTable!![tilbehoer.hmsnr] ?: noDescription
