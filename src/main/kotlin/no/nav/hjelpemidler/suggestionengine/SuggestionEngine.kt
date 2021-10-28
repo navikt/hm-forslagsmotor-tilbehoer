@@ -15,6 +15,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
 private val logg = KotlinLogging.logger {}
@@ -43,10 +44,34 @@ object SuggestionEngine {
         return dsLoaded
     }
 
+    private fun backgroundRunnder() {
+        while (true) {
+            Thread.sleep(10_000)
+            backgroundRunnerSync()
+        }
+    }
+
+    @Synchronized
+    private fun backgroundRunnerSync() {
+        for (item in items) {
+            for (suggestion in item.value.suggestions) {
+                if (suggestion.value.title == noDescription) {
+                    logg.info("Attempting to refetch title for suggestion with missing title (hmsNr=${suggestion.value.hmsNr})")
+                    try {
+                        val newDescription = Oebs.GetTitleForHmsNr(suggestion.value.hmsNr)
+                        items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription, suggestion.value.occurancesInSoknader)
+                    } catch (e: Exception) {
+                        logg.error("Exception thrown during attempt to refetch OEBS title after previous failure (for hmsNr=${suggestion.value.hmsNr}): $e")
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
     @Synchronized
     fun causeInit() {
         if (Configuration.application["APP_PROFILE"]!! != "local") {
-
             try {
                 logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
                 val initialDataset = getInitialDataset()
@@ -79,6 +104,11 @@ object SuggestionEngine {
                 logg.error("Fatal exception while downloading the intial dataset: $e")
                 e.printStackTrace()
                 exitProcess(-1)
+            }
+
+            thread(isDaemon = true) {
+                logg.info("Background runner that retries fetching OEBS descriptions if it failed earlier")
+                backgroundRunnder()
             }
         }
     }
@@ -116,6 +146,10 @@ object SuggestionEngine {
                             fakeLookupTable!![tilbehoer.hmsnr] ?: noDescription
                         }
                     } catch (e: Exception) {
+                        // Ignoring non-existing products (statusCode=404), others will be added with
+                        // title=noDescription and is thus not returned in suggestion results until the
+                        // backgroundRunner retries and fetches the title.
+                        if (e.toString().contains("statusCode=404")) continue
                         logg.warn("warn: failed to get title for hmsnr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }
