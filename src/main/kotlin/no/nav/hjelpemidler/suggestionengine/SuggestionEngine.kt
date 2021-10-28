@@ -149,7 +149,10 @@ object SuggestionEngine {
                         // Ignoring non-existing products (statusCode=404), others will be added with
                         // title=noDescription and is thus not returned in suggestion results until the
                         // backgroundRunner retries and fetches the title.
-                        if (e.toString().contains("statusCode=404")) continue
+                        if (e.toString().contains("statusCode=404")) {
+                            logg.info("Ignoring suggestion with hmsNr=${tilbehoer.hmsnr} as OEBS returned 404 not found (product doesnt exist)")
+                            continue
+                        }
                         logg.warn("warn: failed to get title for hmsnr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }
