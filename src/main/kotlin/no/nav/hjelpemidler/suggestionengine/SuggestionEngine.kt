@@ -164,8 +164,7 @@ object SuggestionEngine {
 
         val response: HttpResponse<String> = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
         if (response.statusCode() != 200) {
-            logg.info("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
-            return listOf()
+            throw Exception("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
         }
 
         return jacksonObjectMapper().readValue<Array<Hjelpemiddel>>(response.body()).asList()
