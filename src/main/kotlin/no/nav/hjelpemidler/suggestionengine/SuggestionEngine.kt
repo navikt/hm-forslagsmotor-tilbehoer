@@ -123,6 +123,8 @@ object SuggestionEngine {
         knownSoknadIds.add(soknadsId)
     }
 
+    private var testIndex = 1
+
     @Synchronized
     fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>, initialDataset: Boolean = false, index: Int = 0, total: Int = 0) {
         if (initialDataset) {
@@ -134,8 +136,6 @@ object SuggestionEngine {
             if (!items.containsKey(hjelpemiddel.hmsNr)) {
                 items[hjelpemiddel.hmsNr] = Item(mutableMapOf())
             }
-
-            var testIndex = 1
 
             val suggestions = items[hjelpemiddel.hmsNr]!!.suggestions
             for (tilbehoer in hjelpemiddel.tilbehorListe) {
@@ -157,7 +157,7 @@ object SuggestionEngine {
                         // title=noDescription and is thus not returned in suggestion results until the
                         // backgroundRunner retries and fetches the title.
                         if (e.toString().contains("statusCode=404")) {
-                            logg.info("Ignoring suggestion with hmsNr=${tilbehoer.hmsnr} as OEBS returned 404 not found (product doesnt exist)")
+                            logg.info("Ignoring suggestion with hmsNr=${tilbehoer.hmsnr} as OEBS returned 404 not found (product doesnt exist): $e")
                             continue
                         }
                         logg.warn("warn: failed to get title for hmsnr from hm-oebs-api-proxy")
