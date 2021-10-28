@@ -107,7 +107,7 @@ object SuggestionEngine {
             }
 
             thread(isDaemon = true) {
-                logg.info("Background runner that retries fetching OEBS descriptions if it failed earlier")
+                logg.info("Starting background runner that retries fetching OEBS descriptions if it failed earlier")
                 backgroundRunnder()
             }
         }
