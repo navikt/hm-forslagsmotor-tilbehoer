@@ -96,7 +96,7 @@ object SuggestionEngine {
     @Synchronized
     fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>, initialDataset: Boolean = false, index: Int = 0, total: Int = 0) {
         if (initialDataset) {
-            logg.info("(" + (index + 1).toString() + "/$total) Learning from initial dataset Søknad.")
+            if (index % 1000 == 0) logg.info("(" + (index + 1).toString() + "/$total) Learning from initial dataset Søknad (only printing every 1000th søknad to limit output).")
         } else {
             logg.info("Learning from new incoming Søknad.")
         }
