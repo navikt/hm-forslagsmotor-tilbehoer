@@ -37,6 +37,7 @@ object SuggestionEngine {
             dsLoaded = datasetLoaded
             waitForReadyLock.unlock()
         }
+        logg.info("DEBUG: asked isReady with result: $dsLoaded")
         return dsLoaded
     }
 
@@ -63,7 +64,9 @@ object SuggestionEngine {
                 AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
                 AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
 
-                Thread.sleep(30_000)
+                logg.info("DEBUG: PRE-SLEEP")
+                Thread.sleep(300_000)
+                logg.info("DEBUG: POST-SLEEP")
 
                 // Notify isready that we are ready to proccess messages
                 waitForReadyLock.lock()
