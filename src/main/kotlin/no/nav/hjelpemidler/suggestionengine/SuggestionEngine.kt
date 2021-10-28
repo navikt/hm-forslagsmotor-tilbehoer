@@ -16,7 +16,6 @@ import java.time.LocalDateTime
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.system.exitProcess
 
-
 private val logg = KotlinLogging.logger {}
 
 object SuggestionEngine {
@@ -70,7 +69,7 @@ object SuggestionEngine {
                 waitForReadyLock.lock()
                 datasetLoaded = true
                 waitForReadyLock.unlock()
-            }catch(e: Exception) {
+            } catch (e: Exception) {
                 // We use this rather than an exception to cause whole app to crash (cause restart loop until things are
                 // good again), and not only the daemon thread
                 logg.error("Fatal exception while downloading the intial dataset: $e")
