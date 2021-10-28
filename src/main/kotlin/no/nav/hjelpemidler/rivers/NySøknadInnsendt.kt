@@ -11,6 +11,7 @@ import no.nav.helse.rapids_rivers.River
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import java.util.*
 
 private val logg = KotlinLogging.logger {}
 private val sikkerlogg = KotlinLogging.logger("tjenestekall")
@@ -35,6 +36,14 @@ internal class NySøknadInnsendt(
         // Parse packet to relevant data
         val rawJson: String = packet["soknad"].toString()
         val soknad = objectMapper.readValue<Soknad>(rawJson).soknad
+
+        if (SuggestionEngine.knownSoknadsId(soknad.id)) {
+            logg.info("SuggestionEngine already knowns about soknad with id=${soknad.id}, ignoring..")
+            return
+        }
+
+        SuggestionEngine.recordSoknadId(soknad.id)
+
         val list = soknad.hjelpemidler.hjelpemiddelListe.toList()
 
         val totalAccessoriesInApplication = list.map { it.tilbehorListe.map { it.antall }.fold(0) { a, b -> a + b } }.fold(0) { a, b -> a + b }
@@ -98,6 +107,7 @@ data class Soknad(
 )
 
 data class Hjelpemidler(
+    val id: UUID,
     val hjelpemidler: HjelpemiddelListe,
 )
 

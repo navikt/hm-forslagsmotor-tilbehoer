@@ -13,6 +13,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.*
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.system.exitProcess
 
@@ -23,6 +24,8 @@ object SuggestionEngine {
     private var datasetLoaded: Boolean = false
 
     private val items = mutableMapOf<String, Item>()
+    private var knownSoknadIds = mutableListOf<UUID>()
+
     private var fakeLookupTable: Map<String, String>? = null
 
     private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
@@ -48,8 +51,11 @@ object SuggestionEngine {
                 logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
                 val initialDataset = getInitialDataset()
 
+                logg.info("Storing list of known soknadIds (nrSoknads=${initialDataset.count()}):")
+                for (intialDatasetSoknad in initialDataset) knownSoknadIds.add(intialDatasetSoknad.id)
+
                 logg.info("Loading initial dataset for Suggestion Engine into memory (len=${initialDataset.count()}).")
-                learnFromSoknad(initialDataset)
+                for (initialDatasetSoknad in initialDataset) learnFromSoknad(initialDatasetSoknad.hjelpemidler.hjelpemiddelListe)
 
                 logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
@@ -75,6 +81,16 @@ object SuggestionEngine {
                 exitProcess(-1)
             }
         }
+    }
+
+    @Synchronized
+    fun knownSoknadsId(soknadsId: UUID): Boolean {
+        return knownSoknadIds.contains(soknadsId)
+    }
+
+    @Synchronized
+    fun recordSoknadId(soknadsId: UUID) {
+        knownSoknadIds.add(soknadsId)
     }
 
     @Synchronized
@@ -142,7 +158,7 @@ object SuggestionEngine {
         fakeLookupTable = lookupTable
     }
 
-    private fun getInitialDataset(): List<Hjelpemiddel> {
+    private fun getInitialDataset(): List<Soknad> {
         // Generate azure ad token for authorization header
         if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
             val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!)
@@ -167,9 +183,18 @@ object SuggestionEngine {
             throw Exception("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
         }
 
-        return jacksonObjectMapper().readValue<Array<Hjelpemiddel>>(response.body()).asList()
+        return jacksonObjectMapper().readValue<Array<Soknad>>(response.body()).asList()
     }
 }
+
+data class Soknad(
+    val id: UUID,
+    val hjelpemidler: SoknadInner
+)
+
+data class SoknadInner(
+    val hjelpemiddelListe: List<Hjelpemiddel>,
+)
 
 data class Hjelpemiddel(
     val hmsNr: String,
