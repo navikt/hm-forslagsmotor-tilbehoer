@@ -41,7 +41,11 @@ internal class NySøknadInnsendt(
         val partialOrFullUseOfSuggestionsOrLookup = list.any {
             it.tilbehorListe.any { (it.brukAvForslagsmotoren?.lagtTilFraForslagsmotoren ?: false || it.brukAvForslagsmotoren?.oppslagAvNavn ?: false) }
         }
-        AivenMetrics().totalAccessoriesInApplication(totalAccessoriesInApplication, partialOrFullUseOfSuggestionsOrLookup)
+
+        // We only record this statistic if there were accessories in the application, as that is always the case if partialOrFullUseOfSuggestionsOrLookup=true,
+        // so if we didn't the "GROUP BY partialOrFullUseOfSuggestionsOrLookup" in Grafana would make little sense for comparison.
+        if (totalAccessoriesInApplication > 1)
+            AivenMetrics().totalAccessoriesInApplication(totalAccessoriesInApplication, partialOrFullUseOfSuggestionsOrLookup)
 
         AivenMetrics().soknadProcessed(list.size)
 
