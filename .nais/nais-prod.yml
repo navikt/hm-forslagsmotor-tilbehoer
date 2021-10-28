@@ -10,7 +10,7 @@ spec:
   liveness:
     path: /isalive
   readiness:
-    path: /isready
+    path: /isready-composed
   replicas:
     min: 1
     max: 1

@@ -13,10 +13,16 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.system.exitProcess
+
 
 private val logg = KotlinLogging.logger {}
 
 object SuggestionEngine {
+    private val waitForReadyLock: ReentrantLock = ReentrantLock()
+    private var datasetLoaded: Boolean = false
+
     private val items = mutableMapOf<String, Item>()
     private var fakeLookupTable: Map<String, String>? = null
 
@@ -26,26 +32,51 @@ object SuggestionEngine {
 
     private val noDescription = "(beskrivelse utilgjengelig)"
 
+    fun isInitialDatasetLoaded(): Boolean {
+        var dsLoaded = false
+        if (waitForReadyLock.tryLock()) {
+            dsLoaded = datasetLoaded
+            waitForReadyLock.unlock()
+        }
+        return dsLoaded
+    }
+
     @Synchronized
     fun causeInit() {
         if (Configuration.application["APP_PROFILE"]!! != "local") {
-            logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
-            val initialDataset = getInitialDataset()
 
-            logg.info("Loading initial dataset for Suggestion Engine into memory (len=${initialDataset.count()}).")
-            learnFromSoknad(initialDataset)
+            try {
+                logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
+                val initialDataset = getInitialDataset()
 
-            logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
+                logg.info("Loading initial dataset for Suggestion Engine into memory (len=${initialDataset.count()}).")
+                learnFromSoknad(initialDataset)
 
-            val totalProductsWithAccessorySuggestions = items.count()
-            val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
-            val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
+                logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
-            logg.info("Suggestion engine ínitial dataset loaded (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
+                val totalProductsWithAccessorySuggestions = items.count()
+                val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
+                val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
 
-            AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
-            AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
-            AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+                logg.info("Suggestion engine ínitial dataset loaded (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
+
+                AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+                AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+                AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+
+                Thread.sleep(30_000)
+
+                // Notify isready that we are ready to proccess messages
+                waitForReadyLock.lock()
+                datasetLoaded = true
+                waitForReadyLock.unlock()
+            }catch(e: Exception) {
+                // We use this rather than an exception to cause whole app to crash (cause restart loop until things are
+                // good again), and not only the daemon thread
+                logg.error("Fatal exception while downloading the intial dataset: $e")
+                e.printStackTrace()
+                exitProcess(-1)
+            }
         }
     }
 
