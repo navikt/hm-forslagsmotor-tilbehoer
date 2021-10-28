@@ -123,8 +123,6 @@ object SuggestionEngine {
         knownSoknadIds.add(soknadsId)
     }
 
-    private var testIndex = 1
-
     @Synchronized
     fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>, initialDataset: Boolean = false, index: Int = 0, total: Int = 0) {
         if (initialDataset) {
@@ -143,11 +141,6 @@ object SuggestionEngine {
                     var description = noDescription
                     try {
                         description = if (fakeLookupTable == null) {
-                            if (testIndex % 10 == 0) {
-                                testIndex++
-                                throw Exception("fake statusCode=502")
-                            }
-                            testIndex++
                             Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
                         } else {
                             fakeLookupTable!![tilbehoer.hmsnr] ?: noDescription
