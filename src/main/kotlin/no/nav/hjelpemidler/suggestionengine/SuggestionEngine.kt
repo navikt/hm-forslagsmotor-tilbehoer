@@ -53,18 +53,38 @@ object SuggestionEngine {
 
     @Synchronized
     private fun backgroundRunnerSync() {
+        var changesMade = false
         for (item in items) {
             for (suggestion in item.value.suggestions) {
                 if (suggestion.value.title == noDescription) {
                     logg.info("Attempting to refetch title for suggestion with missing title (hmsNr=${suggestion.value.hmsNr})")
                     try {
                         val newDescription = Oebs.GetTitleForHmsNr(suggestion.value.hmsNr)
+                        changesMade = true
                         items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription, suggestion.value.occurancesInSoknader)
                     } catch (e: Exception) {
                         logg.error("Exception thrown during attempt to refetch OEBS title after previous failure (for hmsNr=${suggestion.value.hmsNr}): $e")
                         e.printStackTrace()
                     }
                 }
+            }
+        }
+        if (changesMade) {
+            try {
+                logg.info("Calculating updated metrics for Suggestion Engine.")
+
+                val totalProductsWithAccessorySuggestions = items.count()
+                val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
+                val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
+
+                logg.info("\t- New metrics (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
+
+                AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+                AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+                AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+            } catch (e: Exception) {
+                logg.error("Failed to report new metrics: $e")
+                e.printStackTrace()
             }
         }
     }
