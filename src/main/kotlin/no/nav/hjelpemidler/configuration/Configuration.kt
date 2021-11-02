@@ -108,6 +108,8 @@ internal object Configuration {
 
         "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to config()[Key("AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB", stringType)],
         "AZURE_AD_SCOPE_OEBSAPIPROXY" to config()[Key("AZURE_AD_SCOPE_OEBSAPIPROXY", stringType)],
+
+        "AZURE_APP_WELL_KNOWN_URL" to config()[Key("AZURE_APP_WELL_KNOWN_URL", stringType)],
     )
 
     val tokenX: Map<String, String> = mapOf(

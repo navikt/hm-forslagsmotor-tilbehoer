@@ -29,7 +29,7 @@ private fun httpClientWithProxy() = HttpClient(Apache) {
 }
 
 fun Application.installAuthentication() {
-    // Load Azure AD config for rest client authentication
+    // Load tokenx config for rest client authentication
     var tokenxConfig: AuthenticationConfig?
     runBlocking {
         tokenxConfig = AuthenticationConfig(
@@ -38,7 +38,23 @@ fun Application.installAuthentication() {
         )
     }
 
-    val jwkProviderAad = JwkProviderBuilder(URL(tokenxConfig!!.metadata.jwksUri))
+    val jwkProviderTokenx = JwkProviderBuilder(URL(tokenxConfig!!.metadata.jwksUri))
+        // cache up to 10 JWKs for 24 hours
+        .cached(10, 24, TimeUnit.HOURS)
+        // if not cached, only allow max 10 different keys per minute to be fetched from external provider
+        .rateLimited(10, 1, TimeUnit.MINUTES)
+        .build()
+
+    // Load Azure AD config for rest client authentication
+    var azureAdConfig: AuthenticationConfig?
+    runBlocking {
+        azureAdConfig = AuthenticationConfig(
+            metadata = httpClientWithProxy().get(Configuration.azureAD["AZURE_APP_WELL_KNOWN_URL"]!!),
+            clientId = Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!,
+        )
+    }
+
+    val jwkProviderAzureAd = JwkProviderBuilder(URL(azureAdConfig!!.metadata.jwksUri))
         // cache up to 10 JWKs for 24 hours
         .cached(10, 24, TimeUnit.HOURS)
         // if not cached, only allow max 10 different keys per minute to be fetched from external provider
@@ -47,13 +63,29 @@ fun Application.installAuthentication() {
 
     install(Authentication) {
         jwt("tokenX") {
-            verifier(jwkProviderAad, tokenxConfig!!.metadata.issuer)
+            verifier(jwkProviderTokenx, tokenxConfig!!.metadata.issuer)
             validate { credentials ->
                 try {
                     requireNotNull(credentials.payload.audience) {
                         "Auth: Missing audience in token"
                     }
                     require(credentials.payload.audience.contains(tokenxConfig!!.clientId)) {
+                        "Auth: Valid audience not found in claims"
+                    }
+                    JWTPrincipal(credentials.payload)
+                } catch (e: Throwable) {
+                    null
+                }
+            }
+        }
+        jwt("aad") {
+            verifier(jwkProviderAzureAd, azureAdConfig!!.metadata.issuer)
+            validate { credentials ->
+                try {
+                    requireNotNull(credentials.payload.audience) {
+                        "Auth: Missing audience in token"
+                    }
+                    require(credentials.payload.audience.contains(azureAdConfig!!.clientId)) {
                         "Auth: Valid audience not found in claims"
                     }
                     JWTPrincipal(credentials.payload)

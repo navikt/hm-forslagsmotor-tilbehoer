@@ -45,7 +45,7 @@ fun main() {
                     }
                     call.respondRedirect("/isready")
                 }
-                authenticate("tokenX") {
+                authenticate("tokenX", "aad") {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
                         logg.info("Request for suggestions for hmsnr=$hmsNr.")
