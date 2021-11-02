@@ -76,6 +76,7 @@ internal object Configuration {
             "AZURE_APP_CLIENT_SECRET" to "dummy",
             "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "123",
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "123",
+            "AZURE_APP_WELL_KNOWN_URL" to "123",
 
             "INFLUX_HOST" to "abc",
             "INFLUX_PORT" to "abc",
