@@ -39,6 +39,9 @@ spec:
         - application: hm-soknad
           namespace: teamdigihot
           cluster: prod-gcp
+        - application: hm-forslagsmotor-tilbehoer-frontend
+          namespace: teamdigihot
+          cluster: prod-gcp
     outbound:
       rules:
         - application: hm-soknadsbehandling-db
