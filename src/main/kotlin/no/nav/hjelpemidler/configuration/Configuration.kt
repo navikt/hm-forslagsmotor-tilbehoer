@@ -1,7 +1,11 @@
 package no.nav.hjelpemidler.configuration
 
-import com.natpryce.konfig.*
+import com.natpryce.konfig.ConfigurationMap
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
+import com.natpryce.konfig.EnvironmentVariables
+import com.natpryce.konfig.Key
+import com.natpryce.konfig.overriding
+import com.natpryce.konfig.stringType
 
 internal object Configuration {
 
@@ -29,6 +33,8 @@ internal object Configuration {
             "AZURE_TENANT_BASEURL" to "https://login.microsoftonline.com",
             "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "api://prod-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://prod-fss.teamdigihot.hm-oebs-api-proxy/.default",
+
+            "GRUNNDATA_API_URL" to "http://hm-grunndata-api",
         )
     )
 
@@ -48,6 +54,8 @@ internal object Configuration {
             "AZURE_TENANT_BASEURL" to "https://login.microsoftonline.com",
             "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "api://dev-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://dev-fss.teamdigihot.hm-oebs-api-proxy/.default",
+
+            "GRUNNDATA_API_URL" to "http://hm-grunndata-api",
         )
     )
 
@@ -86,6 +94,8 @@ internal object Configuration {
 
             "TOKEN_X_WELL_KNOWN_URL" to "abc",
             "TOKEN_X_CLIENT_ID" to "abc",
+
+            "GRUNNDATA_API_URL" to "http://host.docker.internal",
         )
     )
 
@@ -131,5 +141,6 @@ internal object Configuration {
         "SENSU_URL" to config()[Key("SENSU_URL", stringType)],
         "UNLEASH_URL" to config()[Key("unleash.url", stringType)],
         "OEBS_API_PROXY_URL" to config()[Key("OEBS_API_PROXY_URL", stringType)],
+        "GRUNNDATA_API_URL" to config()[Key("GRUNNDATA_API_URL", stringType)],
     ) + System.getenv().filter { it.key.startsWith("NAIS_") }
 }

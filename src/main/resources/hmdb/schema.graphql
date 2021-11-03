@@ -1,0 +1,83 @@
+schema {
+  query: Query
+}
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type Produkt {
+  artikkelId: String
+  artikkelbeskrivelse: String
+  artikkelnavn: String
+  artikkelnr: String
+  avtalepostId: String
+  avtalepostbeskrivelse: String
+  avtalepostnr: String
+  avtalepostrangering: Int
+  avtaleposttittel: String
+  blobType: String
+  blobUrlLite: String
+  blobUrlStort: String
+  blobUse: String
+  generertAv: String!
+  generertDato: LocalDateTime!
+  harNavAvtale: Boolean!
+  hmsnr: String
+  id: ID!
+  isokode: String
+  isotekst: String
+  isotittel: String
+  produktId: String
+  produktbeskrivelse: String
+  produktnavn: String
+  tekniskeData: [TekniskeDataTriple!]!
+  versjon: Int!
+}
+
+type Query {
+  "Hent produkter"
+  hentAlleProdukter(filter: ProduktfilterInput!): [Produkt!]!
+  "Hent produkter med artikkelId"
+  hentProdukterMedArtikkelId(artikkelId: String!): [Produkt!]!
+  "Hent produkter med atrikkelnavn"
+  hentProdukterMedArtikkelnavn(artikkelnavn: String!): [Produkt!]!
+  "Hent produkter med hmsnr"
+  hentProdukterMedHmsnr(hmsnr: String!): [Produkt!]!
+  "Hent produkter med isokode"
+  hentProdukterMedIsokode(isokode: String!): [Produkt!]!
+}
+
+type TekniskeDataTriple {
+  enhet: String
+  tekst: String
+  verdi: String
+}
+
+"class java.time.LocalDateTime"
+scalar LocalDateTime
+
+input ProduktfilterInput {
+  limit: Int!
+  offset: Int!
+}

@@ -11,7 +11,7 @@ import no.nav.helse.rapids_rivers.River
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
-import java.util.*
+import java.util.UUID
 
 private val logg = KotlinLogging.logger {}
 private val sikkerlogg = KotlinLogging.logger("tjenestekall")
