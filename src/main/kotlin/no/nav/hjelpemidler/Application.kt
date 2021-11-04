@@ -70,7 +70,16 @@ fun main() {
                         val hmsNr = call.parameters["hmsNr"]!!
                         logg.info("Request for name lookup for hmsnr=$hmsNr.")
                         try {
-                            call.respond(LookupAccessoryName(Oebs.GetTitleForHmsNr(hmsNr), null))
+                            var accessory = true
+                            if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr).isNotEmpty()) {
+                                logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
+                                accessory = false
+                            }
+                            call.respond(LookupAccessoryName(Oebs.GetTitleForHmsNr(hmsNr), if (!accessory) {
+                                "ikke et tilbehør"
+                            }else{
+                                null
+                            }))
                         } catch (e: Exception) {
                             logg.info("warn: failed to find title for hmsNr=$hmsNr")
                             e.printStackTrace()
