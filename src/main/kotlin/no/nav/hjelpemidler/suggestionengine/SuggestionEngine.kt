@@ -157,6 +157,7 @@ object SuggestionEngine {
 
             val suggestions = items[hjelpemiddel.hmsNr]!!.suggestions
             for (tilbehoer in hjelpemiddel.tilbehorListe) {
+                if (tilbehoer.hmsnr == "000000") continue // Ignore this old hack to specify accessories by input-field
                 if (!suggestions.contains(tilbehoer.hmsnr)) {
                     var description = noDescription
                     try {
@@ -198,7 +199,7 @@ object SuggestionEngine {
     @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
         var suggestions: MutableList<Suggestion> = mutableListOf()
-        suggestions.addAll(allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 })
+        suggestions.addAll(allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 }.take(20))
         if (Configuration.application["APP_PROFILE"]!! == "dev") suggestions.add(Suggestion("242663", "Molift Air 205", 10))
         return suggestions
     }
