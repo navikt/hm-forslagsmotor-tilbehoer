@@ -197,7 +197,10 @@ object SuggestionEngine {
 
     @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 }
+        var suggestions: MutableList<Suggestion> = mutableListOf()
+        suggestions.addAll(allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 })
+        if (Configuration.application["APP_PROFILE"]!! == "dev") suggestions.add(Suggestion("242663", "Molift Air 205", 10))
+        return suggestions
     }
 
     @Synchronized
