@@ -157,6 +157,7 @@ object SuggestionEngine {
 
             val suggestions = items[hjelpemiddel.hmsNr]!!.suggestions
             for (tilbehoer in hjelpemiddel.tilbehorListe) {
+                if (tilbehoer.hmsnr == "000000") continue // Ignore this old hack to specify accessories by input-field
                 if (!suggestions.contains(tilbehoer.hmsnr)) {
                     var description = noDescription
                     try {
