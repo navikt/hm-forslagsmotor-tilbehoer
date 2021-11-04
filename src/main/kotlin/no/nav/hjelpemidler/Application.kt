@@ -53,7 +53,7 @@ fun main() {
                         val results: MutableList<SuggestionFrontendFiltered> = mutableListOf()
                         for (suggestion in SuggestionEngine.suggestionsForHmsNr(hmsNr)) {
                             if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(suggestion.hmsNr).isNotEmpty()) {
-                                logg.info("DEBUG: skipping suggestion for $hmsNr as it exists as a primary product in the hmdb")
+                                logg.info("DEBUG: skipping suggestion for ${suggestion.hmsNr} as it exists as a primary product in the hmdb")
                                 continue
                             }
                             results.add(
