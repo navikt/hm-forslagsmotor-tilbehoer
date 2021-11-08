@@ -25,14 +25,14 @@ object HjelpemiddeldatabaseClient {
             val response = client.execute(request)
             when {
                 response.errors != null -> {
-                    logg.warn("Feil under henting av data fra hjelpemiddeldatabasen, hmsnr=$hmsnr, errors=${response.errors?.map { it.message }}")
+                    logg.error("Feil under henting av data fra hjelpemiddeldatabasen, hmsnr=$hmsnr, errors=${response.errors?.map { it.message }}")
                     emptyList()
                 }
                 response.data != null -> response.data?.produkter ?: emptyList()
                 else -> emptyList()
             }
         } catch (e: Exception) {
-            logg.warn("Feil under henting av data fra hjelpemiddeldatabasen, hmsnr=$hmsnr", e)
+            logg.error("Feil under henting av data fra hjelpemiddeldatabasen, hmsnr=$hmsnr", e)
             return emptyList()
         }
     }
