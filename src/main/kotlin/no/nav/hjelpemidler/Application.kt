@@ -46,6 +46,10 @@ fun main() {
                     }
                     call.respondRedirect("/isready")
                 }
+                get("/test") {
+                    throw Exception("test exception")
+                    call.respondText("OK")
+                }
                 authenticate("tokenX", "aad") {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
