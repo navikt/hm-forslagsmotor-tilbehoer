@@ -177,7 +177,6 @@ object SuggestionEngine {
                         logg.warn("warn: failed to get title for hmsnr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }
-                    // TODO: If we have the product in our dataset from hmdb, use that as a source of description instead.
                     suggestions[tilbehoer.hmsnr] = Suggestion(
                         tilbehoer.hmsnr,
                         description,
@@ -185,7 +184,6 @@ object SuggestionEngine {
                     )
                 }
 
-                // TODO: Consider if quantity is a good measure here, or if occurrences only counts as one no matter how many was requested.
                 suggestions[tilbehoer.hmsnr]!!.occurancesInSoknader += 1
             }
         }
