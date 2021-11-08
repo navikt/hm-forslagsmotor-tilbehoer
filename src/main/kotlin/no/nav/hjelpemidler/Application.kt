@@ -46,10 +46,6 @@ fun main() {
                     }
                     call.respondRedirect("/isready")
                 }
-                get("/test") {
-                    throw Exception("test exception")
-                    call.respondText("OK")
-                }
                 authenticate("tokenX", "aad") {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
@@ -79,11 +75,16 @@ fun main() {
                                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                                 accessory = false
                             }
-                            call.respond(LookupAccessoryName(Oebs.GetTitleForHmsNr(hmsNr), if (!accessory) {
-                                "ikke et tilbehør"
-                            }else{
-                                null
-                            }))
+                            call.respond(
+                                LookupAccessoryName(
+                                    Oebs.GetTitleForHmsNr(hmsNr),
+                                    if (!accessory) {
+                                        "ikke et tilbehør"
+                                    } else {
+                                        null
+                                    }
+                                )
+                            )
                         } catch (e: Exception) {
                             logg.info("warn: failed to find title for hmsNr=$hmsNr")
                             e.printStackTrace()
