@@ -1,0 +1,12 @@
+query HentProdukterMedHmsnr($hmsnr: String!) {
+  produkter: hentProdukterMedHmsnr(hmsnr: $hmsnr) {
+    id
+    hmsnr
+    artikkelId
+    artikkelnavn
+    produktId
+    produktbeskrivelse
+    isotittel
+    blobUrlLite
+  }
+}

@@ -42,6 +42,7 @@ spec:
     outbound:
       rules:
         - application: hm-soknadsbehandling-db
+        - application: hm-grunndata-api
       external:
         - host: hm-oebs-api-proxy.dev-fss-pub.nais.io
   envFrom:

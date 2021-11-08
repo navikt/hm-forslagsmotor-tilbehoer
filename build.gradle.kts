@@ -1,34 +1,35 @@
-import org.gradle.jvm.tasks.Jar
+
+import com.expediagroup.graphql.plugin.gradle.tasks.GraphQLIntrospectSchemaTask
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "no.nav.hjelpemidler"
 version = "1.0-SNAPSHOT"
 
 val rapid_version: String by project
-val logging_version: String by project
-val konfig_version: String by project
 val kafka_version: String by project
 val influxdb_version: String by project
 val influxdb_aiven_version: String by project
 val unleash_version: String by project
-val ktlint_version: String by project
 val junit_version: String by project
-val kotest_version: String by project
-val kotlin_test_version: String by project
-val ktor_version: String by project
+val ktor_version = Ktor.version
 
 plugins {
     application
-    kotlin("jvm") version "1.4.21"
-    id("com.diffplug.spotless") version "5.11.0"
+    kotlin("jvm") version Kotlin.version
+    id(GraphQL.graphql) version GraphQL.version
+    id(Spotless.spotless) version Spotless.version
+    id(Shadow.shadow) version Shadow.version
 }
 
 apply {
-    plugin("com.diffplug.spotless")
+    plugin(Spotless.spotless)
 }
 
 application {
-    mainClass.set("no.nav.hjelpemidler.ApplicationKt")
+    applicationName = "hm-forslagsmotor-tilbehoer"
+    mainClassName = "no.nav.hjelpemidler.ApplicationKt"
 }
 
 repositories {
@@ -37,62 +38,114 @@ repositories {
     maven("https://packages.confluent.io/maven/") // Kafka-avro
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 dependencies {
+    api("ch.qos.logback:logback-classic:1.2.6")
+    api("net.logstash.logback:logstash-logback-encoder:6.6") {
+        exclude("com.fasterxml.jackson.core")
+    }
+
+    implementation(Jackson.core)
+    implementation(Jackson.kotlin)
+    implementation(Jackson.jsr310)
+    implementation(Ktor.serverNetty)
+    implementation(Fuel.fuel)
+    implementation(Fuel.library("coroutines"))
+    implementation(Konfig.konfig)
+    implementation(Kotlin.Logging.kotlinLogging)
+
+    implementation(kotlin("stdlib-jdk8"))
+    implementation("com.github.guepardoapps:kulid:1.1.2.0")
+    implementation("io.ktor:ktor-jackson:$ktor_version")
+    implementation("io.ktor:ktor-auth:$ktor_version")
+    implementation("io.ktor:ktor-auth-jwt:$ktor_version")
+    implementation("io.ktor:ktor-client-apache:$ktor_version")
+    implementation("io.ktor:ktor-client-jackson:$ktor_version")
     implementation("com.github.navikt:rapids-and-rivers:$rapid_version")
-    implementation("com.natpryce:konfig:$konfig_version")
-    implementation("io.github.microutils:kotlin-logging:$logging_version")
     implementation("org.apache.kafka:kafka-clients:$kafka_version")
     implementation("org.influxdb:influxdb-java:$influxdb_version")
     implementation("com.influxdb:influxdb-client-kotlin:$influxdb_aiven_version")
     implementation("no.finn.unleash:unleash-client-java:$unleash_version")
-
-    implementation("io.ktor:ktor-client-jackson:$ktor_version")
-    implementation("io.ktor:ktor-jackson:$ktor_version")
     implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
-    implementation("io.ktor:ktor-client-apache:$ktor_version")
-    implementation("io.ktor:ktor-auth:$ktor_version")
-    implementation("io.ktor:ktor-auth-jwt:$ktor_version")
+    implementation(Micrometer.prometheusRegistry)
+    implementation("org.influxdb:influxdb-java:$influxdb_version")
+    implementation("com.influxdb:influxdb-client-kotlin:$influxdb_aiven_version")
+    implementation(GraphQL.ktorClient) {
+        exclude("com.expediagroup", "graphql-kotlin-client-serialization") // prefer jackson
+        exclude("io.ktor", "ktor-client-serialization") // prefer ktor-client-jackson
+        exclude("io.ktor", "ktor-client-cio") // prefer ktor-client-apache
+    }
+    implementation(GraphQL.clientJackson)
+
+    testImplementation(Kotlin.testJUnit5)
+    testImplementation(KoTest.assertions)
+    testImplementation(KoTest.runner)
+    testImplementation(Ktor.ktorTest)
+    testImplementation(Mockk.mockk)
+    testImplementation(TestContainers.postgresql)
+    testImplementation(Wiremock.standalone)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_test_version")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
-    testRuntimeOnly("io.kotest:kotest-assertions-core-jvm:$kotest_version")
 }
 
 spotless {
     kotlin {
-        ktlint(ktlint_version).userData(mapOf("disabled_rules" to "no-wildcard-imports"))
+        ktlint(Ktlint.version)
     }
     kotlinGradle {
         target("*.gradle.kts", "buildSrc/*.gradle.kts")
-        ktlint(ktlint_version)
+        ktlint(Ktlint.version)
     }
 }
 
-tasks.test {
+tasks.withType<KotlinCompile> {
+    kotlinOptions.freeCompilerArgs = listOf()
+    kotlinOptions.jvmTarget = "11"
+}
+
+tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.withType<KotlinCompile>() {
-    kotlinOptions.jvmTarget = "15"
-}
-
-val fatJar = task("fatJar", type = Jar::class) {
-    baseName = "${project.name}-fat"
-    manifest {
-        attributes["Main-Class"] = "no.nav.hjelpemidler.ApplicationKt"
+    testLogging {
+        showExceptions = true
+        showStackTraces = true
+        showStandardStreams = true
+        outputs.upToDateWhen { false }
+        exceptionFormat = TestExceptionFormat.FULL
+        events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
     }
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    with(tasks.jar.get() as CopySpec)
 }
 
-tasks {
-    "build" {
-        dependsOn(fatJar)
-    }
+tasks.withType<Wrapper> {
+    gradleVersion = "7.2"
+}
+
+tasks.named("shadowJar") {
+    dependsOn("test")
+}
+
+tasks.named("jar") {
+    dependsOn("test")
 }
 
 tasks.named("compileKotlin") {
+    dependsOn("spotlessApply")
     dependsOn("spotlessCheck")
+}
+
+graphql {
+    client {
+        schemaFile = file("src/main/resources/hmdb/schema.graphql")
+        queryFileDirectory = "src/main/resources/hmdb"
+        packageName = "no.nav.hjelpemidler.service.hmdb"
+    }
+}
+
+val graphqlIntrospectSchema by tasks.getting(GraphQLIntrospectSchemaTask::class) {
+    endpoint.set("https://hm-grunndata-api.dev.intern.nav.no/graphql")
+    outputFile.set(file("src/main/resources/hmdb/schema.graphql"))
 }

@@ -18,6 +18,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
+import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
@@ -51,6 +52,10 @@ fun main() {
                         logg.info("Request for suggestions for hmsnr=$hmsNr.")
                         val results: MutableList<SuggestionFrontendFiltered> = mutableListOf()
                         for (suggestion in SuggestionEngine.suggestionsForHmsNr(hmsNr)) {
+                            if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(suggestion.hmsNr).isNotEmpty()) {
+                                logg.info("DEBUG: skipping suggestion for ${suggestion.hmsNr} as it exists as a primary product in the hmdb")
+                                continue
+                            }
                             results.add(
                                 Suggestion(
                                     hmsNr = suggestion.hmsNr,
@@ -65,7 +70,21 @@ fun main() {
                         val hmsNr = call.parameters["hmsNr"]!!
                         logg.info("Request for name lookup for hmsnr=$hmsNr.")
                         try {
-                            call.respond(LookupAccessoryName(Oebs.GetTitleForHmsNr(hmsNr), null))
+                            var accessory = true
+                            if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr).isNotEmpty()) {
+                                logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
+                                accessory = false
+                            }
+                            call.respond(
+                                LookupAccessoryName(
+                                    Oebs.GetTitleForHmsNr(hmsNr),
+                                    if (!accessory) {
+                                        "ikke et tilbehør"
+                                    } else {
+                                        null
+                                    }
+                                )
+                            )
                         } catch (e: Exception) {
                             logg.info("warn: failed to find title for hmsNr=$hmsNr")
                             e.printStackTrace()
