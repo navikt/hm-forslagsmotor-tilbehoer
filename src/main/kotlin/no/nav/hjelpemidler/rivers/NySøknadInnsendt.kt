@@ -65,7 +65,7 @@ internal class NySøknadInnsendt(
                 continue
             }
 
-            // Record cases where the suggestions were not used but name lookup in oebs was
+            // Record cases where name lookup from oebs was used
             for (accessory in product.tilbehorListe) {
                 val bruk = accessory.brukAvForslagsmotoren ?: continue
                 if (bruk.oppslagAvNavn) {
