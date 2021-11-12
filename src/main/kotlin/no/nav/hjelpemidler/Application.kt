@@ -71,10 +71,10 @@ fun main() {
                         logg.info("Request for name lookup for hmsnr=$hmsNr.")
                         try {
                             var accessory = true
-                            if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr).isNotEmpty()) {
+                            /*if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr).isNotEmpty()) {
                                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                                 accessory = false
-                            }
+                            }*/
                             call.respond(
                                 LookupAccessoryName(
                                     Oebs.GetTitleForHmsNr(hmsNr),
