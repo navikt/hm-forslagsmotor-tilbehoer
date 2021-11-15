@@ -19,7 +19,6 @@ import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
 import kotlin.concurrent.thread
@@ -50,20 +49,10 @@ fun main() {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
                         logg.info("Request for suggestions for hmsnr=$hmsNr.")
-                        val results: MutableList<SuggestionFrontendFiltered> = mutableListOf()
-                        for (suggestion in SuggestionEngine.suggestionsForHmsNr(hmsNr)) {
-                            if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(suggestion.hmsNr).isNotEmpty()) {
-                                logg.info("DEBUG: skipping suggestion for ${suggestion.hmsNr} as it exists as a primary product in the hmdb")
-                                continue
-                            }
-                            results.add(
-                                Suggestion(
-                                    hmsNr = suggestion.hmsNr,
-                                    title = suggestion.title,
-                                    occurancesInSoknader = suggestion.occurancesInSoknader,
-                                ).toFrontendFiltered()
-                            )
-                        }
+                        val suggestions = SuggestionEngine.suggestionsForHmsNr(hmsNr)
+                        val hmsNrsSkipList = HjelpemiddeldatabaseClient
+                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null }.map { it.hmsnr!! }
+                        val results: List<SuggestionFrontendFiltered> = suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
                         call.respond(results)
                     }
                     get("/lookup-accessory-name/{hmsNr}") {

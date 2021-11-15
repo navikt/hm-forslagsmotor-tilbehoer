@@ -48,36 +48,38 @@ type Produkt {
   isokode: String
   isotekst: String
   isotittel: String
+  kategori: String
   produktId: String
   produktbeskrivelse: String
   produktnavn: String
   tekniskeData: [TekniskeDataTriple!]!
+  tilgjengeligForDigitalSoknad: Boolean!
   versjon: Int!
 }
 
 type Query {
+  "Finn produkter basert på søkeord"
+  finnProdukter(filter: ProduktfilterInput!, sokeord: String!): [Produkt!]!
   "Hent produkter"
   hentAlleProdukter(filter: ProduktfilterInput!): [Produkt!]!
-  "Hent produkter med artikkelId"
-  hentProdukterMedArtikkelId(artikkelId: String!): [Produkt!]!
-  "Hent produkter med atrikkelnavn"
-  hentProdukterMedArtikkelnavn(artikkelnavn: String!): [Produkt!]!
   "Hent produkter med hmsnr"
   hentProdukterMedHmsnr(hmsnr: String!): [Produkt!]!
-  "Hent produkter med isokode"
-  hentProdukterMedIsokode(isokode: String!): [Produkt!]!
+  "Hent produkter med hmsnrs"
+  hentProdukterMedHmsnrs(hmsnrs: [String!]!): [Produkt!]!
 }
 
 type TekniskeDataTriple {
   enhet: String
   tekst: String
   verdi: String
+  visningstekst(separator: String): String!
 }
 
 "class java.time.LocalDateTime"
 scalar LocalDateTime
 
 input ProduktfilterInput {
-  limit: Int!
-  offset: Int!
+  limit: Int
+  offset: Int
+  tilgjengeligForDigitalSoknad: Boolean
 }
