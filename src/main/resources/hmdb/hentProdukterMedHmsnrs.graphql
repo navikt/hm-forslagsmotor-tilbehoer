@@ -8,5 +8,7 @@ query HentProdukterMedHmsnrs($hmsnrs: [String!]!) {
     produktbeskrivelse
     isotittel
     blobUrlLite
+    rammeavtaleStart
+    rammeavtaleSlutt
   }
 }

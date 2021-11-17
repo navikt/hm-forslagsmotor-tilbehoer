@@ -52,6 +52,8 @@ type Produkt {
   produktId: String
   produktbeskrivelse: String
   produktnavn: String
+  rammeavtaleSlutt: LocalDate
+  rammeavtaleStart: LocalDate
   tekniskeData: [TekniskeDataTriple!]!
   tilgjengeligForDigitalSoknad: Boolean!
   versjon: Int!
@@ -74,6 +76,9 @@ type TekniskeDataTriple {
   verdi: String
   visningstekst(separator: String): String!
 }
+
+"class java.time.LocalDate"
+scalar LocalDate
 
 "class java.time.LocalDateTime"
 scalar LocalDateTime
