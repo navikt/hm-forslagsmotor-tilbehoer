@@ -1,5 +1,8 @@
 package no.nav.hjelpemidler.suggestionengine
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
@@ -34,6 +37,11 @@ object SuggestionEngine {
     private var azToken: String? = null
 
     private val noDescription = "(beskrivelse utilgjengelig)"
+
+    private val objectMapper = jacksonObjectMapper()
+        .registerModule(JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
     fun isInitialDatasetLoaded(): Boolean {
         var dsLoaded = false
@@ -243,7 +251,7 @@ object SuggestionEngine {
             throw Exception("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
         }
 
-        return jacksonObjectMapper().readValue<Array<Hjelpemidler>>(response.body()).asList()
+        return objectMapper.readValue<Array<Hjelpemidler>>(response.body()).asList()
     }
 }
 
