@@ -97,10 +97,10 @@ object SuggestionEngine {
                 val initialDataset = getInitialDataset()
 
                 logg.info("Storing list of known soknadIds (nrSoknads=${initialDataset.count()}):")
-                for (intialDatasetSoknad in initialDataset) knownSoknadIds.add(intialDatasetSoknad.id)
+                for (intialDatasetSoknad in initialDataset) knownSoknadIds.add(intialDatasetSoknad.soknad.id)
 
                 logg.info("Loading initial dataset for Suggestion Engine into memory (len=${initialDataset.count()}).")
-                initialDataset.forEachIndexed { index, initialDatasetSoknad -> learnFromSoknad(initialDatasetSoknad.hjelpemidler.hjelpemiddelListe, true, index, initialDataset.count()) }
+                initialDataset.forEachIndexed { index, initialDatasetSoknad -> learnFromSoknad(initialDatasetSoknad.soknad.hjelpemidler.hjelpemiddelListe, true, index, initialDataset.count()) }
 
                 logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
@@ -218,7 +218,7 @@ object SuggestionEngine {
         fakeLookupTable = lookupTable
     }
 
-    private fun getInitialDataset(): List<Soknad> {
+    private fun getInitialDataset(): List<Hjelpemidler> {
         // Generate azure ad token for authorization header
         if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
             val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!)
@@ -243,9 +243,14 @@ object SuggestionEngine {
             throw Exception("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
         }
 
-        return jacksonObjectMapper().readValue<Array<Soknad>>(response.body()).asList()
+        return jacksonObjectMapper().readValue<Array<Hjelpemidler>>(response.body()).asList()
     }
 }
+
+data class Hjelpemidler(
+    val soknad: Soknad,
+    val created: LocalDateTime,
+)
 
 data class Soknad(
     val id: UUID,
