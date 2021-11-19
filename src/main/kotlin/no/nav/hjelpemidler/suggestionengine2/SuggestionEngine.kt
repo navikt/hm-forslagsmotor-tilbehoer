@@ -1,17 +1,13 @@
 package no.nav.hjelpemidler.suggestionengine2
 
 import io.ktor.utils.io.core.Closeable
-import no.nav.hjelpemidler.suggestionengine.Hjelpemidler
-import no.nav.hjelpemidler.suggestionengine.HmdbDatabase
-import no.nav.hjelpemidler.suggestionengine.OebsDatabase
-import no.nav.hjelpemidler.suggestionengine.SoknadDatabase
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class SuggestionEngine(
     testingOebsDatabase: Map<String, String>? = null,
     testingHmdbDatabase: Map<String, LocalDate>? = null,
-    testingSoknadDatabase: List<Hjelpemidler>? = null
+    testingSoknadDatabase: List<Soknad>? = null
 ) : Closeable {
     private val oebsDatabase = OebsDatabase(testingOebsDatabase)
     private val hmdbDatabase = HmdbDatabase(testingHmdbDatabase)
@@ -31,7 +27,7 @@ class SuggestionEngine(
         return allSuggestionsForHmsNr(hmsNr).filter { it.occurancesInSoknader > 4 }.take(20)
     }
 
-    fun learnFromSoknad(soknad: Hjelpemidler) {
+    fun learnFromSoknad(soknad: Soknad) {
         soknadDatabase.add(soknad) // Throws if already known
         soknad.soknad.hjelpemidler.hjelpemiddelListe.forEach {
             if (oebsDatabase.getTitleFor(it.hmsNr) == null) oebsDatabase.setTitleFor(

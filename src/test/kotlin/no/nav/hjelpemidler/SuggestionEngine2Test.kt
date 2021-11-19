@@ -1,11 +1,11 @@
 package no.nav.hjelpemidler
 
-import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
-import no.nav.hjelpemidler.suggestionengine.Hjelpemidler
-import no.nav.hjelpemidler.suggestionengine.Soknad
-import no.nav.hjelpemidler.suggestionengine.SoknadInner
-import no.nav.hjelpemidler.suggestionengine.Tilbehoer
+import no.nav.hjelpemidler.suggestionengine2.Hjelpemiddel
+import no.nav.hjelpemidler.suggestionengine2.HjelpemiddelListe
+import no.nav.hjelpemidler.suggestionengine2.Soknad
+import no.nav.hjelpemidler.suggestionengine2.SoknadData
 import no.nav.hjelpemidler.suggestionengine2.SuggestionEngine
+import no.nav.hjelpemidler.suggestionengine2.Tilbehoer
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.UUID
@@ -29,10 +29,10 @@ internal class SuggestionEngine2Test {
             ),
             mapOf(),
             listOf(
-                Hjelpemidler(
-                    soknad = Soknad(
+                Soknad(
+                    soknad = SoknadData(
                         id = UUID.randomUUID(),
-                        hjelpemidler = SoknadInner(
+                        hjelpemidler = HjelpemiddelListe(
                             hjelpemiddelListe = listOf(
                                 Hjelpemiddel(
                                     hmsNr = "1234",
@@ -159,10 +159,10 @@ internal class SuggestionEngine2Test {
             ),
             mapOf(),
             listOf(
-                Hjelpemidler(
-                    soknad = Soknad(
+                Soknad(
+                    soknad = SoknadData(
                         id = UUID.randomUUID(),
-                        hjelpemidler = SoknadInner(
+                        hjelpemidler = HjelpemiddelListe(
                             hjelpemiddelListe = listOf(
                                 Hjelpemiddel(
                                     hmsNr = "1234",
@@ -243,10 +243,10 @@ internal class SuggestionEngine2Test {
             ),
             mapOf(),
             listOf(
-                Hjelpemidler(
-                    soknad = Soknad(
+                Soknad(
+                    soknad = SoknadData(
                         id = UUID.randomUUID(),
-                        hjelpemidler = SoknadInner(
+                        hjelpemidler = HjelpemiddelListe(
                             hjelpemiddelListe = listOf(
                                 Hjelpemiddel(
                                     hmsNr = "1234",
@@ -338,10 +338,10 @@ internal class SuggestionEngine2Test {
                     ),
                     created = LocalDateTime.now(),
                 ),
-                Hjelpemidler(
-                    soknad = Soknad(
+                Soknad(
+                    soknad = SoknadData(
                         id = UUID.randomUUID(),
-                        hjelpemidler = SoknadInner(
+                        hjelpemidler = HjelpemiddelListe(
                             hjelpemiddelListe = listOf(
                                 Hjelpemiddel(
                                     hmsNr = "1234",

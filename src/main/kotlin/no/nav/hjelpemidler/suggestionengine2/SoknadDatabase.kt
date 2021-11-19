@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.suggestionengine
+package no.nav.hjelpemidler.suggestionengine2
 
 import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
@@ -7,8 +7,8 @@ import java.util.UUID
 
 private val logg = KotlinLogging.logger {}
 
-internal class SoknadDatabase(testing: List<Hjelpemidler>? = null) : Closeable {
-    private var store: MutableList<Hjelpemidler> = mutableListOf()
+internal class SoknadDatabase(testing: List<Soknad>? = null) : Closeable {
+    private var store: MutableList<Soknad> = mutableListOf()
 
     init {
         if (testing != null) {
@@ -25,7 +25,7 @@ internal class SoknadDatabase(testing: List<Hjelpemidler>? = null) : Closeable {
     }
 
     @Synchronized
-    fun add(soknad: Hjelpemidler) {
+    fun add(soknad: Soknad) {
         if (has(soknad.soknad.id)) throw Exception("søknad already exists in the database")
     }
 
