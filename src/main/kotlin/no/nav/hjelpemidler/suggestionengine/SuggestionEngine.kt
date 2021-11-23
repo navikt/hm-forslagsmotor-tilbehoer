@@ -69,6 +69,14 @@ object SuggestionEngine {
                         changesMade = true
                         items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription.first, suggestion.value.occurancesInSoknader)
                     } catch (e: Exception) {
+                        // Ignoring non-existing products (statusCode=404), others will be added with
+                        // title=noDescription and is thus not returned in suggestion results until the
+                        // backgroundRunner retries and fetches the title.
+                        if (e.toString().contains("statusCode=404")) {
+                            logg.info("Ignoring suggestion with hmsNr=${suggestion.value.hmsNr} as OEBS returned 404 not found (product doesnt exist): $e")
+                            continue
+                        }
+
                         logg.error("Exception thrown during attempt to refetch OEBS title after previous failure (for hmsNr=${suggestion.value.hmsNr}): $e")
                         e.printStackTrace()
                     }
