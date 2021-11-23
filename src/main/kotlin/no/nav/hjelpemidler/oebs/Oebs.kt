@@ -1,5 +1,8 @@
 package no.nav.hjelpemidler.oebs
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
@@ -10,24 +13,19 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import java.time.LocalDateTime
 
 private val logg = KotlinLogging.logger {}
 
 object Oebs {
     private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
-    private var azTokenTimeout: LocalDateTime? = null
-    private var azToken: String? = null
+    private val objectMapper = jacksonObjectMapper()
+        .registerModule(JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
-    fun GetTitleForHmsNr(hmsNr: String): String {
+    fun GetTitleForHmsNr(hmsNr: String): Pair<String, String> {
         // Generate azure ad token for authorization header
-        if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
-            val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_OEBSAPIPROXY"]!!)
-            azToken = token.accessToken
-            azTokenTimeout = LocalDateTime.now()
-                .plusSeconds(token.expiresIn - 60 /* 60s leeway => renew 60s before token expiration */)
-        }
-        val authToken = azToken!!
+        val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_OEBSAPIPROXY"]!!).accessToken
 
         // Make request
         val baseurl = Configuration.application["OEBS_API_PROXY_URL"]!!
@@ -45,11 +43,13 @@ object Oebs {
             throw Exception("error: unexpected status code from oebs api proxy (statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)})")
         }
 
-        return jacksonObjectMapper().readValue<ResponseGetTitleForHmsNr>(response.body()).title
+        val res = objectMapper.readValue<ResponseGetTitleForHmsNr>(response.body())
+        return Pair(res.title, res.type)
     }
 }
 
 data class ResponseGetTitleForHmsNr(
     val hmsNr: String,
+    val type: String,
     val title: String,
 )

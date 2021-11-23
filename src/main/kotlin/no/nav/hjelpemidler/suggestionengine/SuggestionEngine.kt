@@ -33,8 +33,6 @@ object SuggestionEngine {
     private var fakeLookupTable: Map<String, String>? = null
 
     private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
-    private var azTokenTimeout: LocalDateTime? = null
-    private var azToken: String? = null
 
     private val noDescription = "(beskrivelse utilgjengelig)"
 
@@ -69,7 +67,7 @@ object SuggestionEngine {
                     try {
                         val newDescription = Oebs.GetTitleForHmsNr(suggestion.value.hmsNr)
                         changesMade = true
-                        items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription, suggestion.value.occurancesInSoknader)
+                        items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription.first, suggestion.value.occurancesInSoknader)
                     } catch (e: Exception) {
                         logg.error("Exception thrown during attempt to refetch OEBS title after previous failure (for hmsNr=${suggestion.value.hmsNr}): $e")
                         e.printStackTrace()
@@ -170,7 +168,9 @@ object SuggestionEngine {
                     var description = noDescription
                     try {
                         description = if (fakeLookupTable == null) {
-                            Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
+                            val oebsTitleAndType = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
+                            logg.info("DEBUG: Fetched title for ${tilbehoer.hmsnr} and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
+                            oebsTitleAndType.first
                         } else {
                             fakeLookupTable!![tilbehoer.hmsnr] ?: noDescription
                         }
@@ -228,13 +228,7 @@ object SuggestionEngine {
 
     private fun getInitialDataset(): List<Hjelpemidler> {
         // Generate azure ad token for authorization header
-        if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
-            val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!)
-            azToken = token.accessToken
-            azTokenTimeout = LocalDateTime.now()
-                .plusSeconds(token.expiresIn - 60 /* 60s leeway => renew 60s before token expiration */)
-        }
-        val authToken = azToken!!
+        val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!).accessToken
 
         // Make request
         val request: HttpRequest = HttpRequest.newBuilder()
