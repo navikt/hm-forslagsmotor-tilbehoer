@@ -23,7 +23,7 @@ object Oebs {
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
-    fun GetTitleForHmsNr(hmsNr: String): String {
+    fun GetTitleForHmsNr(hmsNr: String): Pair<String, String> {
         // Generate azure ad token for authorization header
         val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_OEBSAPIPROXY"]!!).accessToken
 
@@ -43,11 +43,13 @@ object Oebs {
             throw Exception("error: unexpected status code from oebs api proxy (statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)})")
         }
 
-        return objectMapper.readValue<ResponseGetTitleForHmsNr>(response.body()).title
+        val res = objectMapper.readValue<ResponseGetTitleForHmsNr>(response.body())
+        return Pair(res.title, res.type)
     }
 }
 
 data class ResponseGetTitleForHmsNr(
     val hmsNr: String,
+    val type: String,
     val title: String,
 )

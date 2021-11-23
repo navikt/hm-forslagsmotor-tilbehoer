@@ -67,7 +67,7 @@ object SuggestionEngine {
                     try {
                         val newDescription = Oebs.GetTitleForHmsNr(suggestion.value.hmsNr)
                         changesMade = true
-                        items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription, suggestion.value.occurancesInSoknader)
+                        items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription.first, suggestion.value.occurancesInSoknader)
                     } catch (e: Exception) {
                         logg.error("Exception thrown during attempt to refetch OEBS title after previous failure (for hmsNr=${suggestion.value.hmsNr}): $e")
                         e.printStackTrace()
@@ -168,7 +168,9 @@ object SuggestionEngine {
                     var description = noDescription
                     try {
                         description = if (fakeLookupTable == null) {
-                            Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
+                            val oebsTitleAndType = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
+                            logg.info("DEBUG: Fetched title for ${tilbehoer.hmsnr} and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
+                            oebsTitleAndType.first
                         } else {
                             fakeLookupTable!![tilbehoer.hmsnr] ?: noDescription
                         }
