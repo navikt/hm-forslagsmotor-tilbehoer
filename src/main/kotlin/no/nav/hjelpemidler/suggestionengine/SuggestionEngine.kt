@@ -33,8 +33,6 @@ object SuggestionEngine {
     private var fakeLookupTable: Map<String, String>? = null
 
     private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
-    private var azTokenTimeout: LocalDateTime? = null
-    private var azToken: String? = null
 
     private val noDescription = "(beskrivelse utilgjengelig)"
 
@@ -228,13 +226,7 @@ object SuggestionEngine {
 
     private fun getInitialDataset(): List<Hjelpemidler> {
         // Generate azure ad token for authorization header
-        if (azTokenTimeout == null || azTokenTimeout?.isBefore(LocalDateTime.now()) == true) {
-            val token = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!)
-            azToken = token.accessToken
-            azTokenTimeout = LocalDateTime.now()
-                .plusSeconds(token.expiresIn - 60 /* 60s leeway => renew 60s before token expiration */)
-        }
-        val authToken = azToken!!
+        val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!).accessToken
 
         // Make request
         val request: HttpRequest = HttpRequest.newBuilder()
