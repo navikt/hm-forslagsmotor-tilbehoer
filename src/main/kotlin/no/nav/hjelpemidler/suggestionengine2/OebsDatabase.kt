@@ -2,6 +2,7 @@ package no.nav.hjelpemidler.suggestionengine2
 
 import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
+import no.nav.hjelpemidler.oebs.Oebs
 import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
@@ -44,12 +45,36 @@ internal class OebsDatabase(testing: Map<String, String>? = null) : Closeable {
         return store.filterValues { it == null }.toList().map { it.first }
     }
 
+    @Synchronized
+    fun removeTitle(hmsNr: String) {
+        store.remove(hmsNr)
+    }
+
     private fun launchBackgroundRunner() {
         thread(isDaemon = true) {
             while (true) {
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
-                // val list = OebsDatabase.getAllUnknownTitles()
+
+                for (hmsNr in getAllUnknownTitles()) {
+                    try {
+                        val titleAndType = Oebs.GetTitleForHmsNr(hmsNr)
+                        logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${titleAndType.second}. Title: ${titleAndType.first}")
+                        // TODO: Mark it as Del / non-Del (from type field: titleAndType.second)
+                        setTitleFor(hmsNr, titleAndType.first)
+                    } catch (e: Exception) {
+                        // Ignoring non-existing products (statusCode=404), others will be added with
+                        // title=noDescription and is thus not returned in suggestion results until the
+                        // backgroundRunner retries and fetches the title.
+                        if (e.toString().contains("statusCode=404")) {
+                            logg.info("Ignoring suggestion with hmsNr=$hmsNr as OEBS returned 404 not found (product doesnt exist): $e")
+                            removeTitle(hmsNr) // Do not keep asking for this title
+                            continue
+                        }
+                        logg.warn("failed to get title for hmsNr from hm-oebs-api-proxy")
+                        e.printStackTrace()
+                    }
+                }
             }
         }
     }
