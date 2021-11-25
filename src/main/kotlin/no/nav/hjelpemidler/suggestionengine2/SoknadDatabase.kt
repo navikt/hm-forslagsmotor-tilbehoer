@@ -2,7 +2,7 @@ package no.nav.hjelpemidler.suggestionengine2
 
 import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
-import java.time.LocalDateTime
+import java.time.LocalDate
 import java.util.UUID
 
 private val logg = KotlinLogging.logger {}
@@ -47,9 +47,9 @@ internal class SoknadDatabase(testing: List<Soknad>? = null) : Closeable {
     @Synchronized
     fun getAccessoriesByProductHmsnr(
         hmsnr: String,
-        suggestionsFrom: LocalDateTime = LocalDateTime.of(0, 1, 1, 0, 0)
+        suggestionsFrom: LocalDate = LocalDate.of(0, 1, 1)
     ): List<Tilbehoer> {
-        return store.filter { it.created.isAfter(suggestionsFrom) }
+        return store.filter { it.created.isAfter(suggestionsFrom.atStartOfDay()) }
             .map {
                 it.soknad.hjelpemidler.hjelpemiddelListe.filter { it.hmsNr == hmsnr }.map {
                     it.tilbehorListe

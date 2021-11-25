@@ -2,7 +2,6 @@ package no.nav.hjelpemidler.suggestionengine2
 
 import io.ktor.utils.io.core.Closeable
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 class SuggestionEngine(
     testingOebsDatabase: Map<String, String>? = null,
@@ -43,8 +42,13 @@ class SuggestionEngine(
     }
 
     private fun generateSuggestionsFor(hmsNr: String): List<Suggestion> {
-        // TODO: Identify current framework agreement start/end date, use that to form suggestions
-        val suggestionsFrom = LocalDateTime.of(0, 1, 1, 0, 0)
+        // Identify current framework agreement start/end date, use that to form suggestions
+        var suggestionsFrom = LocalDate.of(0, 1, 1)
+
+        val frameworkAgreementStartDate = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr)
+        if (frameworkAgreementStartDate != null) {
+            suggestionsFrom = frameworkAgreementStartDate
+        }
 
         // Get a list of all accessories applied for with this product
         val accessories = soknadDatabase.getAccessoriesByProductHmsnr(hmsNr, suggestionsFrom)
