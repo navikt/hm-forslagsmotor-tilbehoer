@@ -355,6 +355,12 @@ internal class SuggestionEngine2Test {
                                             navn = "Tilbehør 2",
                                             brukAvForslagsmotoren = null,
                                         ),
+                                        Tilbehoer(
+                                            hmsnr = "891011",
+                                            antall = 1,
+                                            navn = "Tilbehør 3",
+                                            brukAvForslagsmotoren = null,
+                                        ),
                                     ),
                                 )
                             ),

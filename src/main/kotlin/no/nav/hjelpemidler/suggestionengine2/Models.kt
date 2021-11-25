@@ -10,7 +10,7 @@ data class Suggestion(
     var occurancesInSoknader: Int = 0,
 ) {
     fun isReady(): Boolean {
-        return hmsNr.isNotEmpty() && title?.isNotEmpty() ?: false
+        return hmsNr.isNotEmpty() && !title.isNullOrBlank()
     }
 
     fun toFrontendFiltered(): SuggestionFrontendFiltered {

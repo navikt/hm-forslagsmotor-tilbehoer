@@ -31,17 +31,13 @@ internal class SoknadDatabase(testing: List<Soknad>? = null) : Closeable {
     }
 
     @Synchronized
-    fun getAccessories(): Map<String, List<Tilbehoer>> {
-        return store.map { it.soknad.hjelpemidler.hjelpemiddelListe }
-            .fold(mutableListOf<Hjelpemiddel>()) { a, b ->
+    fun getAllKnownProductHmsnrs(): Set<String> {
+        // Transform list of soknader into a list of unique hmsNrs
+        return store.map { it.soknad.hjelpemidler.hjelpemiddelListe.map { it.hmsNr } }
+            .fold(mutableListOf<String>()) { a, b ->
                 a.addAll(b)
                 a
-            }.groupBy { it.hmsNr }.mapValues {
-                it.value.map { it.tilbehorListe }.fold(mutableListOf<Tilbehoer>()) { c, d ->
-                    c.addAll(d)
-                    c
-                }
-            }
+            }.toSet()
     }
 
     @Synchronized
