@@ -217,7 +217,24 @@ object SuggestionEngine {
 
     @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 }.take(20)
+        val some = allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 }.take(20)
+        val some2 = se2.suggestionsForHmsNr(hmsNr)
+        logg.info("DEBUG: HERE: Comparing suggestions for $hmsNr")
+        if (some.count() != some2.count()) {
+            logg.info("DEBUG: HERE: Suggestion lists in v1 and v2 doesnt match: $some != $some2")
+        }else{
+            var allMatching = true
+            for (i in 0 until some.count()) {
+                if (some[i].hmsNr != some2[i].hmsNr) {
+                    allMatching = false
+                    logg.info("DEBUG: HERE: Suggestion spot ${i + 1} does not match between v1 and v2: ${some[i].title} (${some[i].hmsNr})} != ${some2[i].title} (${some2[i].hmsNr})}")
+                }
+            }
+            if (allMatching) {
+                logg.info("DEBUG: HERE: All suggestions for $hmsNr matches!")
+            }
+        }
+        return some
     }
 
     @Synchronized
