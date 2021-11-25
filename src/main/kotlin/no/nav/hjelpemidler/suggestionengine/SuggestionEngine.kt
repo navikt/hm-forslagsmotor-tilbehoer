@@ -10,6 +10,7 @@ import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.oebs.Oebs
+import no.nav.hjelpemidler.suggestionengine2.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -40,6 +41,8 @@ object SuggestionEngine {
         .registerModule(JavaTimeModule())
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
+    private val se2 = SuggestionEngine()
 
     fun isInitialDatasetLoaded(): Boolean {
         var dsLoaded = false
@@ -108,7 +111,9 @@ object SuggestionEngine {
         if (Configuration.application["APP_PROFILE"]!! != "local") {
             try {
                 logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
-                val initialDataset = getInitialDataset()
+                val (initialDataset, initialDatasetV2) = getInitialDataset()
+
+                se2.learnFromSoknader(initialDatasetV2)
 
                 logg.info("Storing list of known soknadIds (nrSoknads=${initialDataset.count()}):")
                 for (intialDatasetSoknad in initialDataset) knownSoknadIds.add(intialDatasetSoknad.soknad.id)
@@ -234,7 +239,7 @@ object SuggestionEngine {
         fakeLookupTable = lookupTable
     }
 
-    private fun getInitialDataset(): List<Hjelpemidler> {
+    private fun getInitialDataset(): Pair<List<Hjelpemidler>, List<no.nav.hjelpemidler.suggestionengine2.Soknad>> {
         // Generate azure ad token for authorization header
         val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!).accessToken
 
@@ -253,7 +258,10 @@ object SuggestionEngine {
             throw Exception("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
         }
 
-        return objectMapper.readValue<Array<Hjelpemidler>>(response.body()).asList()
+        return Pair<List<Hjelpemidler>, List<no.nav.hjelpemidler.suggestionengine2.Soknad>>(
+            objectMapper.readValue<Array<Hjelpemidler>>(response.body()).asList(),
+            objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine2.Soknad>>(response.body()).asList()
+        )
     }
 }
 
