@@ -13,7 +13,7 @@ class SuggestionEngine(
 ) : Closeable {
 
     private val soknadDatabase = SoknadDatabase(testingSoknadDatabase)
-    private val oebsDatabase = OebsDatabase(testingOebsDatabase)
+    private val oebsDatabase = OebsDatabase(testingOebsDatabase, { generateStats() })
     private val hmdbDatabase = HmdbDatabase(testingHmdbDatabase)
 
     override fun close() {
@@ -89,6 +89,8 @@ class SuggestionEngine(
     }
 
     private fun generateStats() {
+        logg.info("DEBUG: HERE: Generating stats now")
+
         // Fetch the list of all known product hmsNrs
         val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
 

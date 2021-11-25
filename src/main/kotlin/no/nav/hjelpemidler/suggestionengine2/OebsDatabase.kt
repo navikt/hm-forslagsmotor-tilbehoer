@@ -7,7 +7,7 @@ import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
 
-internal class OebsDatabase(testing: Map<String, String>? = null) : Closeable {
+internal class OebsDatabase(testing: Map<String, String>? = null, val generateStats: () -> Unit) : Closeable {
     private val store: MutableMap<String, String?> = mutableMapOf()
     private var isClosed = false
 
@@ -56,12 +56,14 @@ internal class OebsDatabase(testing: Map<String, String>? = null) : Closeable {
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
+                var changes = false
                 for (hmsNr in getAllUnknownTitles()) {
                     try {
                         val titleAndType = Oebs.GetTitleForHmsNr(hmsNr)
                         logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${titleAndType.second}. Title: ${titleAndType.first}")
                         // TODO: Mark it as Del / non-Del (from type field: titleAndType.second)
                         setTitleFor(hmsNr, titleAndType.first)
+                        changes = true
                     } catch (e: Exception) {
                         // Ignoring non-existing products (statusCode=404), others will be added with
                         // title=noDescription and is thus not returned in suggestion results until the
@@ -75,6 +77,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null) : Closeable {
                         e.printStackTrace()
                     }
                 }
+                if (changes) generateStats()
             }
         }
     }
