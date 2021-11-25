@@ -1,7 +1,9 @@
 package no.nav.hjelpemidler.suggestionengine2
 
 import io.ktor.utils.io.core.Closeable
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import java.time.LocalDate
 import kotlin.concurrent.thread
 
@@ -41,7 +43,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
     }
 
     @Synchronized
-    fun getAllUnknownFrameworkStartTimes(): List<String> {
+    private fun getAllUnknownFrameworkStartTimes(): List<String> {
         return store.filterValues { it == null }.toList().map { it.first }
     }
 
@@ -50,7 +52,33 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
             while (true) {
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
-                // val list = HmdbDatabase.getAllUnknownFrameworkStartTimes()
+
+                val hmsNrs = getAllUnknownFrameworkStartTimes()
+                try {
+                    val result = runBlocking {
+                        HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrs.toSet())
+                    }.filter { it.hmsnr != null }.groupBy { it.hmsnr!! }
+
+                    for (hmsNr in result.keys) {
+                        val productReferences = result[hmsNr] ?: continue
+                        for (product in productReferences) {
+                            val start = product.rammeavtaleStart
+                            val end = product.rammeavtaleSlutt
+                            if (start != null && end != null) {
+                                val now = LocalDate.now()
+                                val startDate = LocalDate.parse(start)
+                                val endDate = LocalDate.parse(end)
+                                if (now.isEqual(startDate) || now.isEqual(endDate) || (now.isAfter(startDate) && now.isBefore(endDate))) {
+                                    setFrameworkAgreementStartFor(product.hmsnr!!, startDate)
+                                    break // productReferences
+                                }
+                            }
+                        } // productReferences
+                    }
+                } catch (e: Exception) {
+                    logg.warn("failed to fetch framework start dates(for=$hmsNrs): $e")
+                    e.printStackTrace()
+                }
             }
         }
     }

@@ -338,6 +338,9 @@ internal class SuggestionEngine2Test {
                     ),
                     created = LocalDateTime.now(),
                 ),
+            )
+        ).use { se ->
+            se.learnFromSoknad(
                 Soknad(
                     soknad = SoknadData(
                         id = UUID.randomUUID(),
@@ -360,7 +363,6 @@ internal class SuggestionEngine2Test {
                     created = LocalDateTime.now(),
                 ),
             )
-        ).use { se ->
             val suggestions = se.suggestionsForHmsNr("1234")
             assertEquals(2, suggestions.size)
             assertEquals("5678", suggestions[0].hmsNr)

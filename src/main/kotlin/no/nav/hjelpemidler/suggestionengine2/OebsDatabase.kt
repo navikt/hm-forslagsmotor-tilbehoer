@@ -41,13 +41,13 @@ internal class OebsDatabase(testing: Map<String, String>? = null) : Closeable {
     }
 
     @Synchronized
-    fun getAllUnknownTitles(): List<String> {
-        return store.filterValues { it == null }.toList().map { it.first }
+    fun removeTitle(hmsNr: String) {
+        store.remove(hmsNr)
     }
 
     @Synchronized
-    fun removeTitle(hmsNr: String) {
-        store.remove(hmsNr)
+    private fun getAllUnknownTitles(): List<String> {
+        return store.filterValues { it == null }.toList().map { it.first }
     }
 
     private fun launchBackgroundRunner() {

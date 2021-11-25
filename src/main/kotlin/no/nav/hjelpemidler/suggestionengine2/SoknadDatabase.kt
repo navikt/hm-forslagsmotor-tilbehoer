@@ -27,6 +27,7 @@ internal class SoknadDatabase(testing: List<Soknad>? = null) : Closeable {
     @Synchronized
     fun add(soknad: Soknad) {
         if (has(soknad.soknad.id)) throw Exception("søknad already exists in the database")
+        store.add(soknad)
     }
 
     @Synchronized
