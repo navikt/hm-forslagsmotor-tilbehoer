@@ -36,17 +36,22 @@ class SuggestionEngine(
 
     fun learnFromSoknader(soknader: List<Soknad>) {
         for (soknad in soknader) {
-            soknadDatabase.add(soknad) // Throws if already known
-            soknad.soknad.hjelpemidler.hjelpemiddelListe.forEach {
-                if (oebsDatabase.getTitleFor(it.hmsNr) == null) oebsDatabase.setTitleFor(
-                    it.hmsNr,
-                    null
-                ) // Oebs's background runner takes things from here
+            try {
+                soknadDatabase.add(soknad) // Throws if already known
+                soknad.soknad.hjelpemidler.hjelpemiddelListe.forEach {
+                    if (oebsDatabase.getTitleFor(it.hmsNr) == null) oebsDatabase.setTitleFor(
+                        it.hmsNr,
+                        null
+                    ) // Oebs's background runner takes things from here
 
-                if (hmdbDatabase.getFrameworkAgreementStartFor(it.hmsNr) == null) hmdbDatabase.setFrameworkAgreementStartFor(
-                    it.hmsNr,
-                    null
-                ) // Hmdb's background runner takes things from here
+                    if (hmdbDatabase.getFrameworkAgreementStartFor(it.hmsNr) == null) hmdbDatabase.setFrameworkAgreementStartFor(
+                        it.hmsNr,
+                        null
+                    ) // Hmdb's background runner takes things from here
+                }
+            } catch (e: Exception) {
+                logg.info("DEBUG: HERE: Exception thrown while adding soknads: $e")
+                e.printStackTrace()
             }
         }
 
