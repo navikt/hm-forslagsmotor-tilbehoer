@@ -9,6 +9,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
+      - rewrite-suggestion-engine
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:
