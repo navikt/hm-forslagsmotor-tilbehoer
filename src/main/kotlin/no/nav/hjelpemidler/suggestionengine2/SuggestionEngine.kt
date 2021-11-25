@@ -7,19 +7,19 @@ import java.time.LocalDate
 private val logg = KotlinLogging.logger {}
 
 class SuggestionEngine(
+    testingSoknadDatabase: List<Soknad>? = null,
     testingOebsDatabase: Map<String, String>? = null,
     testingHmdbDatabase: Map<String, LocalDate>? = null,
-    testingSoknadDatabase: List<Soknad>? = null
 ) : Closeable {
 
+    private val soknadDatabase = SoknadDatabase(testingSoknadDatabase)
     private val oebsDatabase = OebsDatabase(testingOebsDatabase)
     private val hmdbDatabase = HmdbDatabase(testingHmdbDatabase)
-    private val soknadDatabase = SoknadDatabase(testingSoknadDatabase)
 
     override fun close() {
+        soknadDatabase.close()
         oebsDatabase.close()
         hmdbDatabase.close()
-        soknadDatabase.close()
     }
 
     fun allSuggestionsForHmsNr(hmsNr: String): List<Suggestion> {
@@ -31,17 +31,23 @@ class SuggestionEngine(
     }
 
     fun learnFromSoknad(soknad: Soknad) {
-        soknadDatabase.add(soknad) // Throws if already known
-        soknad.soknad.hjelpemidler.hjelpemiddelListe.forEach {
-            if (oebsDatabase.getTitleFor(it.hmsNr) == null) oebsDatabase.setTitleFor(
-                it.hmsNr,
-                null
-            ) // Oebs's background runner takes things from here
+        learnFromSoknader(listOf(soknad))
+    }
 
-            if (hmdbDatabase.getFrameworkAgreementStartFor(it.hmsNr) == null) hmdbDatabase.setFrameworkAgreementStartFor(
-                it.hmsNr,
-                null
-            ) // Hmdb's background runner takes things from here
+    fun learnFromSoknader(soknader: List<Soknad>) {
+        for (soknad in soknader) {
+            soknadDatabase.add(soknad) // Throws if already known
+            soknad.soknad.hjelpemidler.hjelpemiddelListe.forEach {
+                if (oebsDatabase.getTitleFor(it.hmsNr) == null) oebsDatabase.setTitleFor(
+                    it.hmsNr,
+                    null
+                ) // Oebs's background runner takes things from here
+
+                if (hmdbDatabase.getFrameworkAgreementStartFor(it.hmsNr) == null) hmdbDatabase.setFrameworkAgreementStartFor(
+                    it.hmsNr,
+                    null
+                ) // Hmdb's background runner takes things from here
+            }
         }
 
         // Recalculate metrics

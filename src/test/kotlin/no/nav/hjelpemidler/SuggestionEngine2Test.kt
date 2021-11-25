@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 internal class SuggestionEngine2Test {
     @Test
     fun `No suggestions available for item`() {
-        SuggestionEngine(mapOf(), mapOf(), listOf()).use { se ->
+        SuggestionEngine(listOf(), mapOf(), mapOf()).use { se ->
             val suggestions = se.suggestionsForHmsNr("1234")
             assertEquals(0, suggestions.size)
         }
@@ -23,11 +23,6 @@ internal class SuggestionEngine2Test {
     @Test
     fun `Fewer occurrences than five results in no result, five or more occurrences results in results`() {
         SuggestionEngine(
-            mapOf(
-                "4321" to "Tilbehør 1",
-                "12345" to "Tilbehør 2",
-            ),
-            mapOf(),
             listOf(
                 Soknad(
                     soknad = SoknadData(
@@ -138,7 +133,12 @@ internal class SuggestionEngine2Test {
                     ),
                     created = LocalDateTime.now(),
                 ),
-            )
+            ),
+            mapOf(
+                "4321" to "Tilbehør 1",
+                "12345" to "Tilbehør 2",
+            ),
+            mapOf(),
         ).use { se ->
             val suggestions = se.suggestionsForHmsNr("1234")
             assertEquals(0, suggestions.size)
@@ -154,10 +154,6 @@ internal class SuggestionEngine2Test {
     @Test
     fun `A single suggestion is available based on five or more occurrences`() {
         SuggestionEngine(
-            mapOf(
-                "4321" to "Tilbehør 1",
-            ),
-            mapOf(),
             listOf(
                 Soknad(
                     soknad = SoknadData(
@@ -224,7 +220,11 @@ internal class SuggestionEngine2Test {
                     ),
                     created = LocalDateTime.now(),
                 ),
-            )
+            ),
+            mapOf(
+                "4321" to "Tilbehør 1",
+            ),
+            mapOf(),
         ).use { se ->
             val suggestions = se.suggestionsForHmsNr("1234")
             assertEquals(1, suggestions.size)
@@ -237,11 +237,6 @@ internal class SuggestionEngine2Test {
     @Test
     fun `Multiple suggestions and priority is correct`() {
         SuggestionEngine(
-            mapOf(
-                "4321" to "Tilbehør 1",
-                "5678" to "Tilbehør 2",
-            ),
-            mapOf(),
             listOf(
                 Soknad(
                     soknad = SoknadData(
@@ -338,7 +333,12 @@ internal class SuggestionEngine2Test {
                     ),
                     created = LocalDateTime.now(),
                 ),
-            )
+            ),
+            mapOf(
+                "4321" to "Tilbehør 1",
+                "5678" to "Tilbehør 2",
+            ),
+            mapOf(),
         ).use { se ->
             se.learnFromSoknad(
                 Soknad(
