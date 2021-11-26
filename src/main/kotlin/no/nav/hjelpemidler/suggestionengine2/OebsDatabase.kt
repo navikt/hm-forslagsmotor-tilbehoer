@@ -56,13 +56,17 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
+                logg.info("DEBUG: HERE: Running background check for ${getAllUnknownTitles().count()} unknown titles")
+
                 var changes = false
                 for (hmsNr in getAllUnknownTitles()) {
+                    logg.info("DEBUG: HERE: Running check for $hmsNr")
                     try {
                         val titleAndType = Oebs.GetTitleForHmsNr(hmsNr)
                         logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${titleAndType.second}. Title: ${titleAndType.first}")
                         // TODO: Mark it as Del / non-Del (from type field: titleAndType.second)
                         setTitleFor(hmsNr, titleAndType.first)
+                        logg.info("DEBUG: HERE: New title set for $hmsNr")
                         changes = true
                     } catch (e: Exception) {
                         // Ignoring non-existing products (statusCode=404), others will be added with
@@ -77,7 +81,12 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                         e.printStackTrace()
                     }
                 }
-                if (changes) generateStats()
+                if (changes) {
+                    logg.info("DEBUG: HERE: Regenerating stats due to changes")
+                    generateStats()
+                }else{
+                    logg.info("DEBUG: HERE: No changes, not regenerating stats")
+                }
             }
         }
     }
