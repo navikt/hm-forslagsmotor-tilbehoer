@@ -74,14 +74,13 @@ class SuggestionEngine(
         // Aggregate suggestions and count
         val suggestions: MutableMap<String, Suggestion> = mutableMapOf()
         for (accessory in accessories) {
-            val hmsNr = accessory.hmsnr
-            if (!suggestions.containsKey(hmsNr)) {
-                suggestions[hmsNr] = Suggestion(
-                    hmsNr = hmsNr,
-                    title = oebsDatabase.getTitleFor(hmsNr),
+            if (!suggestions.containsKey(accessory.hmsnr)) {
+                suggestions[accessory.hmsnr] = Suggestion(
+                    hmsNr = accessory.hmsnr,
+                    title = oebsDatabase.getTitleFor(accessory.hmsnr),
                 )
             }
-            suggestions[hmsNr]!!.occurancesInSoknader++
+            suggestions[accessory.hmsnr]!!.occurancesInSoknader++
         }
 
         return suggestions.toList().map { it.second }
@@ -114,5 +113,10 @@ class SuggestionEngine(
 
         // TODO: Report what we found to influxdb / grafana
         logg.info("Suggestion engine V2 (!!) stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
+
+        logg.info("DEBUG: HERE: All suggestions:")
+        for (suggestionKey in suggestions.keys) {
+            logg.info("DEBUG: HERE: Suggestions for $suggestionKey: ${suggestions[suggestionKey]}")
+        }
     }
 }
