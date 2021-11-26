@@ -38,11 +38,19 @@ class SuggestionEngine(
         for (soknad in soknader) {
             try {
                 soknadDatabase.add(soknad) // Throws if already known
+
                 soknad.soknad.hjelpemidler.hjelpemiddelListe.forEach {
                     if (oebsDatabase.getTitleFor(it.hmsNr) == null) oebsDatabase.setTitleFor(
                         it.hmsNr,
                         null
                     ) // Oebs's background runner takes things from here
+
+                    it.tilbehorListe.forEach {
+                        if (oebsDatabase.getTitleFor(it.hmsnr) == null) oebsDatabase.setTitleFor(
+                            it.hmsnr,
+                            null
+                        ) // Oebs's background runner takes things from here
+                    }
 
                     if (hmdbDatabase.getFrameworkAgreementStartFor(it.hmsNr) == null) hmdbDatabase.setFrameworkAgreementStartFor(
                         it.hmsNr,
