@@ -53,10 +53,10 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
-                val hmsNrs = getAllUnknownFrameworkStartTimes()
+                val hmsNrs = getAllUnknownFrameworkStartTimes().toSet()
                 try {
                     val result = runBlocking {
-                        HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrs.toSet())
+                        HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrs)
                     }.filter { it.hmsnr != null }.groupBy { it.hmsnr!! }
 
                     for (hmsNr in result.keys) {
