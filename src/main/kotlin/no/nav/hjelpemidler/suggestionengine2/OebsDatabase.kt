@@ -41,6 +41,11 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
     }
 
     @Synchronized
+    fun hasTitleReference(hmsNr: String): Boolean {
+        return store.contains(hmsNr)
+    }
+
+    @Synchronized
     fun removeTitle(hmsNr: String) {
         store.remove(hmsNr)
     }

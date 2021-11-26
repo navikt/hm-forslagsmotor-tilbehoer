@@ -82,6 +82,10 @@ class SuggestionEngine(
         // Aggregate suggestions and count
         val suggestions: MutableMap<String, Suggestion> = mutableMapOf()
         for (accessory in accessories) {
+            // If the title has been deleted automatically it means OEBS didnt know about it (404 not found),
+            // and we wont suggest it here:
+            if (!oebsDatabase.hasTitleReference(accessory.hmsnr)) continue
+
             if (!suggestions.containsKey(accessory.hmsnr)) {
                 suggestions[accessory.hmsnr] = Suggestion(
                     hmsNr = accessory.hmsnr,
