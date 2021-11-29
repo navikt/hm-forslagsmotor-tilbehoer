@@ -56,6 +56,6 @@ internal class SoknadDatabase(testing: List<Soknad>? = null) : Closeable {
             }.fold(mutableListOf<Tilbehoer>()) { a, b ->
                 a.addAll(b)
                 a
-            }
+            }.filter { it.hmsnr != "000000" }
     }
 }
