@@ -1,9 +1,7 @@
 package no.nav.hjelpemidler.suggestionengine2
 
 import io.ktor.utils.io.core.Closeable
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import java.time.LocalDate
 import kotlin.concurrent.thread
 
@@ -53,6 +51,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
+                /*
                 val hmsNrs = getAllUnknownFrameworkStartTimes().toSet()
                 try {
                     val result = runBlocking {
@@ -79,6 +78,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                     logg.warn("failed to fetch framework start dates(for=$hmsNrs): $e")
                     e.printStackTrace()
                 }
+                */
             }
         }
     }
