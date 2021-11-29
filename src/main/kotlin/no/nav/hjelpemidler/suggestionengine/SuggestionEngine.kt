@@ -132,7 +132,7 @@ object SuggestionEngine {
 
                 logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
-                val totalProductsWithAccessorySuggestions = items.count()
+                val totalProductsWithAccessorySuggestions = items.keys.count()
                 val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
                 val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
 
