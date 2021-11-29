@@ -216,6 +216,10 @@ object SuggestionEngine {
 
                 suggestions[tilbehoer.hmsnr]!!.occurancesInSoknader += 1
             }
+
+            if (suggestions.count() == 0) {
+                items.remove(hjelpemiddel.hmsNr)
+            }
         }
     }
 
