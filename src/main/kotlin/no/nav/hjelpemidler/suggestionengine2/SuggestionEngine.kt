@@ -69,12 +69,7 @@ class SuggestionEngine(
 
     private fun generateSuggestionsFor(hmsNr: String): List<Suggestion> {
         // Identify current framework agreement start/end date, use that to form suggestions
-        var suggestionsFrom = LocalDate.of(0, 1, 1)
-
-        val frameworkAgreementStartDate = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr)
-        if (frameworkAgreementStartDate != null) {
-            suggestionsFrom = frameworkAgreementStartDate
-        }
+        val suggestionsFrom = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr) ?: LocalDate.of(0, 1, 1)
 
         // Get a list of all accessories applied for with this product
         val accessories = soknadDatabase.getAccessoriesByProductHmsnr(hmsNr, suggestionsFrom)

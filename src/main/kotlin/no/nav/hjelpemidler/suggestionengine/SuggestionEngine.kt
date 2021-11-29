@@ -63,6 +63,7 @@ object SuggestionEngine {
     @Synchronized
     private fun backgroundRunnerSync() {
         var changesMade = false
+        var remove404List: MutableList<Pair<String, String>> = mutableListOf()
         for (item in items) {
             for (suggestion in item.value.suggestions) {
                 if (suggestion.value.title == noDescription) {
@@ -77,6 +78,8 @@ object SuggestionEngine {
                         // backgroundRunner retries and fetches the title.
                         if (e.toString().contains("statusCode=404")) {
                             logg.info("Ignoring suggestion with hmsNr=${suggestion.value.hmsNr} as OEBS returned 404 not found (product doesnt exist): $e")
+                            changesMade = true
+                            remove404List.add(Pair(item.key, suggestion.key))
                             continue
                         }
 
@@ -88,6 +91,12 @@ object SuggestionEngine {
         }
         if (changesMade) {
             try {
+                logg.info("Removing ignored suggestions if any (len=${remove404List.count()})")
+                for (toRemove in remove404List) {
+                    items[toRemove.first]!!.suggestions.remove(toRemove.second)
+                    if (items[toRemove.first]!!.suggestions.isEmpty()) items.remove(toRemove.first)
+                }
+
                 logg.info("Calculating updated metrics for Suggestion Engine.")
 
                 val totalProductsWithAccessorySuggestions = items.count()
