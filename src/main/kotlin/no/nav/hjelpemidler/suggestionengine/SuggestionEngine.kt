@@ -170,7 +170,7 @@ object SuggestionEngine {
             logg.info("Learning from new incoming Søknad.")
         }
         for (hjelpemiddel in hjelpemidler) {
-            if (!items.containsKey(hjelpemiddel.hmsNr)) {
+            if (!items.containsKey(hjelpemiddel.hmsNr) && hjelpemiddel.tilbehorListe.isNotEmpty()) {
                 items[hjelpemiddel.hmsNr] = Item(mutableMapOf())
             }
 

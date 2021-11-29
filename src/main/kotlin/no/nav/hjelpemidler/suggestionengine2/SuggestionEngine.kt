@@ -106,7 +106,7 @@ class SuggestionEngine(
         val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
 
         // Transform list of unique hmsNrs into a map from hmsNr to list of suggestions (excluding any hmsNr that has no suggestions)
-        val suggestions = hmsNrs.map { Pair<String, List<Suggestion>>(it, generateSuggestionsFor(it)) }
+        val suggestions = hmsNrs.map { Pair(it, generateSuggestionsFor(it)) }
             .groupBy { it.first }
             .mapValues {
                 it.value.map { it.second }.fold(mutableListOf<Suggestion>()) { a, b ->
