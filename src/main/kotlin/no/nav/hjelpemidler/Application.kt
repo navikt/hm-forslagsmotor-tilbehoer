@@ -61,14 +61,14 @@ fun main() {
                         try {
                             var accessory = true
                             val hmdbResults = HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr)
-                            if (hmdbResults.filter { it.tilgjengeligForDigitalSoknad }.isNotEmpty()) {
+                            if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
                                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                                 accessory = false
                             }
                             val oebsTitleAndType = Oebs.GetTitleForHmsNr(hmsNr)
                             logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
                             if (oebsTitleAndType.second != "Del") {
-                                logg.info("DEBUG: $hmsNr is not an accessory (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
+                                logg.info("DEBUG: $hmsNr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
                                 // accessory = false
                             }
                             call.respond(

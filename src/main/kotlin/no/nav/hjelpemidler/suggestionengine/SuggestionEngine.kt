@@ -59,7 +59,7 @@ class SuggestionEngine(
                     ) // Hmdb's background runner takes things from here
                 }
             } catch (e: Exception) {
-                logg.info("DEBUG: HERE: Exception thrown while adding soknads: $e")
+                logg.info("Exception thrown while adding soknads: $e")
                 e.printStackTrace()
             }
         }
@@ -100,8 +100,6 @@ class SuggestionEngine(
     }
 
     private fun generateStats() {
-        logg.info("DEBUG: HERE: Generating stats now")
-
         // Fetch the list of all known product hmsNrs
         val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
 
@@ -124,11 +122,6 @@ class SuggestionEngine(
             suggestions.map { it.value.count { !it.isReady() } }.fold(0) { a, b -> a + b }
 
         // TODO: Report what we found to influxdb / grafana
-        logg.info("Suggestion engine V2 (!!) stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
-
-        logg.info("DEBUG: HERE: All suggestions:")
-        for (suggestionKey in suggestions.keys) {
-            logg.info("DEBUG: HERE: Suggestions for $suggestionKey: ${suggestions[suggestionKey]}")
-        }
+        logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
     }
 }

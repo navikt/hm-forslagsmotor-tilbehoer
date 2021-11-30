@@ -61,17 +61,17 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
-                logg.info("DEBUG: HERE: Running background check for ${getAllUnknownTitles().count()} unknown titles")
+                val unknownTitles = getAllUnknownTitles()
+                if (unknownTitles.isNotEmpty())
+                    logg.info("Running background check for ${unknownTitles.count()} unknown titles")
 
                 var changes = false
-                for (hmsNr in getAllUnknownTitles()) {
-                    logg.info("DEBUG: HERE: Running check for $hmsNr")
+                for (hmsNr in unknownTitles) {
                     try {
                         val titleAndType = Oebs.GetTitleForHmsNr(hmsNr)
-                        logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${titleAndType.second}. Title: ${titleAndType.first}")
+                        logg.info("Fetched title for $hmsNr and oebs report it as having type=${titleAndType.second}. New title: \"${titleAndType.first}\"")
                         // TODO: Mark it as "Del" / non-"Del" (from type field: titleAndType.second)
                         setTitleFor(hmsNr, titleAndType.first)
-                        logg.info("DEBUG: HERE: New title set for $hmsNr")
                         changes = true
                     } catch (e: Exception) {
                         // Ignoring non-existing products (statusCode=404), others will be added with
@@ -82,16 +82,12 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                             removeTitle(hmsNr) // Do not keep asking for this title
                             continue
                         }
-                        logg.warn("failed to get title for hmsNr from hm-oebs-api-proxy")
+                        logg.warn("failed to get title for hmsNr=$hmsNr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }
                 }
-                if (changes) {
-                    logg.info("DEBUG: HERE: Regenerating stats due to changes")
+                if (changes)
                     generateStats()
-                } else {
-                    logg.info("DEBUG: HERE: No changes, not regenerating stats")
-                }
             }
         }
     }
