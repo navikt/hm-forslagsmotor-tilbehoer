@@ -65,7 +65,7 @@ fun main() {
                                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                                 accessory = false
                             }
-                            val oebsTitleAndType = Oebs.GetTitleForHmsNr(hmsNr)
+                            val oebsTitleAndType = Oebs.getTitleForHmsNr(hmsNr)
                             logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
                             if (oebsTitleAndType.second != "Del") {
                                 logg.info("DEBUG: $hmsNr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
