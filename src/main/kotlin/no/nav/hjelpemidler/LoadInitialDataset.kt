@@ -19,7 +19,11 @@ import kotlin.concurrent.thread
 private val logg = KotlinLogging.logger {}
 
 object InitialDataset {
-    private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
+    private val azClient = AzureClient(
+        Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!,
+        Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!,
+        Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!
+    )
 
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -49,12 +53,16 @@ object InitialDataset {
                 throw Exception(
                     "error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${
                     response.body().take(40)
-                    }"
+                    }(...)"
                 )
             }
 
             // Set initial dataset to suggestion engine
-            se.learnFromSoknader(objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine2.Soknad>>(response.body()).asList())
+            se.learnFromSoknader(
+                objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine2.Soknad>>(response.body()).asList()
+            )
+
+            Thread.sleep(1_000 * 60 * 2) // Sleep for a few minutes while the suggestion engine fetches OEBS titles etc.
 
             // We have now loaded the dataset
             synchronized(this) {
