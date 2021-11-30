@@ -49,7 +49,7 @@ fun main() {
                         logg.info("Request for suggestions for hmsnr=$hmsNr.")
                         val suggestions = se.suggestionsForHmsNr(hmsNr)
                         val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null }
+                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
                             .map { it.hmsnr!! }
                         val results: List<SuggestionFrontendFiltered> =
                             suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
