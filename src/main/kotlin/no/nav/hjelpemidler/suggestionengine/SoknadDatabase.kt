@@ -45,7 +45,7 @@ internal class SoknadDatabase(testing: List<Soknad>? = null) : Closeable {
         hmsnr: String,
         suggestionsFrom: LocalDate = LocalDate.of(0, 1, 1)
     ): List<Tilbehoer> {
-        return store.filter { it.created.isAfter(suggestionsFrom.atStartOfDay()) }
+        return store.filter { it.created!!.isAfter(suggestionsFrom.atStartOfDay()) }
             .map {
                 it.soknad.hjelpemidler.hjelpemiddelListe.filter { it.hmsNr == hmsnr }.map {
                     it.tilbehorListe
