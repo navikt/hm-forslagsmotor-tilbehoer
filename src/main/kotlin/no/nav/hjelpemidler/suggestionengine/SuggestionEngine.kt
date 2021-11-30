@@ -132,7 +132,7 @@ object SuggestionEngine {
 
                 logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
 
-                val totalProductsWithAccessorySuggestions = items.keys.count()
+                val totalProductsWithAccessorySuggestions = items.count()
                 val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
                 val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
 
@@ -235,7 +235,7 @@ object SuggestionEngine {
         logg.info("DEBUG: HERE: Comparing suggestions for $hmsNr")
         if (some.count() != some2.count()) {
             logg.info("DEBUG: HERE: Suggestion lists in v1 and v2 doesnt match: $some != $some2")
-        }else{
+        } else {
             var allMatching = true
             for (i in 0 until some.count()) {
                 if (some[i].hmsNr != some2[i].hmsNr) {

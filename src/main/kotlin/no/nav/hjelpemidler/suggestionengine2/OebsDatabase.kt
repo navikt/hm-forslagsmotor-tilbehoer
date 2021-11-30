@@ -89,7 +89,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                 if (changes) {
                     logg.info("DEBUG: HERE: Regenerating stats due to changes")
                     generateStats()
-                }else{
+                } else {
                     logg.info("DEBUG: HERE: No changes, not regenerating stats")
                 }
             }
