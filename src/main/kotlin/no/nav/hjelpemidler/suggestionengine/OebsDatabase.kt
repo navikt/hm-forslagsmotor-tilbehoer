@@ -3,19 +3,20 @@ package no.nav.hjelpemidler.suggestionengine
 import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
 import no.nav.hjelpemidler.oebs.Oebs
+import java.time.LocalDateTime
 import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
 
 internal class OebsDatabase(testing: Map<String, String>? = null, val generateStats: () -> Unit) : Closeable {
-    private val store: MutableMap<String, String?> = mutableMapOf()
+    private val store: MutableMap<String, Storage> = mutableMapOf()
     private var isClosed = false
 
     init {
         if (testing == null) launchBackgroundRunner()
         else {
             testing.forEach {
-                store[it.key] = it.value
+                store[it.key] = Storage(it.value, LocalDateTime.now())
             }
         }
     }
@@ -32,12 +33,16 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
 
     @Synchronized
     fun setTitleFor(hmsNr: String, title: String?) {
-        store[hmsNr] = title
+        if (title != null) {
+            store[hmsNr] = Storage(title, LocalDateTime.now())
+        } else {
+            store[hmsNr] = Storage() // Request background fetch for hmsNr
+        }
     }
 
     @Synchronized
     fun getTitleFor(hmsNr: String): String? {
-        return store[hmsNr]
+        return store[hmsNr]?.title
     }
 
     @Synchronized
@@ -51,8 +56,10 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
     }
 
     @Synchronized
-    private fun getAllUnknownTitles(): List<String> {
-        return store.filterValues { it == null }.toList().map { it.first }
+    private fun getAllTitlesWhichAreUnknownOrNotRefreshedSince(since: LocalDateTime): List<String> {
+        return store
+            .filterValues { it.title == null || (it.lastUpdated != null && it.lastUpdated!!.isBefore(since)) }
+            .toList().map { it.first }
     }
 
     private fun launchBackgroundRunner() {
@@ -61,7 +68,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
-                val unknownTitles = getAllUnknownTitles()
+                val unknownTitles = getAllTitlesWhichAreUnknownOrNotRefreshedSince(LocalDateTime.now().minusHours(24))
                 if (unknownTitles.isNotEmpty())
                     logg.info("Running background check for ${unknownTitles.count()} unknown titles")
 
@@ -91,4 +98,9 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
             }
         }
     }
+
+    data class Storage(
+        var title: String? = null,
+        var lastUpdated: LocalDateTime? = null,
+    )
 }
