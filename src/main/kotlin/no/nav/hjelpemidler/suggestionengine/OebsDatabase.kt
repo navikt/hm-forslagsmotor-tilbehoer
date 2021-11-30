@@ -89,7 +89,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                             removeTitle(hmsNr) // Do not keep asking for this title
                             continue
                         }
-                        logg.warn("failed to get title for hmsNr=$hmsNr from hm-oebs-api-proxy")
+                        logg.warn("Failed to get title for hmsNr=$hmsNr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }
                 }
