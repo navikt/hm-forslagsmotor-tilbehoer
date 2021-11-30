@@ -60,10 +60,11 @@ fun main() {
                         logg.info("Request for name lookup for hmsnr=$hmsNr.")
                         try {
                             var accessory = true
-                            /*if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr).isNotEmpty()) {
+                            val hmdbResults = HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr)
+                            if (hmdbResults.filter { it.tilgjengeligForDigitalSoknad }.isNotEmpty()) {
                                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                                 accessory = false
-                            }*/
+                            }
                             val oebsTitleAndType = Oebs.GetTitleForHmsNr(hmsNr)
                             logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
                             if (oebsTitleAndType.second != "Del") {
