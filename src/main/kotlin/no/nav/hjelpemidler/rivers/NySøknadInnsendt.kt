@@ -11,6 +11,7 @@ import no.nav.helse.rapids_rivers.River
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.suggestionengine.Soknad
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import java.time.LocalDateTime
 
 private val logg = KotlinLogging.logger {}
 private val sikkerlogg = KotlinLogging.logger("tjenestekall")
@@ -36,6 +37,7 @@ internal class NySøknadInnsendt(
         // Parse packet to relevant data
         val rawJson: String = packet["soknad"].toString()
         val soknad = objectMapper.readValue<Soknad>(rawJson)
+        soknad.created = LocalDateTime.now()
 
         if (se.knowsOfSoknadID(soknad.soknad.id)) {
             logg.info("SuggestionEngine already knowns about soknad with id=${soknad.soknad.id}, ignoring..")

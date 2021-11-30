@@ -25,7 +25,7 @@ data class SuggestionFrontendFiltered(
 
 data class Soknad(
     val soknad: SoknadData,
-    val created: LocalDateTime,
+    var created: LocalDateTime?,
 )
 
 data class SoknadData(
