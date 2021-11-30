@@ -8,7 +8,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
-import no.nav.hjelpemidler.suggestionengine2.SuggestionEngine
+import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -59,7 +59,7 @@ object InitialDataset {
 
             // Set initial dataset to suggestion engine
             se.learnFromSoknader(
-                objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine2.Soknad>>(response.body()).asList()
+                objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine.Soknad>>(response.body()).asList()
             )
 
             Thread.sleep(1_000 * 60 * 2) // Sleep for a few minutes while the suggestion engine fetches OEBS titles etc.

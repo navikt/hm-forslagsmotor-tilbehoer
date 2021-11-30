@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.suggestionengine2
+package no.nav.hjelpemidler.suggestionengine
 
 import java.time.LocalDateTime
 import java.util.UUID

@@ -9,15 +9,15 @@ import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
 import no.nav.hjelpemidler.metrics.AivenMetrics
-import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
+import no.nav.hjelpemidler.suggestionengine.Soknad
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
-import java.util.UUID
 
 private val logg = KotlinLogging.logger {}
 private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 
 internal class NySøknadInnsendt(
     rapidsConnection: RapidsConnection,
+    val se: SuggestionEngine
 ) : PacketListenerWithOnError {
     private val objectMapper = jacksonObjectMapper()
 
@@ -35,18 +35,17 @@ internal class NySøknadInnsendt(
 
         // Parse packet to relevant data
         val rawJson: String = packet["soknad"].toString()
-        val soknad = objectMapper.readValue<Soknad>(rawJson).soknad
+        val soknad = objectMapper.readValue<Soknad>(rawJson)
 
-        if (SuggestionEngine.knownSoknadsId(soknad.id)) {
-            logg.info("SuggestionEngine already knowns about soknad with id=${soknad.id}, ignoring..")
+        if (se.knowsOfSoknadID(soknad.soknad.id)) {
+            logg.info("SuggestionEngine already knowns about soknad with id=${soknad.soknad.id}, ignoring..")
             return
         }
 
-        SuggestionEngine.recordSoknadId(soknad.id)
+        val list = soknad.soknad.hjelpemidler.hjelpemiddelListe.toList()
 
-        val list = soknad.hjelpemidler.hjelpemiddelListe.toList()
-
-        val totalAccessoriesInApplication = list.map { it.tilbehorListe.map { it.antall }.fold(0) { a, b -> a + b } }.fold(0) { a, b -> a + b }
+        val totalAccessoriesInApplication =
+            list.map { it.tilbehorListe.map { it.antall }.fold(0) { a, b -> a + b } }.fold(0) { a, b -> a + b }
         val partialOrFullUseOfSuggestionsOrLookup = list.any {
             it.tilbehorListe.any { (it.brukAvForslagsmotoren?.lagtTilFraForslagsmotoren ?: false || it.brukAvForslagsmotoren?.oppslagAvNavn ?: false) }
         }
@@ -54,7 +53,10 @@ internal class NySøknadInnsendt(
         // We only record this statistic if there were accessories in the application, as that is always the case if partialOrFullUseOfSuggestionsOrLookup=true,
         // so if we didn't the "GROUP BY partialOrFullUseOfSuggestionsOrLookup" in Grafana would make little sense for comparison.
         if (totalAccessoriesInApplication > 1)
-            AivenMetrics().totalAccessoriesInApplication(totalAccessoriesInApplication, partialOrFullUseOfSuggestionsOrLookup)
+            AivenMetrics().totalAccessoriesInApplication(
+                totalAccessoriesInApplication,
+                partialOrFullUseOfSuggestionsOrLookup
+            )
 
         AivenMetrics().soknadProcessed(list.size)
 
@@ -73,7 +75,7 @@ internal class NySøknadInnsendt(
                 }
             }
 
-            val suggestions = SuggestionEngine.allSuggestionsForHmsNr(product.hmsNr)
+            val suggestions = se.allSuggestionsForHmsNr(product.hmsNr)
             if (suggestions.isEmpty()) {
                 AivenMetrics().productWithoutSuggestions()
                 continue
@@ -98,19 +100,6 @@ internal class NySøknadInnsendt(
         }
 
         // Learn from data
-        SuggestionEngine.learnFromSoknad(list)
+        se.learnFromSoknad(soknad)
     }
 }
-
-data class Soknad(
-    val soknad: Hjelpemidler,
-)
-
-data class Hjelpemidler(
-    val id: UUID,
-    val hjelpemidler: HjelpemiddelListe,
-)
-
-data class HjelpemiddelListe(
-    val hjelpemiddelListe: Array<Hjelpemiddel>
-)

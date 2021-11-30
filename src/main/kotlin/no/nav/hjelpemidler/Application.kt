@@ -19,8 +19,8 @@ import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.suggestionengine2.SuggestionEngine
-import no.nav.hjelpemidler.suggestionengine2.SuggestionFrontendFiltered
+import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
 
 private val logg = KotlinLogging.logger {}
 
@@ -90,7 +90,7 @@ fun main() {
             }
         }
         .build().apply {
-            NySøknadInnsendt(this)
+            NySøknadInnsendt(this, se)
         }.apply {
             register(
                 object : RapidsConnection.StatusListener {

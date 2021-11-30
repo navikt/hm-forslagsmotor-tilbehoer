@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.suggestionengine2
+package no.nav.hjelpemidler.suggestionengine
 
 import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
