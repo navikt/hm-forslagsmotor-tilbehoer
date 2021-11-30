@@ -77,7 +77,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val background
 
                     logg.info("OEBS database: Running background check for ${hmsNrsToCheck.count()} unknown/outdated titles")
 
-                    // Load titles for all those hmsnrs
+                    // Load titles for all those hmsNrs
                     var changes = false
                     val titles = Oebs.getTitleForHmsNrs(hmsNrsToCheck.toSet())
                     for (title in titles) {
@@ -104,32 +104,6 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val background
                     logg.warn("OEBS database: Background run failed: $e")
                     e.printStackTrace()
                 }
-
-                /*var changes = false
-                for ((idx, hmsNr) in hmsNrsToCheck.withIndex()) {
-                    if (idx % 1000 == 0) logg.info("OEBS database: Running background check: $idx/${hmsNrsToCheck.count()}")
-                    try {
-                        val titleAndType = Oebs.GetTitleForHmsNr(hmsNr)
-                        logg.info("OEBS database: Fetched title for $hmsNr and oebs report it as having type=${titleAndType.second}. New title: \"${titleAndType.first}\"")
-                        // TODO: Mark it as "Del" / non-"Del" (from type field: titleAndType.second)
-                        setTitleFor(hmsNr, titleAndType.first)
-                        changes = true
-                    } catch (e: Exception) {
-                        // Ignoring non-existing products (statusCode=404), others will be added with
-                        // title=noDescription and is thus not returned in suggestion results until the
-                        // backgroundRunner retries and fetches the title.
-                        if (e.toString().contains("statusCode=404")) {
-                            logg.info("OEBS database: Ignoring suggestion with hmsNr=$hmsNr as OEBS returned 404 not found (product doesnt exist): $e")
-                            removeTitle(hmsNr) // Do not keep asking for this title
-                            continue
-                        }
-                        logg.warn("OEBS database: Failed to get title for hmsNr=$hmsNr from hm-oebs-api-proxy")
-                        e.printStackTrace()
-                    }
-                }
-                if (changes)
-                    backgroundRunOnChangeCallback()
-                 */
             }
         }
     }

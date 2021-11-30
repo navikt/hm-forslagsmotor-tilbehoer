@@ -2,6 +2,7 @@ package no.nav.hjelpemidler.suggestionengine
 
 import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import java.time.LocalDate
 import java.util.UUID
 
@@ -139,7 +140,11 @@ class SuggestionEngine(
         val totalAccessoriesWithoutADescription =
             suggestions.map { it.value.count { !it.isReady() } }.fold(0) { a, b -> a + b }
 
-        // TODO: Report what we found to influxdb / grafana
+        // Report what we found to influxdb / grafana
         logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
+
+        AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+        AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+        AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
     }
 }
