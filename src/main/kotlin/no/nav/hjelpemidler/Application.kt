@@ -37,7 +37,7 @@ fun main() {
             }
             routing {
                 get("/isready-composed") {
-                    if (!InitialDataset.isInitialDatasetLoaded()) {
+                    if (!InitialDataset.isInitialDatasetLoaded() || !se.isReady()) {
                         call.respondText("NOT READY", ContentType.Text.Plain, HttpStatusCode.ServiceUnavailable)
                         return@get
                     }

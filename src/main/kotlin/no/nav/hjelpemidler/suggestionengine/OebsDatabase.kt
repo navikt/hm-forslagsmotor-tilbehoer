@@ -8,7 +8,7 @@ import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
 
-internal class OebsDatabase(testing: Map<String, String>? = null, val generateStats: () -> Unit) : Closeable {
+internal class OebsDatabase(testing: Map<String, String>? = null, val backgroundRunOnChangeCallback: () -> Unit) : Closeable {
     private val store: MutableMap<String, Storage> = mutableMapOf()
     private var isClosed = false
 
@@ -70,13 +70,14 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
 
                 val unknownTitles = getAllTitlesWhichAreUnknownOrNotRefreshedSince(LocalDateTime.now().minusHours(24))
                 if (unknownTitles.isNotEmpty())
-                    logg.info("Running background check for ${unknownTitles.count()} unknown titles")
+                    logg.info("OEBS database: Running background check for ${unknownTitles.count()} unknown titles")
 
                 var changes = false
-                for (hmsNr in unknownTitles) {
+                for ((idx, hmsNr) in unknownTitles.withIndex()) {
+                    if (idx % 1000 == 0) logg.info("OEBS database: Running background check: $idx/${unknownTitles.count()}")
                     try {
                         val titleAndType = Oebs.GetTitleForHmsNr(hmsNr)
-                        logg.info("Fetched title for $hmsNr and oebs report it as having type=${titleAndType.second}. New title: \"${titleAndType.first}\"")
+                        logg.info("OEBS database: Fetched title for $hmsNr and oebs report it as having type=${titleAndType.second}. New title: \"${titleAndType.first}\"")
                         // TODO: Mark it as "Del" / non-"Del" (from type field: titleAndType.second)
                         setTitleFor(hmsNr, titleAndType.first)
                         changes = true
@@ -85,16 +86,16 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                         // title=noDescription and is thus not returned in suggestion results until the
                         // backgroundRunner retries and fetches the title.
                         if (e.toString().contains("statusCode=404")) {
-                            logg.info("Ignoring suggestion with hmsNr=$hmsNr as OEBS returned 404 not found (product doesnt exist): $e")
+                            logg.info("OEBS database: Ignoring suggestion with hmsNr=$hmsNr as OEBS returned 404 not found (product doesnt exist): $e")
                             removeTitle(hmsNr) // Do not keep asking for this title
                             continue
                         }
-                        logg.warn("Failed to get title for hmsNr=$hmsNr from hm-oebs-api-proxy")
+                        logg.warn("OEBS database: Failed to get title for hmsNr=$hmsNr from hm-oebs-api-proxy")
                         e.printStackTrace()
                     }
                 }
                 if (changes)
-                    generateStats()
+                    backgroundRunOnChangeCallback()
             }
         }
     }

@@ -14,13 +14,31 @@ class SuggestionEngine(
 ) : Closeable {
 
     private val soknadDatabase = SoknadDatabase(testingSoknadDatabase)
-    private val oebsDatabase = OebsDatabase(testingOebsDatabase, { generateStats() })
     private val hmdbDatabase = HmdbDatabase(testingHmdbDatabase)
+
+    private var hasHadInitialOebsDatabaseBackgroundRun: Boolean = false
+    private val oebsDatabase = OebsDatabase(testingOebsDatabase) {
+        // After a background run with changes, do:
+
+        // Regenerate stats
+        generateStats()
+
+        // Set our boolean used during boot to wait for the initial background run to complete before setting isReady=true
+        synchronized(hasHadInitialOebsDatabaseBackgroundRun) {
+            hasHadInitialOebsDatabaseBackgroundRun = true
+        }
+    }
 
     override fun close() {
         soknadDatabase.close()
         oebsDatabase.close()
         hmdbDatabase.close()
+    }
+
+    fun isReady(): Boolean {
+        synchronized(hasHadInitialOebsDatabaseBackgroundRun) {
+            return hasHadInitialOebsDatabaseBackgroundRun
+        }
     }
 
     fun allSuggestionsForHmsNr(hmsNr: String): List<Suggestion> {

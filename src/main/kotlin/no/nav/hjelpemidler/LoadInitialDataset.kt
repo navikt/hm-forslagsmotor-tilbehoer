@@ -62,8 +62,6 @@ object InitialDataset {
                 objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine.Soknad>>(response.body()).asList()
             )
 
-            Thread.sleep(1_000 * 60 * 2) // Sleep for a few minutes while the suggestion engine fetches OEBS titles etc.
-
             // We have now loaded the dataset
             synchronized(this) {
                 isInitialDatasetLoaded = true
