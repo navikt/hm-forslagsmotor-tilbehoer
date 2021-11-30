@@ -19,17 +19,15 @@ import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
-import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
-import kotlin.concurrent.thread
+import no.nav.hjelpemidler.suggestionengine2.SuggestionEngine
+import no.nav.hjelpemidler.suggestionengine2.SuggestionFrontendFiltered
 
 private val logg = KotlinLogging.logger {}
 
+private val se = SuggestionEngine()
+
 fun main() {
-    thread(isDaemon = true) {
-        logg.info("Causing init of Suggestion Engine in separate thread")
-        SuggestionEngine.causeInit()
-    }
+    InitialDataset.fetchInitialDatasetFor(se)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .withKtorModule {
@@ -39,7 +37,7 @@ fun main() {
             }
             routing {
                 get("/isready-composed") {
-                    if (!SuggestionEngine.isInitialDatasetLoaded()) {
+                    if (!InitialDataset.isInitialDatasetLoaded()) {
                         call.respondText("NOT READY", ContentType.Text.Plain, HttpStatusCode.ServiceUnavailable)
                         return@get
                     }
@@ -49,10 +47,12 @@ fun main() {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
                         logg.info("Request for suggestions for hmsnr=$hmsNr.")
-                        val suggestions = SuggestionEngine.suggestionsForHmsNr(hmsNr)
+                        val suggestions = se.suggestionsForHmsNr(hmsNr)
                         val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null }.map { it.hmsnr!! }
-                        val results: List<SuggestionFrontendFiltered> = suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
+                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null }
+                            .map { it.hmsnr!! }
+                        val results: List<SuggestionFrontendFiltered> =
+                            suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
                         call.respond(results)
                     }
                     get("/lookup-accessory-name/{hmsNr}") {

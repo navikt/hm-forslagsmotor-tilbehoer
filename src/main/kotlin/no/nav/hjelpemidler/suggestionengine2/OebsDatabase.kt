@@ -69,7 +69,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val generateSt
                     try {
                         val titleAndType = Oebs.GetTitleForHmsNr(hmsNr)
                         logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${titleAndType.second}. Title: ${titleAndType.first}")
-                        // TODO: Mark it as Del / non-Del (from type field: titleAndType.second)
+                        // TODO: Mark it as "Del" / non-"Del" (from type field: titleAndType.second)
                         setTitleFor(hmsNr, titleAndType.first)
                         logg.info("DEBUG: HERE: New title set for $hmsNr")
                         changes = true
