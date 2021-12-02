@@ -1,11 +1,13 @@
 package no.nav.hjelpemidler.suggestionengine
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
 data class Suggestion(
     val hmsNr: String,
     val title: String? = null,
+    val dataStartDate: LocalDate? = null,
 
     var occurancesInSoknader: Int = 0,
 ) {
@@ -14,13 +16,14 @@ data class Suggestion(
     }
 
     fun toFrontendFiltered(): SuggestionFrontendFiltered {
-        return SuggestionFrontendFiltered(hmsNr, title ?: "")
+        return SuggestionFrontendFiltered(hmsNr, title ?: "", dataStartDate)
     }
 }
 
 data class SuggestionFrontendFiltered(
     val hmsNr: String,
     val title: String,
+    val dataStartDate: LocalDate? = null,
 )
 
 data class Soknad(

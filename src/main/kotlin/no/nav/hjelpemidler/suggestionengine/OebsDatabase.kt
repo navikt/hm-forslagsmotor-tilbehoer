@@ -99,7 +99,6 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val background
                     // Notify about changes
                     if (changes)
                         backgroundRunOnChangeCallback()
-
                 } catch (e: Exception) {
                     logg.warn("OEBS database: Background run failed: $e")
                     e.printStackTrace()

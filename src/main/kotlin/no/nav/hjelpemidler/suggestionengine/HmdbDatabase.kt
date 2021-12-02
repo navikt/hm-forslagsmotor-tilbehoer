@@ -1,21 +1,24 @@
 package no.nav.hjelpemidler.suggestionengine
 
 import io.ktor.utils.io.core.Closeable
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
 
 internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable {
-    private val store: MutableMap<String, LocalDate?> = mutableMapOf()
+    private val store: MutableMap<String, Storage> = mutableMapOf()
     private var isClosed = false
 
     init {
         if (testing == null) launchBackgroundRunner()
         else {
             testing.forEach {
-                store[it.key] = it.value
+                store[it.key] = Storage(it.value, LocalDateTime.now())
             }
         }
     }
@@ -32,17 +35,23 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
 
     @Synchronized
     fun setFrameworkAgreementStartFor(hmsNr: String, start: LocalDate?) {
-        store[hmsNr] = start
+        if (start != null) {
+            store[hmsNr] = Storage(start, LocalDateTime.now())
+        } else {
+            store[hmsNr] = Storage()
+        }
     }
 
     @Synchronized
     fun getFrameworkAgreementStartFor(hmsNr: String): LocalDate? {
-        return store[hmsNr]
+        return store[hmsNr]?.frameworkStart
     }
 
     @Synchronized
-    private fun getAllUnknownFrameworkStartTimes(): List<String> {
-        return store.filterValues { it == null }.toList().map { it.first }
+    private fun getAllFrameworkStartTimesWhichAreUnknownOrNotRefreshedSince(since: LocalDateTime): List<String> {
+        return store
+            .filterValues { it.frameworkStart == null || (it.lastUpdated != null && it.lastUpdated!!.isBefore(since)) }
+            .toList().map { it.first }
     }
 
     private fun launchBackgroundRunner() {
@@ -51,8 +60,10 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
-                /*
-                val hmsNrs = getAllUnknownFrameworkStartTimes().toSet()
+                val hmsNrs = getAllFrameworkStartTimesWhichAreUnknownOrNotRefreshedSince(
+                    LocalDateTime.now().minusHours(24)
+                ).toSet()
+
                 try {
                     val result = runBlocking {
                         HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrs)
@@ -78,8 +89,12 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                     logg.warn("failed to fetch framework start dates(for=$hmsNrs): $e")
                     e.printStackTrace()
                 }
-                */
             }
         }
     }
+
+    data class Storage(
+        var frameworkStart: LocalDate? = null,
+        var lastUpdated: LocalDateTime? = null,
+    )
 }
