@@ -27,7 +27,6 @@ class SuggestionEngine(
 
         // Set our boolean used during boot to wait for the initial background run to complete before setting isReady=true
         synchronized(hasHadInitialOebsDatabaseBackgroundRun) {
-            logg.info("DEBUG: Setting has had initial oebs database background run now!")
             hasHadInitialOebsDatabaseBackgroundRun = true
         }
     }
