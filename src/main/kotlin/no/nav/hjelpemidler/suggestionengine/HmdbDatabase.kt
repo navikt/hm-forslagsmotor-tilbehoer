@@ -43,6 +43,11 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
     }
 
     @Synchronized
+    fun setLastUpdatedFor(hmsNr: String?) {
+        store[hmsNr]?.lastUpdated = LocalDateTime.now()
+    }
+
+    @Synchronized
     fun getFrameworkAgreementStartFor(hmsNr: String): LocalDate? {
         return store[hmsNr]?.frameworkStart
     }
@@ -60,15 +65,16 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
-                val hmsNrs = getAllFrameworkStartTimesWhichAreUnknownOrNotRefreshedSince(
+                val hmsNrsToCheck = getAllFrameworkStartTimesWhichAreUnknownOrNotRefreshedSince(
                     LocalDateTime.now().minusHours(24)
                 ).toSet()
+                if (hmsNrsToCheck.isEmpty()) continue
 
-                logg.info("DEBUG: hmsnrs we will check hmdb: ${hmsNrs.count()}")
+                logg.info("HMDB database: Running background check for ${hmsNrsToCheck.count()} unknown/outdated framework agreement start dates")
 
                 try {
                     val result = runBlocking {
-                        HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrs)
+                        HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrsToCheck)
                     }.filter { it.hmsnr != null }.groupBy { it.hmsnr!! }
 
                     logg.info("DEBUG: number of hmsnrs we got results for: ${result.count()}")
@@ -90,9 +96,11 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                                 }
                             }
                         } // productReferences
+
+                        setLastUpdatedFor(hmsNr)
                     }
                 } catch (e: Exception) {
-                    logg.warn("failed to fetch framework start dates(for=$hmsNrs): $e")
+                    logg.warn("failed to fetch framework start dates(for=$hmsNrsToCheck): $e")
                     e.printStackTrace()
                 }
             }
