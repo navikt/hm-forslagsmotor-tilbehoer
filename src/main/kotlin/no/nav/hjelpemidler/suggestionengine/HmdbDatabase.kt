@@ -64,10 +64,14 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                     LocalDateTime.now().minusHours(24)
                 ).toSet()
 
+                logg.info("DEBUG: hmsnrs we will check hmdb: ${hmsNrs.count()}")
+
                 try {
                     val result = runBlocking {
                         HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrs)
                     }.filter { it.hmsnr != null }.groupBy { it.hmsnr!! }
+
+                    logg.info("DEBUG: number of hmsnrs we got results for: ${result.count()}")
 
                     for (hmsNr in result.keys) {
                         val productReferences = result[hmsNr] ?: continue
@@ -78,7 +82,9 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                                 val now = LocalDate.now()
                                 val startDate = LocalDate.parse(start)
                                 val endDate = LocalDate.parse(end)
+                                logg.info("DEBUG: we have a framework agreement for hmsNr=$hmsNr start=$start startDate=$startDate end=$end endDate=$endDate now=$now")
                                 if (now.isEqual(startDate) || now.isEqual(endDate) || (now.isAfter(startDate) && now.isBefore(endDate))) {
+                                    logg.info("DEBUG: setting framework agreement for hmsNr=$hmsNr to startDate=$startDate")
                                     setFrameworkAgreementStartFor(product.hmsnr!!, startDate)
                                     break // productReferences
                                 }
