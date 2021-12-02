@@ -45,6 +45,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
     @Synchronized
     fun setLastUpdatedFor(hmsNr: String?) {
         store[hmsNr]?.lastUpdated = LocalDateTime.now()
+        logg.info("DEBUG: setLastUpdatedFor(hmsNr=$hmsNr): set to: ${store[hmsNr]?.lastUpdated}")
     }
 
     @Synchronized
@@ -99,6 +100,11 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
 
                         setLastUpdatedFor(hmsNr)
                     }
+
+                    // TODO: Remove the ones that doesnt exist?
+
+                    // TODO: We do we keep pulling every 10s those that are out of agreement?
+
                 } catch (e: Exception) {
                     logg.warn("failed to fetch framework start dates(for=$hmsNrsToCheck): $e")
                     e.printStackTrace()
