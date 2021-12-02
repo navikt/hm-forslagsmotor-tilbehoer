@@ -12,6 +12,7 @@ class SuggestionEngine(
     testingSoknadDatabase: List<Soknad>? = null,
     testingOebsDatabase: Map<String, String>? = null,
     testingHmdbDatabase: Map<String, LocalDate>? = null,
+    val testingMode: Boolean = testingSoknadDatabase != null || testingOebsDatabase != null || testingHmdbDatabase != null,
 ) : Closeable {
 
     private val soknadDatabase = SoknadDatabase(testingSoknadDatabase)
@@ -149,8 +150,10 @@ class SuggestionEngine(
         // Report what we found to influxdb / grafana
         logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
 
-        AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
-        AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
-        AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+        if (!testingMode) {
+            AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+        }
     }
 }
