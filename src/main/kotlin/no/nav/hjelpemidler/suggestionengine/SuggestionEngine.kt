@@ -95,7 +95,7 @@ class SuggestionEngine(
     private fun generateSuggestionsFor(hmsNr: String): List<Suggestion> {
         // Identify current framework agreement start/end date, use that to form suggestions
         val suggestionsFrom = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr) ?: LocalDate.of(0, 1, 1)
-        val suggestionsHasFromDate = suggestionsFrom.year == 0
+        val suggestionsHasFromDate = suggestionsFrom.year != 0
 
         logg.info("DEBUG: generating suggestions for hmsNr=$hmsNr suggestionsHasFromDate=$suggestionsHasFromDate suggestionsFrom=$suggestionsFrom")
 
