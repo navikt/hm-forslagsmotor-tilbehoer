@@ -40,7 +40,7 @@ object InitialDataset {
             // Make request
             val request: HttpRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://hm-soknadsbehandling-db/api/forslagsmotor/tilbehoer/datasett"))
-                .timeout(Duration.ofMinutes(1))
+                .timeout(Duration.ofMinutes(5))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .header("Authorization", "Bearer $authToken")
