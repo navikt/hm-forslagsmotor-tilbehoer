@@ -59,11 +59,17 @@ type Produkt {
   versjon: Int!
 }
 
+type ProduktPage {
+  hasMore: Boolean!
+  items: [Produkt!]!
+  numberOfItems: Int!
+}
+
 type Query {
   "Finn produkter basert på søkeord"
-  finnProdukter(filter: ProduktfilterInput!, sokeord: String!): [Produkt!]!
+  finnProdukter(filter: ProduktfilterInput!, sokeord: String!): ProduktPage!
   "Hent produkter"
-  hentAlleProdukter(filter: ProduktfilterInput!): [Produkt!]!
+  hentAlleProdukter(filter: ProduktfilterInput!): ProduktPage!
   "Hent produkter med hmsnr"
   hentProdukterMedHmsnr(hmsnr: String!): [Produkt!]!
   "Hent produkter med hmsnrs"

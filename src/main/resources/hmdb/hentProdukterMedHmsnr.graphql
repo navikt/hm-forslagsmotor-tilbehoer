@@ -8,5 +8,6 @@ query HentProdukterMedHmsnr($hmsnr: String!) {
     produktbeskrivelse
     isotittel
     blobUrlLite
+    tilgjengeligForDigitalSoknad
   }
 }

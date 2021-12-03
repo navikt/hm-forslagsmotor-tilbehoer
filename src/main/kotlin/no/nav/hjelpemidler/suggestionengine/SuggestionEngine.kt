@@ -1,309 +1,176 @@
 package no.nav.hjelpemidler.suggestionengine
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
-import no.nav.hjelpemidler.azure.AzureClient
-import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.metrics.AivenMetrics
-import no.nav.hjelpemidler.oebs.Oebs
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.Duration
-import java.time.LocalDateTime
+import java.time.LocalDate
 import java.util.UUID
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.thread
-import kotlin.system.exitProcess
 
 private val logg = KotlinLogging.logger {}
 
-object SuggestionEngine {
-    private val waitForReadyLock: ReentrantLock = ReentrantLock()
-    private var datasetLoaded: Boolean = false
+class SuggestionEngine(
+    testingSoknadDatabase: List<Soknad>? = null,
+    testingOebsDatabase: Map<String, String>? = null,
+    testingHmdbDatabase: Map<String, LocalDate>? = null,
+    val testingMode: Boolean = testingSoknadDatabase != null || testingOebsDatabase != null || testingHmdbDatabase != null,
+) : Closeable {
 
-    private val items = mutableMapOf<String, Item>()
-    private var knownSoknadIds = mutableListOf<UUID>()
+    private val soknadDatabase = SoknadDatabase(testingSoknadDatabase)
+    private val hmdbDatabase = HmdbDatabase(testingHmdbDatabase)
 
-    private var fakeLookupTable: Map<String, String>? = null
+    private var hasHadInitialOebsDatabaseBackgroundRun: Boolean = false
+    private val oebsDatabase = OebsDatabase(testingOebsDatabase) {
+        // After a background run with changes, do:
 
-    private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
+        // Regenerate stats
+        generateStats()
 
-    private val noDescription = "(beskrivelse utilgjengelig)"
-
-    private val objectMapper = jacksonObjectMapper()
-        .registerModule(JavaTimeModule())
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-
-    fun isInitialDatasetLoaded(): Boolean {
-        var dsLoaded = false
-        if (waitForReadyLock.tryLock()) {
-            dsLoaded = datasetLoaded
-            waitForReadyLock.unlock()
-        }
-        return dsLoaded
-    }
-
-    private fun backgroundRunnder() {
-        while (true) {
-            Thread.sleep(10_000)
-            backgroundRunnerSync()
+        // Set our boolean used during boot to wait for the initial background run to complete before setting isReady=true
+        synchronized(hasHadInitialOebsDatabaseBackgroundRun) {
+            hasHadInitialOebsDatabaseBackgroundRun = true
         }
     }
 
-    @Synchronized
-    private fun backgroundRunnerSync() {
-        var changesMade = false
-        for (item in items) {
-            for (suggestion in item.value.suggestions) {
-                if (suggestion.value.title == noDescription) {
-                    logg.info("Attempting to refetch title for suggestion with missing title (hmsNr=${suggestion.value.hmsNr})")
-                    try {
-                        val newDescription = Oebs.GetTitleForHmsNr(suggestion.value.hmsNr)
-                        changesMade = true
-                        items[item.key]!!.suggestions[suggestion.key] = Suggestion(suggestion.value.hmsNr, newDescription.first, suggestion.value.occurancesInSoknader)
-                    } catch (e: Exception) {
-                        // Ignoring non-existing products (statusCode=404), others will be added with
-                        // title=noDescription and is thus not returned in suggestion results until the
-                        // backgroundRunner retries and fetches the title.
-                        if (e.toString().contains("statusCode=404")) {
-                            logg.info("Ignoring suggestion with hmsNr=${suggestion.value.hmsNr} as OEBS returned 404 not found (product doesnt exist): $e")
-                            continue
-                        }
+    override fun close() {
+        soknadDatabase.close()
+        oebsDatabase.close()
+        hmdbDatabase.close()
+    }
 
-                        logg.error("Exception thrown during attempt to refetch OEBS title after previous failure (for hmsNr=${suggestion.value.hmsNr}): $e")
-                        e.printStackTrace()
-                    }
-                }
-            }
-        }
-        if (changesMade) {
-            try {
-                logg.info("Calculating updated metrics for Suggestion Engine.")
-
-                val totalProductsWithAccessorySuggestions = items.count()
-                val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
-                val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
-
-                logg.info("\t- New metrics (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
-
-                AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
-                AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
-                AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
-            } catch (e: Exception) {
-                logg.error("Failed to report new metrics: $e")
-                e.printStackTrace()
-            }
+    fun isReady(): Boolean {
+        synchronized(hasHadInitialOebsDatabaseBackgroundRun) {
+            return hasHadInitialOebsDatabaseBackgroundRun
         }
     }
 
-    @Synchronized
-    fun causeInit() {
-        if (Configuration.application["APP_PROFILE"]!! != "local") {
-            try {
-                logg.info("Downloading initial dataset for Suggestion Engine from hm-soknadsbehandling-db.")
-                val initialDataset = getInitialDataset()
-
-                logg.info("Storing list of known soknadIds (nrSoknads=${initialDataset.count()}):")
-                for (intialDatasetSoknad in initialDataset) knownSoknadIds.add(intialDatasetSoknad.soknad.id)
-
-                logg.info("Loading initial dataset for Suggestion Engine into memory (len=${initialDataset.count()}).")
-                initialDataset.forEachIndexed { index, initialDatasetSoknad -> learnFromSoknad(initialDatasetSoknad.soknad.hjelpemidler.hjelpemiddelListe, true, index, initialDataset.count()) }
-
-                logg.info("Calculating metrics on initial dataset for Suggestion Engine.")
-
-                val totalProductsWithAccessorySuggestions = items.count()
-                val totalAccessorySuggestions = items.map { i -> i.value.suggestions.count() }.fold(0) { i, j -> i + j }
-                val totalAccessoriesWithoutADescription = items.map { i -> i.value.suggestions.filter { j -> j.value.title == noDescription }.count() }.fold(0) { i, j -> i + j }
-
-                logg.info("Suggestion engine ínitial dataset loaded (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
-
-                AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
-                AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
-                AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
-
-                // Notify isready that we are ready to proccess messages
-                waitForReadyLock.lock()
-                datasetLoaded = true
-                waitForReadyLock.unlock()
-            } catch (e: Exception) {
-                // We use this rather than an exception to cause whole app to crash (cause restart loop until things are
-                // good again), and not only the daemon thread
-                logg.error("Fatal exception while downloading the intial dataset: $e")
-                e.printStackTrace()
-                exitProcess(-1)
-            }
-
-            thread(isDaemon = true) {
-                logg.info("Starting background runner that retries fetching OEBS descriptions if it failed earlier")
-                backgroundRunnder()
-            }
-        }
-    }
-
-    @Synchronized
-    fun knownSoknadsId(soknadsId: UUID): Boolean {
-        return knownSoknadIds.contains(soknadsId)
-    }
-
-    @Synchronized
-    fun recordSoknadId(soknadsId: UUID) {
-        knownSoknadIds.add(soknadsId)
-    }
-
-    @Synchronized
-    fun learnFromSoknad(hjelpemidler: List<Hjelpemiddel>, initialDataset: Boolean = false, index: Int = 0, total: Int = 0) {
-        if (initialDataset) {
-            if (index % 1000 == 0) logg.info("(" + (index + 1).toString() + "/$total) Learning from initial dataset Søknad (only printing every 1000th søknad to limit output).")
-        } else {
-            logg.info("Learning from new incoming Søknad.")
-        }
-        for (hjelpemiddel in hjelpemidler) {
-            if (!items.containsKey(hjelpemiddel.hmsNr)) {
-                items[hjelpemiddel.hmsNr] = Item(mutableMapOf())
-            }
-
-            val suggestions = items[hjelpemiddel.hmsNr]!!.suggestions
-            for (tilbehoer in hjelpemiddel.tilbehorListe) {
-                if (tilbehoer.hmsnr == "000000") continue // Ignore this old hack to specify accessories by input-field
-                if (!suggestions.contains(tilbehoer.hmsnr)) {
-                    var description = noDescription
-                    try {
-                        description = if (fakeLookupTable == null) {
-                            val oebsTitleAndType = Oebs.GetTitleForHmsNr(tilbehoer.hmsnr)
-                            logg.info("DEBUG: Fetched title for ${tilbehoer.hmsnr} and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
-                            oebsTitleAndType.first
-                        } else {
-                            fakeLookupTable!![tilbehoer.hmsnr] ?: noDescription
-                        }
-                    } catch (e: Exception) {
-                        // Ignoring non-existing products (statusCode=404), others will be added with
-                        // title=noDescription and is thus not returned in suggestion results until the
-                        // backgroundRunner retries and fetches the title.
-                        if (e.toString().contains("statusCode=404")) {
-                            logg.info("Ignoring suggestion with hmsNr=${tilbehoer.hmsnr} as OEBS returned 404 not found (product doesnt exist): $e")
-                            continue
-                        }
-                        logg.warn("warn: failed to get title for hmsnr from hm-oebs-api-proxy")
-                        e.printStackTrace()
-                    }
-                    suggestions[tilbehoer.hmsnr] = Suggestion(
-                        tilbehoer.hmsnr,
-                        description,
-                        0,
-                    )
-                }
-
-                suggestions[tilbehoer.hmsnr]!!.occurancesInSoknader += 1
-            }
-        }
-    }
-
-    @Synchronized
     fun allSuggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return items[hmsNr]?.suggestions?.map { it.value }?.sortedByDescending { it.occurancesInSoknader } ?: listOf()
+        return generateSuggestionsFor(hmsNr)
     }
 
-    @Synchronized
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return allSuggestionsForHmsNr(hmsNr).filter { it.title != noDescription && it.occurancesInSoknader > 4 }.take(20)
+        return allSuggestionsForHmsNr(hmsNr).filter { it.isReady() && it.occurancesInSoknader > 4 }.take(20)
     }
 
-    @Synchronized
-    fun suggestionsForHmsNrWithNoDescription(hmsNr: String): List<Suggestion> {
-        return allSuggestionsForHmsNr(hmsNr).filter { it.occurancesInSoknader > 4 }
+    fun learnFromSoknad(soknad: Soknad) {
+        learnFromSoknader(listOf(soknad))
     }
 
-    // Mostly useful for testing (cleanup between tests)
-    @Synchronized
-    fun discardDataset() {
-        logg.info("Discarding dataset.")
-        items.clear()
-        fakeLookupTable = null
-    }
+    fun learnFromSoknader(soknader: List<Soknad>) {
+        for (soknad in soknader) {
+            try {
+                soknadDatabase.add(soknad) // Throws if already known
 
-    // Mostly useful for testing (cleanup between tests)
-    @Synchronized
-    fun fakeNameLookupTable(lookupTable: Map<String, String>) {
-        fakeLookupTable = lookupTable
-    }
+                soknad.soknad.hjelpemidler.hjelpemiddelListe.forEach {
+                    if (oebsDatabase.getTitleFor(it.hmsNr) == null) oebsDatabase.setTitleFor(
+                        it.hmsNr,
+                        null
+                    ) // Oebs's background runner takes things from here
 
-    private fun getInitialDataset(): List<Hjelpemidler> {
-        // Generate azure ad token for authorization header
-        val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!).accessToken
+                    it.tilbehorListe.forEach {
+                        if (oebsDatabase.getTitleFor(it.hmsnr) == null) oebsDatabase.setTitleFor(
+                            it.hmsnr,
+                            null
+                        ) // Oebs's background runner takes things from here
+                    }
 
-        // Make request
-        val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("http://hm-soknadsbehandling-db/api/forslagsmotor/tilbehoer/datasett"))
-            .timeout(Duration.ofMinutes(1))
-            .header("Content-Type", "application/json")
-            .header("Accept", "application/json")
-            .header("Authorization", "Bearer $authToken")
-            .GET()
-            .build()
-
-        val response: HttpResponse<String> = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() != 200) {
-            throw Exception("error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)}")
+                    if (hmdbDatabase.getFrameworkAgreementStartFor(it.hmsNr) == null) hmdbDatabase.setFrameworkAgreementStartFor(
+                        it.hmsNr,
+                        null
+                    ) // Hmdb's background runner takes things from here
+                }
+            } catch (e: Exception) {
+                logg.info("Exception thrown while adding soknads: $e")
+                e.printStackTrace()
+            }
         }
 
-        return objectMapper.readValue<Array<Hjelpemidler>>(response.body()).asList()
+        // Recalculate metrics
+        generateStats()
+    }
+
+    fun knowsOfSoknadID(soknadID: UUID): Boolean {
+        return soknadDatabase.has(soknadID)
+    }
+
+    private fun generateSuggestionsFor(hmsNr: String): List<Suggestion> {
+        // Identify current framework agreement start/end date, use that to form suggestions
+        val suggestionsFrom = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr) ?: LocalDate.of(0, 1, 1)
+        val suggestionsHasFromDate = suggestionsFrom.year != 0
+
+        logg.info("DEBUG: generating suggestions for hmsNr=$hmsNr suggestionsHasFromDate=$suggestionsHasFromDate suggestionsFrom=$suggestionsFrom")
+
+        // Get a list of all accessories applied for with this product
+        val accessories = soknadDatabase.getAccessoriesByProductHmsnr(hmsNr, suggestionsFrom)
+
+        // Aggregate suggestions and count
+        val suggestions: MutableMap<String, Suggestion> = mutableMapOf()
+        for (accessory in accessories) {
+            // If the title has been deleted automatically it means OEBS didnt know about it (404 not found),
+            // and we wont suggest it here:
+            if (!oebsDatabase.hasTitleReference(accessory.hmsnr)) continue
+
+            if (!suggestions.containsKey(accessory.hmsnr)) {
+                suggestions[accessory.hmsnr] = Suggestion(
+                    hmsNr = accessory.hmsnr,
+                    title = oebsDatabase.getTitleFor(accessory.hmsnr),
+                    dataStartDate = if (suggestionsHasFromDate) {
+                        suggestionsFrom
+                    } else {
+                        null
+                    }
+                )
+            }
+            suggestions[accessory.hmsnr]!!.occurancesInSoknader++
+        }
+
+        return suggestions.toList().map { it.second }
+            .sortedByDescending { it.occurancesInSoknader }
+    }
+
+    private fun generateStats() {
+        // Fetch the list of all known product hmsNrs
+        val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
+
+        // Transform list of unique hmsNrs into a map from hmsNr to list of suggestions (excluding any hmsNr that has no suggestions)
+        val suggestions = hmsNrs.map { Pair(it, generateSuggestionsFor(it)) }
+            .groupBy { it.first }
+            .mapValues {
+                it.value.map { it.second }.fold(mutableListOf<Suggestion>()) { a, b ->
+                    a.addAll(b)
+                    a
+                }
+            }
+            .mapValues { it.value.toList() }
+            .filter { it.value.isNotEmpty() }
+
+        // Collect statistics on the resulting data
+        val totalProductsWithAccessorySuggestions = suggestions.keys.count()
+        val totalAccessorySuggestions = suggestions.map { it.value.count() }.fold(0) { a, b -> a + b }
+        val totalAccessoriesWithoutADescription =
+            suggestions.map { it.value.count { !it.isReady() } }.fold(0) { a, b -> a + b }
+
+        // Report what we found to influxdb / grafana
+        logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
+
+        // Log info about what suggestions we have
+        var allSuggestions = "All current suggestions (as seen by clients):\n\n"
+        suggestions.mapValues {
+            it.value.filter { it.occurancesInSoknader > 4 }
+                .sortedByDescending { it.occurancesInSoknader }
+                .map { Pair(it.hmsNr, it.occurancesInSoknader) }
+        }.filter { it.value.isNotEmpty() }
+            .forEach {
+                allSuggestions += "\tSuggestions for ${it.key}:\n"
+                it.value.forEach {
+                    allSuggestions += "\t\t- Suggestion: ${it.first}: ${it.second} occurrence(s)\n"
+                }
+            }
+        logg.info(allSuggestions)
+
+        if (!testingMode) {
+            AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+        }
     }
 }
-
-data class Hjelpemidler(
-    val soknad: Soknad,
-    val created: LocalDateTime,
-)
-
-data class Soknad(
-    val id: UUID,
-    val hjelpemidler: SoknadInner
-)
-
-data class SoknadInner(
-    val hjelpemiddelListe: List<Hjelpemiddel>,
-)
-
-data class Hjelpemiddel(
-    val hmsNr: String,
-    val tilbehorListe: List<Tilbehoer>,
-)
-
-data class Tilbehoer(
-    val hmsnr: String,
-    val antall: Int,
-    val navn: String,
-    val brukAvForslagsmotoren: BrukAvForslagsmotoren?,
-)
-
-data class BrukAvForslagsmotoren(
-    val lagtTilFraForslagsmotoren: Boolean,
-    val oppslagAvNavn: Boolean,
-)
-
-data class Suggestion(
-    val hmsNr: String,
-    val title: String,
-
-    var occurancesInSoknader: Int,
-) {
-    fun toFrontendFiltered(): SuggestionFrontendFiltered {
-        return SuggestionFrontendFiltered(hmsNr, title)
-    }
-}
-
-data class SuggestionFrontendFiltered(
-    val hmsNr: String,
-    val title: String,
-)
-
-private class Item(
-    var suggestions: MutableMap<String, Suggestion>,
-)

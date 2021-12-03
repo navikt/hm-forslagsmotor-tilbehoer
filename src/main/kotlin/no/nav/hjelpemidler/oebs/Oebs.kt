@@ -23,7 +23,7 @@ object Oebs {
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
-    fun GetTitleForHmsNr(hmsNr: String): Pair<String, String> {
+    fun getTitleForHmsNr(hmsNr: String): Pair<String, String> {
         // Generate azure ad token for authorization header
         val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_OEBSAPIPROXY"]!!).accessToken
 
@@ -45,6 +45,30 @@ object Oebs {
 
         val res = objectMapper.readValue<ResponseGetTitleForHmsNr>(response.body())
         return Pair(res.title, res.type)
+    }
+
+    fun getTitleForHmsNrs(hmsNrs: Set<String>): Map<String, Pair<String, String>> {
+        // Generate azure ad token for authorization header
+        val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_OEBSAPIPROXY"]!!).accessToken
+
+        // Make request
+        val baseurl = Configuration.application["OEBS_API_PROXY_URL"]!!
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create("https://$baseurl/get-title-for-hmsnrs"))
+            .timeout(Duration.ofMinutes(1))
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer $authToken")
+            .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(hmsNrs.toList())))
+            .build()
+
+        val response: HttpResponse<String> = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
+        if (response.statusCode() != 200) {
+            throw Exception("error: unexpected status code from oebs api proxy (statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)})")
+        }
+
+        val res = objectMapper.readValue<Array<ResponseGetTitleForHmsNr>>(response.body())
+        return res.map { Pair(it.hmsNr, Pair(it.title, it.type)) }.groupBy { it.first }.mapValues { it.value.first().second }
     }
 }
 

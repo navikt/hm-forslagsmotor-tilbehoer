@@ -1,5 +1,9 @@
 package no.nav.hjelpemidler
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.auth.authenticate
@@ -21,25 +25,28 @@ import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
-import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
 
+private val se = SuggestionEngine()
+
+private val objectMapper = jacksonObjectMapper()
+    .registerModule(JavaTimeModule())
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
 fun main() {
-    thread(isDaemon = true) {
-        logg.info("Causing init of Suggestion Engine in separate thread")
-        SuggestionEngine.causeInit()
-    }
+    InitialDataset.fetchInitialDatasetFor(se)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .withKtorModule {
             installAuthentication()
             install(ContentNegotiation) {
-                register(ContentType.Application.Json, JacksonConverter())
+                register(ContentType.Application.Json, JacksonConverter(objectMapper))
             }
             routing {
                 get("/isready-composed") {
-                    if (!SuggestionEngine.isInitialDatasetLoaded()) {
+                    if (!InitialDataset.isInitialDatasetLoaded() || !se.isReady()) {
                         call.respondText("NOT READY", ContentType.Text.Plain, HttpStatusCode.ServiceUnavailable)
                         return@get
                     }
@@ -49,10 +56,12 @@ fun main() {
                     get("/suggestions/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
                         logg.info("Request for suggestions for hmsnr=$hmsNr.")
-                        val suggestions = SuggestionEngine.suggestionsForHmsNr(hmsNr)
+                        val suggestions = se.suggestionsForHmsNr(hmsNr)
                         val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null }.map { it.hmsnr!! }
-                        val results: List<SuggestionFrontendFiltered> = suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
+                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
+                            .map { it.hmsnr!! }
+                        val results: List<SuggestionFrontendFiltered> =
+                            suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
                         call.respond(results)
                     }
                     get("/lookup-accessory-name/{hmsNr}") {
@@ -60,14 +69,15 @@ fun main() {
                         logg.info("Request for name lookup for hmsnr=$hmsNr.")
                         try {
                             var accessory = true
-                            /*if (HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr).isNotEmpty()) {
+                            val hmdbResults = HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsNr)
+                            if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
                                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                                 accessory = false
-                            }*/
-                            val oebsTitleAndType = Oebs.GetTitleForHmsNr(hmsNr)
+                            }
+                            val oebsTitleAndType = Oebs.getTitleForHmsNr(hmsNr)
                             logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
                             if (oebsTitleAndType.second != "Del") {
-                                logg.info("DEBUG: $hmsNr is not an accessory (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
+                                logg.info("DEBUG: $hmsNr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
                                 // accessory = false
                             }
                             call.respond(
@@ -90,7 +100,7 @@ fun main() {
             }
         }
         .build().apply {
-            NySøknadInnsendt(this)
+            NySøknadInnsendt(this, se)
         }.apply {
             register(
                 object : RapidsConnection.StatusListener {
