@@ -1,5 +1,9 @@
 package no.nav.hjelpemidler
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.auth.authenticate
@@ -26,6 +30,11 @@ private val logg = KotlinLogging.logger {}
 
 private val se = SuggestionEngine()
 
+private val objectMapper = jacksonObjectMapper()
+    .registerModule(JavaTimeModule())
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
 fun main() {
     InitialDataset.fetchInitialDatasetFor(se)
 
@@ -33,7 +42,7 @@ fun main() {
         .withKtorModule {
             installAuthentication()
             install(ContentNegotiation) {
-                register(ContentType.Application.Json, JacksonConverter())
+                register(ContentType.Application.Json, JacksonConverter(objectMapper))
             }
             routing {
                 get("/isready-composed") {
