@@ -44,11 +44,22 @@ class SuggestionEngine(
     }
 
     fun allSuggestionsForHmsNr(hmsNr: String): List<Suggestion> {
+        return generateSuggestionsFor(hmsNr).suggestions
+    }
+
+    fun allSuggestionsForHmsNrV2(hmsNr: String): Suggestions {
         return generateSuggestionsFor(hmsNr)
     }
 
     fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
         return allSuggestionsForHmsNr(hmsNr).filter { it.isReady() && it.occurancesInSoknader > 4 }.take(20)
+    }
+
+    fun suggestionsForHmsNrV2(hmsNr: String): Suggestions {
+        var suggestions = allSuggestionsForHmsNrV2(hmsNr)
+        suggestions.suggestions =
+            suggestions.suggestions.filter { it.isReady() && it.occurancesInSoknader > 4 }.take(20)
+        return suggestions
     }
 
     fun learnFromSoknad(soknad: Soknad) {
@@ -92,7 +103,7 @@ class SuggestionEngine(
         return soknadDatabase.has(soknadID)
     }
 
-    private fun generateSuggestionsFor(hmsNr: String): List<Suggestion> {
+    private fun generateSuggestionsFor(hmsNr: String): Suggestions {
         // Identify current framework agreement start/end date, use that to form suggestions
         val suggestionsFrom = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr) ?: LocalDate.of(0, 1, 1)
         val suggestionsHasFromDate = suggestionsFrom.year != 0
@@ -113,18 +124,16 @@ class SuggestionEngine(
                 suggestions[accessory.hmsnr] = Suggestion(
                     hmsNr = accessory.hmsnr,
                     title = oebsDatabase.getTitleFor(accessory.hmsnr),
-                    dataStartDate = if (suggestionsHasFromDate) {
-                        suggestionsFrom
-                    } else {
-                        null
-                    }
                 )
             }
             suggestions[accessory.hmsnr]!!.occurancesInSoknader++
         }
 
-        return suggestions.toList().map { it.second }
-            .sortedByDescending { it.occurancesInSoknader }
+        return Suggestions(if (suggestionsHasFromDate) {
+            suggestionsFrom
+        } else {
+            null
+        }, suggestions.toList().map { it.second }.sortedByDescending { it.occurancesInSoknader })
     }
 
     private fun generateStats() {
@@ -132,7 +141,7 @@ class SuggestionEngine(
         val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
 
         // Transform list of unique hmsNrs into a map from hmsNr to list of suggestions (excluding any hmsNr that has no suggestions)
-        val suggestions = hmsNrs.map { Pair(it, generateSuggestionsFor(it)) }
+        val suggestions = hmsNrs.map { Pair(it, generateSuggestionsFor(it).suggestions) }
             .groupBy { it.first }
             .mapValues {
                 it.value.map { it.second }.fold(mutableListOf<Suggestion>()) { a, b ->

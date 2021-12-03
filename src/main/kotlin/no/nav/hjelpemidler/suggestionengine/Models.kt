@@ -4,10 +4,19 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
+data class Suggestions(
+    val dataStartDate: LocalDate?,
+    var suggestions: List<Suggestion>
+)
+
+data class SuggestionsFrontendFiltered(
+    val dataStartDate: LocalDate?,
+    val suggestions: List<SuggestionFrontendFiltered>
+)
+
 data class Suggestion(
     val hmsNr: String,
     val title: String? = null,
-    val dataStartDate: LocalDate? = null,
 
     var occurancesInSoknader: Int = 0,
 ) {
@@ -16,14 +25,13 @@ data class Suggestion(
     }
 
     fun toFrontendFiltered(): SuggestionFrontendFiltered {
-        return SuggestionFrontendFiltered(hmsNr, title ?: "", dataStartDate)
+        return SuggestionFrontendFiltered(hmsNr, title ?: "")
     }
 }
 
 data class SuggestionFrontendFiltered(
     val hmsNr: String,
     val title: String,
-    val dataStartDate: LocalDate? = null,
 )
 
 data class Soknad(
