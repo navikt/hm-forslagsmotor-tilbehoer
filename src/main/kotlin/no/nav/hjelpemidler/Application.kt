@@ -25,6 +25,7 @@ import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import no.nav.hjelpemidler.suggestionengine.SuggestionFrontendFiltered
+import no.nav.hjelpemidler.suggestionengine.SuggestionsFrontendFiltered
 
 private val logg = KotlinLogging.logger {}
 
@@ -66,13 +67,15 @@ fun main() {
                     }
                     get("/suggestions2/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
-                        logg.info("Request for suggestions for hmsnr=$hmsNr.")
+                        logg.info("Request for suggestions2 for hmsnr=$hmsNr.")
                         val suggestions = se.suggestionsForHmsNrV2(hmsNr)
                         val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                            .hentProdukterMedHmsnrs(suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
+                            .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
                             .map { it.hmsnr!! }
-                        val results: List<SuggestionFrontendFiltered> =
-                            suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
+                        val results = SuggestionsFrontendFiltered(
+                            suggestions.dataStartDate,
+                            suggestions.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
+                        )
                         call.respond(results)
                     }
                     get("/lookup-accessory-name/{hmsNr}") {

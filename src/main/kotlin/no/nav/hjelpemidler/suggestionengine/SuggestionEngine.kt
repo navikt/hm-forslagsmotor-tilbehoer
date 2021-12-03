@@ -129,11 +129,14 @@ class SuggestionEngine(
             suggestions[accessory.hmsnr]!!.occurancesInSoknader++
         }
 
-        return Suggestions(if (suggestionsHasFromDate) {
-            suggestionsFrom
-        } else {
-            null
-        }, suggestions.toList().map { it.second }.sortedByDescending { it.occurancesInSoknader })
+        return Suggestions(
+            if (suggestionsHasFromDate) {
+                suggestionsFrom
+            } else {
+                null
+            },
+            suggestions.toList().map { it.second }.sortedByDescending { it.occurancesInSoknader }
+        )
     }
 
     private fun generateStats() {
