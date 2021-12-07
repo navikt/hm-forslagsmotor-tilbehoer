@@ -59,7 +59,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val background
     @Synchronized
     private fun getAllTitlesWhichAreUnknownOrNotRefreshedSince(since: LocalDateTime): List<String> {
         return store
-            .filterValues { it.title == null || (it.lastUpdated != null && it.lastUpdated!!.isBefore(since)) }
+            .filterValues { it.lastUpdated == null || it.lastUpdated!!.isBefore(since) }
             .toList().map { it.first }
     }
 

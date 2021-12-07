@@ -53,9 +53,9 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
     }
 
     @Synchronized
-    private fun getAllFrameworkStartTimesWhichAreUnknownOrNotRefreshedSince(since: LocalDateTime): List<String> {
+    private fun getAllFrameworkStartTimesWhichHaventBeenFetchedOrNotRefreshedSince(since: LocalDateTime): List<String> {
         return store
-            .filterValues { it.frameworkStart == null || (it.lastUpdated != null && it.lastUpdated!!.isBefore(since)) }
+            .filterValues { it.lastUpdated == null || it.lastUpdated!!.isBefore(since) }
             .toList().map { it.first }
     }
 
@@ -65,7 +65,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
 
-                val hmsNrsToCheck = getAllFrameworkStartTimesWhichAreUnknownOrNotRefreshedSince(
+                val hmsNrsToCheck = getAllFrameworkStartTimesWhichHaventBeenFetchedOrNotRefreshedSince(
                     LocalDateTime.now().minusHours(24)
                 ).toSet()
                 if (hmsNrsToCheck.isEmpty()) continue
