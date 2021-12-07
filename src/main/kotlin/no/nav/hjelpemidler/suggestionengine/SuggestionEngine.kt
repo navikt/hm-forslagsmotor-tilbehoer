@@ -100,8 +100,6 @@ class SuggestionEngine(
         val suggestionsFrom = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr) ?: LocalDate.of(0, 1, 1)
         val suggestionsHasFromDate = suggestionsFrom.year != 0
 
-        logg.info("DEBUG: generating suggestions for hmsNr=$hmsNr suggestionsHasFromDate=$suggestionsHasFromDate suggestionsFrom=$suggestionsFrom")
-
         // Get a list of all accessories applied for with this product
         val accessories = soknadDatabase.getAccessoriesByProductHmsnr(hmsNr, suggestionsFrom)
 

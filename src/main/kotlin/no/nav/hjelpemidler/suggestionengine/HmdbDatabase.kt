@@ -45,7 +45,6 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
     @Synchronized
     fun setLastUpdatedFor(hmsNr: String?) {
         store[hmsNr]?.lastUpdated = LocalDateTime.now()
-        logg.info("DEBUG: setLastUpdatedFor(hmsNr=$hmsNr): set to: ${store[hmsNr]?.lastUpdated}")
     }
 
     @Synchronized
@@ -78,8 +77,6 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                         HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrsToCheck)
                     }.filter { it.hmsnr != null }.groupBy { it.hmsnr!! }
 
-                    logg.info("DEBUG: number of hmsnrs we got results for: ${result.count()}")
-
                     for (hmsNr in result.keys) {
                         val productReferences = result[hmsNr] ?: continue
                         for (product in productReferences) {
@@ -89,9 +86,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                                 val now = LocalDate.now()
                                 val startDate = LocalDate.parse(start)
                                 val endDate = LocalDate.parse(end)
-                                logg.info("DEBUG: we have a framework agreement for hmsNr=$hmsNr start=$start startDate=$startDate end=$end endDate=$endDate now=$now")
                                 if (now.isEqual(startDate) || now.isEqual(endDate) || (now.isAfter(startDate) && now.isBefore(endDate))) {
-                                    logg.info("DEBUG: setting framework agreement for hmsNr=$hmsNr to startDate=$startDate")
                                     setFrameworkAgreementStartFor(hmsNr, startDate)
                                     break // productReferences
                                 }
