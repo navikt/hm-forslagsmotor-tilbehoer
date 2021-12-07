@@ -66,19 +66,6 @@ fun main() {
                         )
                         call.respond(results)
                     }
-                    get("/suggestions2/{hmsNr}") {
-                        val hmsNr = call.parameters["hmsNr"]!!
-                        logg.info("Request for suggestions2 for hmsnr=$hmsNr.")
-                        val suggestions = se.suggestionsForHmsNr(hmsNr)
-                        val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                            .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
-                            .map { it.hmsnr!! }
-                        val results = SuggestionsFrontendFiltered(
-                            suggestions.dataStartDate,
-                            suggestions.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
-                        )
-                        call.respond(results)
-                    }
                     get("/lookup-accessory-name/{hmsNr}") {
                         val hmsNr = call.parameters["hmsNr"]!!
                         logg.info("Request for name lookup for hmsnr=$hmsNr.")
