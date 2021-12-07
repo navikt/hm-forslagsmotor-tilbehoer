@@ -48,6 +48,11 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
     }
 
     @Synchronized
+    fun removeFrameworkAgreementStartFor(hmsNr: String?) {
+        store.remove(hmsNr)
+    }
+
+    @Synchronized
     fun getFrameworkAgreementStartFor(hmsNr: String): LocalDate? {
         return store[hmsNr]?.frameworkStart
     }
@@ -96,9 +101,15 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                         setLastUpdatedFor(hmsNr)
                     }
 
-                    // TODO: Remove the ones that doesnt exist?
+                    // Remove the ones that doesnt exist?
+                    val toRemove = hmsNrsToCheck.filter { !result.containsKey(it) }
+                    if (toRemove.isNotEmpty()) logg.info("HMDB database: Removing invalid hmsNrs: ${toRemove.count()}")
+                    for (id in toRemove) {
+                        removeFrameworkAgreementStartFor(id)
+                    }
 
-                    // TODO: We do we keep pulling every 10s those that are out of agreement?
+                    logg.info("HMDB database: Done checking on unknown/outdated framework agreement start dates")
+
                 } catch (e: Exception) {
                     logg.warn("failed to fetch framework start dates(for=$hmsNrsToCheck): $e")
                     e.printStackTrace()
