@@ -16,7 +16,7 @@ internal class SuggestionEngineTest {
     fun `No suggestions available for item`() {
         SuggestionEngine(listOf(), mapOf(), mapOf()).use { se ->
             val suggestions = se.suggestionsForHmsNr("1234")
-            assertEquals(0, suggestions.size)
+            assertEquals(0, suggestions.suggestions.size)
         }
     }
 
@@ -141,13 +141,13 @@ internal class SuggestionEngineTest {
             mapOf(),
         ).use { se ->
             val suggestions = se.suggestionsForHmsNr("1234")
-            assertEquals(0, suggestions.size)
+            assertEquals(0, suggestions.suggestions.size)
 
             val suggestions2 = se.suggestionsForHmsNr("54321")
-            assertEquals(1, suggestions2.size)
-            assertEquals("12345", suggestions2[0].hmsNr)
-            assertEquals("Tilbehør 2", suggestions2[0].title)
-            assertEquals(5, suggestions2[0].occurancesInSoknader)
+            assertEquals(1, suggestions2.suggestions.size)
+            assertEquals("12345", suggestions2.suggestions[0].hmsNr)
+            assertEquals("Tilbehør 2", suggestions2.suggestions[0].title)
+            assertEquals(5, suggestions2.suggestions[0].occurancesInSoknader)
         }
     }
 
@@ -227,10 +227,10 @@ internal class SuggestionEngineTest {
             mapOf(),
         ).use { se ->
             val suggestions = se.suggestionsForHmsNr("1234")
-            assertEquals(1, suggestions.size)
-            assertEquals("4321", suggestions[0].hmsNr)
-            assertEquals("Tilbehør 1", suggestions[0].title)
-            assertEquals(5, suggestions[0].occurancesInSoknader)
+            assertEquals(1, suggestions.suggestions.size)
+            assertEquals("4321", suggestions.suggestions[0].hmsNr)
+            assertEquals("Tilbehør 1", suggestions.suggestions[0].title)
+            assertEquals(5, suggestions.suggestions[0].occurancesInSoknader)
         }
     }
 
@@ -370,10 +370,10 @@ internal class SuggestionEngineTest {
                 ),
             )
             val suggestions = se.suggestionsForHmsNr("1234")
-            assertEquals(2, suggestions.size)
-            assertEquals("5678", suggestions[0].hmsNr)
-            assertEquals("Tilbehør 2", suggestions[0].title)
-            assertEquals(6, suggestions[0].occurancesInSoknader)
+            assertEquals(2, suggestions.suggestions.size)
+            assertEquals("5678", suggestions.suggestions[0].hmsNr)
+            assertEquals("Tilbehør 2", suggestions.suggestions[0].title)
+            assertEquals(6, suggestions.suggestions[0].occurancesInSoknader)
         }
     }
 }

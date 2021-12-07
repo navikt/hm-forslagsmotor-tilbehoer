@@ -43,20 +43,12 @@ class SuggestionEngine(
         }
     }
 
-    fun allSuggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return generateSuggestionsFor(hmsNr).suggestions
-    }
-
-    fun allSuggestionsForHmsNrV2(hmsNr: String): Suggestions {
+    fun allSuggestionsForHmsNr(hmsNr: String): Suggestions {
         return generateSuggestionsFor(hmsNr)
     }
 
-    fun suggestionsForHmsNr(hmsNr: String): List<Suggestion> {
-        return allSuggestionsForHmsNr(hmsNr).filter { it.isReady() && it.occurancesInSoknader > 4 }.take(20)
-    }
-
-    fun suggestionsForHmsNrV2(hmsNr: String): Suggestions {
-        var suggestions = allSuggestionsForHmsNrV2(hmsNr)
+    fun suggestionsForHmsNr(hmsNr: String): Suggestions {
+        var suggestions = allSuggestionsForHmsNr(hmsNr)
         suggestions.suggestions =
             suggestions.suggestions.filter { it.isReady() && it.occurancesInSoknader > 4 }.take(20)
         return suggestions

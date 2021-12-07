@@ -83,7 +83,7 @@ internal class NySøknadInnsendt(
             }
 
             val suggestions = se.allSuggestionsForHmsNr(product.hmsNr)
-            if (suggestions.isEmpty()) {
+            if (suggestions.suggestions.isEmpty()) {
                 AivenMetrics().productWithoutSuggestions()
                 continue
             }
@@ -91,7 +91,7 @@ internal class NySøknadInnsendt(
             // How precise were our suggestions check for each accessory
             for (accessory in product.tilbehorListe) {
                 var wasSuggested = -1
-                suggestions.forEachIndexed { idx, suggestion ->
+                suggestions.suggestions.forEachIndexed { idx, suggestion ->
                     if (suggestion.hmsNr == accessory.hmsnr) {
                         wasSuggested = idx + 1 // Get 1-indexed list (1, 2, 3, ...)
                     }
