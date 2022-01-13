@@ -3,6 +3,7 @@ package no.nav.hjelpemidler.suggestionengine
 import io.ktor.utils.io.core.Closeable
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -66,6 +67,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
 
     private fun launchBackgroundRunner() {
         thread(isDaemon = true) {
+            var firstRun = true
             while (true) {
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
@@ -78,6 +80,8 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                 logg.info("HMDB database: Running background check for ${hmsNrsToCheck.count()} unknown/outdated framework agreement start dates")
 
                 try {
+                    var changes = false
+
                     val result = runBlocking {
                         HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmsNrsToCheck)
                     }.filter { it.hmsnr != null }.groupBy { it.hmsnr!! }
@@ -93,6 +97,7 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                                 val endDate = LocalDate.parse(end)
                                 if (now.isEqual(startDate) || now.isEqual(endDate) || (now.isAfter(startDate) && now.isBefore(endDate))) {
                                     setFrameworkAgreementStartFor(hmsNr, startDate)
+                                    changes = true
                                     break // productReferences
                                 }
                             }
@@ -106,6 +111,15 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                     if (toRemove.isNotEmpty()) logg.info("HMDB database: Removing invalid hmsNrs: ${toRemove.count()}")
                     for (id in toRemove) {
                         removeFrameworkAgreementStartFor(id)
+                        changes = true
+                    }
+
+                    // Metrics
+                    if (firstRun || changes) {
+                        firstRun = false
+                        AivenMetrics().totalMissingFrameworkAgreementStartDates(getAllFrameworkStartTimesWhichHaventBeenFetchedOrNotRefreshedSince(
+                            LocalDateTime.now().minusHours(24)
+                        ).count())
                     }
 
                     logg.info("HMDB database: Done checking on unknown/outdated framework agreement start dates")

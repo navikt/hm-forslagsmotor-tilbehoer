@@ -49,6 +49,8 @@ internal class NySøknadInnsendt(
             return
         }
 
+        collectNewMetrics(soknad)
+
         val list = soknad.soknad.hjelpemidler.hjelpemiddelListe.toList()
 
         val totalAccessoriesInApplication =
@@ -108,5 +110,56 @@ internal class NySøknadInnsendt(
 
         // Learn from data
         se.learnFromSoknad(soknad)
+    }
+
+    fun collectNewMetrics(soknad: Soknad) {
+        val list = soknad.soknad.hjelpemidler.hjelpemiddelListe
+        if (list.isEmpty()) return
+
+        // Totalt antall søknader med tilbehør vs uten
+        val soknadHasAccessories= list.any { it.tilbehorListe.isNotEmpty() }
+        if (soknadHasAccessories) AivenMetrics().soknadHasAccessories(soknadHasAccessories)
+
+        // Gjennomsnittelig bruk av forslagene (full/delvis) vs. manuell inntasting av hmsnr for tilbehør (ukesintervall?)
+        val fullUseOfSuggestions = soknadHasAccessories && list.all {
+            it.tilbehorListe.all {
+                if (it.brukAvForslagsmotoren == null) {
+                    false
+                } else {
+                    it.brukAvForslagsmotoren.lagtTilFraForslagsmotoren
+                }
+            }
+        }
+        if (fullUseOfSuggestions) AivenMetrics().fullUseOfSuggestions()
+
+        val partialUseOfSuggestions = soknadHasAccessories && !fullUseOfSuggestions && list.any {
+            it.tilbehorListe.any {
+                if (it.brukAvForslagsmotoren == null) {
+                    false
+                } else {
+                    it.brukAvForslagsmotoren.lagtTilFraForslagsmotoren
+                }
+            }
+        }
+        if (partialUseOfSuggestions) AivenMetrics().partialUseOfSuggestions()
+
+        val noUseOfSuggestions = soknadHasAccessories && !fullUseOfSuggestions && !partialUseOfSuggestions
+        if (noUseOfSuggestions) AivenMetrics().noUseOfSuggestions()
+
+        // Totalt antall valg av forslag vs. totalt antall manuell inntasting av hmsnr
+        val totalAccessoriesAddedUsingSuggestions = list.map {
+            it.tilbehorListe.fold(0) { sum, t ->
+                if (t.brukAvForslagsmotoren != null && t.brukAvForslagsmotoren.lagtTilFraForslagsmotoren) {
+                    sum + 1
+                }
+                sum
+            }
+        }.fold(0) { a, b -> a+b }
+        if (soknadHasAccessories) AivenMetrics().totalAccessoriesAddedUsingSuggestions(totalAccessoriesAddedUsingSuggestions)
+
+        val totaAccessorieslNotAddedUsingSuggestions = list.map { it.tilbehorListe.fold(0) { a, _ -> a+1 } }
+            .fold(0) { a, b -> a+b }
+            .minus(totalAccessoriesAddedUsingSuggestions)
+        if (soknadHasAccessories) AivenMetrics().totaAccessorieslNotAddedUsingSuggestions(totaAccessorieslNotAddedUsingSuggestions)
     }
 }

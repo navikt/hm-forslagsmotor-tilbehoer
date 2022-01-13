@@ -2,6 +2,7 @@ package no.nav.hjelpemidler.suggestionengine
 
 import io.ktor.utils.io.core.Closeable
 import mu.KotlinLogging
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.oebs.Oebs
 import java.time.LocalDateTime
 import kotlin.concurrent.thread
@@ -65,6 +66,7 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val background
 
     private fun launchBackgroundRunner() {
         thread(isDaemon = true) {
+            var firstRun = true
             while (true) {
                 Thread.sleep(10_000)
                 if (isClosed()) return@thread // Exit
@@ -97,6 +99,11 @@ internal class OebsDatabase(testing: Map<String, String>? = null, val background
                     logg.info("OEBS database: Done checking on unknown/outdated titles")
 
                     // Notify about changes
+                    if (firstRun || changes) {
+                        firstRun = false
+                        AivenMetrics().totalMissingOebsTitles(getAllTitlesWhichAreUnknownOrNotRefreshedSince(LocalDateTime.now().minusHours(24)).count())
+                    }
+
                     if (changes)
                         backgroundRunOnChangeCallback()
                 } catch (e: Exception) {
