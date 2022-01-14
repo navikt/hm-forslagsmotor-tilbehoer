@@ -100,9 +100,10 @@ class SuggestionEngine(
     fun inspectionOfSuggestions(): List<ProductFrontendFiltered> {
         val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
         return hmsNrs.map {
-            val s = generateSuggestionsFor(it)
+            val suggestions = generateSuggestionsFor(it)
+            val s = suggestions
                 .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
-            ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s)
+            ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s, suggestions.dataStartDate)
         }.filter { it.suggestions.isNotEmpty() }
     }
 

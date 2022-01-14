@@ -19,6 +19,7 @@ data class ProductFrontendFiltered(
     val hmsnr: String,
     val title: String,
     val suggestions: List<Suggestion>,
+    val frameworkAgreementStartDate: LocalDate?,
 )
 
 data class Suggestion(
