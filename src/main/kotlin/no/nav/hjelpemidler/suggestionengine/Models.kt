@@ -1,5 +1,6 @@
 package no.nav.hjelpemidler.suggestionengine
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -17,12 +18,8 @@ data class SuggestionsFrontendFiltered(
 data class ProductFrontendFiltered(
     val hmsnr: String,
     val title: String,
-    val suggestions: List<SuggestionFrontendFiltered>,
-) {
-    fun isReady(): Boolean {
-        return !title.isNullOrEmpty()
-    }
-}
+    val suggestions: List<Suggestion>,
+)
 
 data class Suggestion(
     val hmsNr: String,
@@ -30,10 +27,12 @@ data class Suggestion(
 
     var occurancesInSoknader: Int = 0,
 ) {
+    @JsonIgnore
     fun isReady(): Boolean {
         return hmsNr.isNotEmpty() && !title.isNullOrBlank()
     }
 
+    @JsonIgnore
     fun toFrontendFiltered(): SuggestionFrontendFiltered {
         return SuggestionFrontendFiltered(hmsNr, title ?: "")
     }

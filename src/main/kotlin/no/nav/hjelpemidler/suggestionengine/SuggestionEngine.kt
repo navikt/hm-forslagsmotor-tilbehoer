@@ -102,9 +102,8 @@ class SuggestionEngine(
         return hmsNrs.map {
             val s = generateSuggestionsFor(it)
                 .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
-                .map { it.toFrontendFiltered() }
             ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s)
-        }
+        }.filter { it.suggestions.isNotEmpty() }
     }
 
     private fun generateSuggestionsFor(hmsNr: String): Suggestions {
