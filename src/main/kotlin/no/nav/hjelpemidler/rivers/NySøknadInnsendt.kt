@@ -117,7 +117,7 @@ internal class NySøknadInnsendt(
         if (list.isEmpty()) return
 
         // Totalt antall søknader med tilbehør vs uten
-        val soknadHasAccessories= list.any { it.tilbehorListe.isNotEmpty() }
+        val soknadHasAccessories = list.any { it.tilbehorListe.isNotEmpty() }
         AivenMetrics().soknadHasAccessories(soknadHasAccessories)
 
         // Gjennomsnittelig bruk av forslagene (full/delvis) vs. manuell inntasting av hmsnr for tilbehør (ukesintervall?)
