@@ -117,13 +117,14 @@ internal class HmdbDatabase(testing: Map<String, LocalDate>? = null) : Closeable
                     // Metrics
                     if (firstRun || changes) {
                         firstRun = false
-                        AivenMetrics().totalMissingFrameworkAgreementStartDates(getAllFrameworkStartTimesWhichHaventBeenFetchedOrNotRefreshedSince(
-                            LocalDateTime.now().minusHours(24)
-                        ).count())
+                        AivenMetrics().totalMissingFrameworkAgreementStartDates(
+                            getAllFrameworkStartTimesWhichHaventBeenFetchedOrNotRefreshedSince(
+                                LocalDateTime.now().minusHours(24)
+                            ).count()
+                        )
                     }
 
                     logg.info("HMDB database: Done checking on unknown/outdated framework agreement start dates")
-
                 } catch (e: Exception) {
                     logg.warn("failed to fetch framework start dates(for=$hmsNrsToCheck): $e")
                     e.printStackTrace()

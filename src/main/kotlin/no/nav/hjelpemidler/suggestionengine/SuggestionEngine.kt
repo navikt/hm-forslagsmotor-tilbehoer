@@ -8,6 +8,8 @@ import java.util.UUID
 
 private val logg = KotlinLogging.logger {}
 
+private val MIN_NUMBER_OF_OCCURANCES = 4
+
 class SuggestionEngine(
     testingSoknadDatabase: List<Soknad>? = null,
     testingOebsDatabase: Map<String, String>? = null,
@@ -50,7 +52,7 @@ class SuggestionEngine(
     fun suggestionsForHmsNr(hmsNr: String): Suggestions {
         var suggestions = allSuggestionsForHmsNr(hmsNr)
         suggestions.suggestions =
-            suggestions.suggestions.filter { it.isReady() && it.occurancesInSoknader > 4 }.take(20)
+            suggestions.suggestions.filter { it.isReady() && it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES }.take(20)
         return suggestions
     }
 
@@ -93,6 +95,16 @@ class SuggestionEngine(
 
     fun knowsOfSoknadID(soknadID: UUID): Boolean {
         return soknadDatabase.has(soknadID)
+    }
+
+    fun inspectionOfSuggestions(): List<ProductFrontendFiltered> {
+        val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
+        return hmsNrs.map {
+            val s = generateSuggestionsFor(it)
+                .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
+                .map { it.toFrontendFiltered() }
+            ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s)
+        }
     }
 
     private fun generateSuggestionsFor(hmsNr: String): Suggestions {
@@ -157,7 +169,7 @@ class SuggestionEngine(
         // Log info about what suggestions we have
         var allSuggestions = "All current suggestions (as seen by clients):\n\n"
         suggestions.mapValues {
-            it.value.filter { it.occurancesInSoknader > 4 }
+            it.value.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES }
                 .sortedByDescending { it.occurancesInSoknader }
                 .map { Pair(it.hmsNr, it.occurancesInSoknader) }
         }.filter { it.value.isNotEmpty() }

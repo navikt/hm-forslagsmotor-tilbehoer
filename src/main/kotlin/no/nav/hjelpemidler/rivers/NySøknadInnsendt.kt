@@ -154,11 +154,11 @@ internal class NySøknadInnsendt(
                 }
                 sum
             }
-        }.fold(0) { a, b -> a+b }
+        }.fold(0) { a, b -> a + b }
         if (soknadHasAccessories) AivenMetrics().totalAccessoriesAddedUsingSuggestions(totalAccessoriesAddedUsingSuggestions)
 
-        val totaAccessorieslNotAddedUsingSuggestions = list.map { it.tilbehorListe.fold(0) { a, _ -> a+1 } }
-            .fold(0) { a, b -> a+b }
+        val totaAccessorieslNotAddedUsingSuggestions = list.map { it.tilbehorListe.fold(0) { a, _ -> a + 1 } }
+            .fold(0) { a, b -> a + b }
             .minus(totalAccessoriesAddedUsingSuggestions)
         if (soknadHasAccessories) AivenMetrics().totaAccessorieslNotAddedUsingSuggestions(totaAccessorieslNotAddedUsingSuggestions)
     }

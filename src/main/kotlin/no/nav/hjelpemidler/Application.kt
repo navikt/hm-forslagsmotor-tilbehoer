@@ -58,11 +58,13 @@ fun main() {
                         logg.info("Request for suggestions for hmsnr=$hmsNr.")
                         val suggestions = se.suggestionsForHmsNr(hmsNr)
                         val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                            .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet()).filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
+                            .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet())
+                            .filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
                             .map { it.hmsnr!! }
                         val results = SuggestionsFrontendFiltered(
                             suggestions.dataStartDate,
-                            suggestions.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }.map { it.toFrontendFiltered() }
+                            suggestions.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }
+                                .map { it.toFrontendFiltered() }
                         )
                         call.respond(results)
                     }
@@ -97,6 +99,9 @@ fun main() {
                             e.printStackTrace()
                             call.respond(LookupAccessoryName(null, "produkt ikke funnet"))
                         }
+                    }
+                    get("/inspection") {
+                        call.respond(se.inspectionOfSuggestions())
                     }
                 }
             }

@@ -6,13 +6,23 @@ import java.util.UUID
 
 data class Suggestions(
     val dataStartDate: LocalDate?,
-    var suggestions: List<Suggestion>
+    var suggestions: List<Suggestion>,
 )
 
 data class SuggestionsFrontendFiltered(
     val dataStartDate: LocalDate?,
-    val suggestions: List<SuggestionFrontendFiltered>
+    val suggestions: List<SuggestionFrontendFiltered>,
 )
+
+data class ProductFrontendFiltered(
+    val hmsnr: String,
+    val title: String,
+    val suggestions: List<SuggestionFrontendFiltered>,
+) {
+    fun isReady(): Boolean {
+        return !title.isNullOrEmpty()
+    }
+}
 
 data class Suggestion(
     val hmsNr: String,
