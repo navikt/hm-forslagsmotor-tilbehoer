@@ -187,7 +187,7 @@ class SuggestionEngine(
                     .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
                 ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s, suggestions.dataStartDate)
             }
-        }.filter { it.suggestions.isNotEmpty() }
+        }.filter { it.suggestions.isNotEmpty() }.sortedBy { it.hmsnr }
 
         synchronized(cachedInspectionOfSuggestions) {
             cachedInspectionOfSuggestions.clear()
