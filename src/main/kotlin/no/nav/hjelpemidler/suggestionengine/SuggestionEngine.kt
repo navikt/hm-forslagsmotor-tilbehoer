@@ -106,6 +106,10 @@ class SuggestionEngine(
         }
     }
 
+    fun getCachedOebsTitleFor(hmsnr: String): String? {
+        return oebsDatabase.getTitleFor(hmsnr)
+    }
+
     private fun generateSuggestionsFor(hmsNr: String): Suggestions {
         // Identify current framework agreement start/end date, use that to form suggestions
         val suggestionsFrom = hmdbDatabase.getFrameworkAgreementStartFor(hmsNr) ?: LocalDate.of(0, 1, 1)

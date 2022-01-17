@@ -78,15 +78,23 @@ fun main() {
                                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                                 accessory = false
                             }
-                            val oebsTitleAndType = Oebs.getTitleForHmsNr(hmsNr)
-                            logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
-                            if (oebsTitleAndType.second != "Del") {
-                                logg.info("DEBUG: $hmsNr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
-                                // accessory = false
+
+                            val titleFromSuggestionEngineCache = se.getCachedOebsTitleFor(hmsNr)
+                            var oebsTitleAndType: Pair<String, String>? = null
+                            if (titleFromSuggestionEngineCache == null) {
+                                oebsTitleAndType = Oebs.getTitleForHmsNr(hmsNr)
+                                logg.info("DEBUG: Fetched title for $hmsNr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
+                                if (oebsTitleAndType.second != "Del") {
+                                    logg.info("DEBUG: $hmsNr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
+                                    // accessory = false
+                                }
+                            } else {
+                                logg.info("DEBUG: Using cached oebs title from suggestion engine for $hmsNr: $titleFromSuggestionEngineCache")
                             }
+
                             call.respond(
                                 LookupAccessoryName(
-                                    oebsTitleAndType.first,
+                                    oebsTitleAndType?.first ?: titleFromSuggestionEngineCache,
                                     if (!accessory) {
                                         "ikke et tilbehør"
                                     } else {
