@@ -10,6 +10,7 @@ import kotlin.system.measureTimeMillis
 private val logg = KotlinLogging.logger {}
 
 private val MIN_NUMBER_OF_OCCURANCES = 4
+private val MAX_NUMBER_OR_RESULTS = 20
 
 class SuggestionEngine(
     testingSoknadDatabase: List<Soknad>? = null,
@@ -55,7 +56,7 @@ class SuggestionEngine(
     fun suggestionsForHmsNr(hmsNr: String): Suggestions {
         var suggestions = allSuggestionsForHmsNr(hmsNr)
         suggestions.suggestions =
-            suggestions.suggestions.filter { it.isReady() && it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES }.take(20)
+            suggestions.suggestions.filter { it.isReady() && it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES }.take(MAX_NUMBER_OR_RESULTS)
         return suggestions
     }
 
@@ -184,7 +185,7 @@ class SuggestionEngine(
             hmsNrs.map {
                 val suggestions = generateSuggestionsFor(it)
                 val s = suggestions
-                    .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
+                    .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }.take(MAX_NUMBER_OR_RESULTS)
                 ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s, suggestions.dataStartDate)
             }
         }.filter { it.suggestions.isNotEmpty() }.sortedBy { it.hmsnr }
