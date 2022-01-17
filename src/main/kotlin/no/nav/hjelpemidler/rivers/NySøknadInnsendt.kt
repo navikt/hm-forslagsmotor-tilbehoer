@@ -150,7 +150,7 @@ internal class NySøknadInnsendt(
         val totalAccessoriesAddedUsingSuggestions = list.map {
             it.tilbehorListe.fold(0) { sum, t ->
                 if (t.brukAvForslagsmotoren != null && t.brukAvForslagsmotoren.lagtTilFraForslagsmotoren) {
-                    sum + 1
+                    sum + t.antall
                 } else {
                     sum
                 }
@@ -158,9 +158,15 @@ internal class NySøknadInnsendt(
         }.fold(0) { a, b -> a + b }
         if (soknadHasAccessories) AivenMetrics().totalAccessoriesAddedUsingSuggestions(totalAccessoriesAddedUsingSuggestions)
 
-        val totaAccessorieslNotAddedUsingSuggestions = list.map { it.tilbehorListe.fold(0) { a, _ -> a + 1 } }
-            .fold(0) { a, b -> a + b }
-            .minus(totalAccessoriesAddedUsingSuggestions)
+        val totaAccessorieslNotAddedUsingSuggestions = list.map {
+            it.tilbehorListe.fold(0) { sum, t ->
+                if (t.brukAvForslagsmotoren == null || !t.brukAvForslagsmotoren.lagtTilFraForslagsmotoren) {
+                    sum + t.antall
+                } else {
+                    sum
+                }
+            }
+        }.fold(0) { a, b -> a + b }
         if (soknadHasAccessories) AivenMetrics().totaAccessorieslNotAddedUsingSuggestions(totaAccessorieslNotAddedUsingSuggestions)
     }
 }
