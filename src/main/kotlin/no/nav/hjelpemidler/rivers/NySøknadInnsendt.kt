@@ -151,7 +151,7 @@ internal class NySøknadInnsendt(
             it.tilbehorListe.fold(0) { sum, t ->
                 if (t.brukAvForslagsmotoren != null && t.brukAvForslagsmotoren.lagtTilFraForslagsmotoren) {
                     sum + 1
-                }else{
+                } else {
                     sum
                 }
             }

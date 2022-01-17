@@ -5,6 +5,7 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.system.measureTimeMillis
 
 private val logg = KotlinLogging.logger {}
 
@@ -98,12 +99,16 @@ class SuggestionEngine(
     }
 
     fun inspectionOfSuggestions(): List<ProductFrontendFiltered> {
-        val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
-        return hmsNrs.map {
-            val suggestions = generateSuggestionsFor(it)
-            val s = suggestions
-                .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
-            ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s, suggestions.dataStartDate)
+        return measureAndLogElapsedTime("inspectionOfSuggestions()") {
+            val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
+            hmsNrs.map {
+                val suggestions = measureAndLogElapsedTime("inspectionOfSuggestions()-generateSuggestionsFor") {
+                    generateSuggestionsFor(it)
+                }
+                val s = suggestions
+                    .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
+                ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s, suggestions.dataStartDate)
+            }
         }.filter { it.suggestions.isNotEmpty() }
     }
 
@@ -187,4 +192,13 @@ class SuggestionEngine(
             AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
         }
     }
+}
+
+fun <T> measureAndLogElapsedTime(name: String, block: () -> T): T {
+    var result: T?
+    val elapsedTime = measureTimeMillis {
+        result = block()
+    }
+    logg.info("measureAndLogElapsedTime: Elapsed time \"$name\": ${elapsedTime}ms")
+    return result!!
 }
