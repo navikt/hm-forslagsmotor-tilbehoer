@@ -165,21 +165,6 @@ class SuggestionEngine(
         // Report what we found to influxdb / grafana
         logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription)")
 
-        // Log info about what suggestions we have
-        var allSuggestions = "All current suggestions (as seen by clients):\n\n"
-        suggestions.mapValues {
-            it.value.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES }
-                .sortedByDescending { it.occurancesInSoknader }
-                .map { Pair(it.hmsNr, it.occurancesInSoknader) }
-        }.filter { it.value.isNotEmpty() }
-            .forEach {
-                allSuggestions += "\tSuggestions for ${it.key}:\n"
-                it.value.forEach {
-                    allSuggestions += "\t\t- Suggestion: ${it.first}: ${it.second} occurrence(s)\n"
-                }
-            }
-        logg.info(allSuggestions)
-
         if (!testingMode) {
             AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
             AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
