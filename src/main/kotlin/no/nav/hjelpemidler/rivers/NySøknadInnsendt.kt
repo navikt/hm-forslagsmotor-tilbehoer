@@ -151,8 +151,9 @@ internal class NySøknadInnsendt(
             it.tilbehorListe.fold(0) { sum, t ->
                 if (t.brukAvForslagsmotoren != null && t.brukAvForslagsmotoren.lagtTilFraForslagsmotoren) {
                     sum + 1
+                }else{
+                    sum
                 }
-                sum
             }
         }.fold(0) { a, b -> a + b }
         if (soknadHasAccessories) AivenMetrics().totalAccessoriesAddedUsingSuggestions(totalAccessoriesAddedUsingSuggestions)
