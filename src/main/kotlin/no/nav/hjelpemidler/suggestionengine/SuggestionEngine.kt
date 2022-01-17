@@ -34,6 +34,8 @@ class SuggestionEngine(
         }
     }
 
+    private val cachedInspectionOfSuggestions: MutableList<ProductFrontendFiltered> = mutableListOf()
+
     override fun close() {
         soknadDatabase.close()
         oebsDatabase.close()
@@ -99,17 +101,9 @@ class SuggestionEngine(
     }
 
     fun inspectionOfSuggestions(): List<ProductFrontendFiltered> {
-        return measureAndLogElapsedTime("inspectionOfSuggestions()") {
-            val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
-            hmsNrs.map {
-                val suggestions = measureAndLogElapsedTime("inspectionOfSuggestions()-generateSuggestionsFor") {
-                    generateSuggestionsFor(it)
-                }
-                val s = suggestions
-                    .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
-                ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s, suggestions.dataStartDate)
-            }
-        }.filter { it.suggestions.isNotEmpty() }
+        synchronized(cachedInspectionOfSuggestions) {
+            return cachedInspectionOfSuggestions
+        }
     }
 
     private fun generateSuggestionsFor(hmsNr: String): Suggestions {
@@ -190,6 +184,25 @@ class SuggestionEngine(
             AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
             AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
             AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+        }
+
+        prepareInspectionOfSuggestions()
+    }
+
+    private fun prepareInspectionOfSuggestions() {
+        val newInspectionOfSuggestions = measureAndLogElapsedTime("prepareInspectionOfSuggestions()") {
+            val hmsNrs = soknadDatabase.getAllKnownProductHmsnrs()
+            hmsNrs.map {
+                val suggestions = generateSuggestionsFor(it)
+                val s = suggestions
+                    .suggestions.filter { it.occurancesInSoknader > MIN_NUMBER_OF_OCCURANCES && it.isReady() }
+                ProductFrontendFiltered(it, oebsDatabase.getTitleFor(it) ?: "", s, suggestions.dataStartDate)
+            }
+        }.filter { it.suggestions.isNotEmpty() }
+
+        synchronized(cachedInspectionOfSuggestions) {
+            cachedInspectionOfSuggestions.clear()
+            cachedInspectionOfSuggestions.addAll(newInspectionOfSuggestions)
         }
     }
 }
