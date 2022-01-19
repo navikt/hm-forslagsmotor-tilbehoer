@@ -37,6 +37,11 @@ class SuggestionEngine(
 
     private val cachedInspectionOfSuggestions: MutableList<ProductFrontendFiltered> = mutableListOf()
 
+    // List of illegal suggestions we do not want the engine to suggest
+    private val illegalSuggestion = mapOf(
+        "177946" to listOf("120690"),
+    )
+
     override fun close() {
         soknadDatabase.close()
         oebsDatabase.close()
@@ -125,6 +130,9 @@ class SuggestionEngine(
             // If the title has been deleted automatically it means OEBS didnt know about it (404 not found),
             // and we wont suggest it here:
             if (!oebsDatabase.hasTitleReference(accessory.hmsnr)) continue
+
+            // Filter out illegal suggestions for this product
+            if (illegalSuggestion[hmsNr]?.contains(accessory.hmsnr) == true) continue
 
             if (!suggestions.containsKey(accessory.hmsnr)) {
                 suggestions[accessory.hmsnr] = Suggestion(
