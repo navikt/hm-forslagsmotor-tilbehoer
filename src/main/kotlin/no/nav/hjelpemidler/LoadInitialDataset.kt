@@ -34,21 +34,38 @@ object InitialDataset {
 
     fun fetchInitialDatasetFor(se: SuggestionEngine) {
         thread(isDaemon = true) {
+            logg.info("Waiting on network before downloading initial dataset")
+            Thread.sleep(5000)
+
             // Generate azure ad token for authorization header
             val authToken = azClient.getToken(Configuration.azureAD["AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB"]!!).accessToken
 
             // Make request
-            val request: HttpRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://hm-soknadsbehandling-db/api/forslagsmotor/tilbehoer/datasett"))
-                .timeout(Duration.ofMinutes(5))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .header("Authorization", "Bearer $authToken")
-                .GET()
-                .build()
+            var response: HttpResponse<String>? = null
+            val attempts = 2
+            for (attempt in 0..attempts) {
+                logg.info("Attempting to download dataset")
+                val request: HttpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("http://hm-soknadsbehandling-db/api/forslagsmotor/tilbehoer/datasett"))
+                    .timeout(Duration.ofMinutes(1))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .header("Authorization", "Bearer $authToken")
+                    .GET()
+                    .build()
 
-            val response: HttpResponse<String> =
-                HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
+                try {
+                    response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
+                    break
+                }catch (e: Exception) {
+                    logg.info("Download of initial dataset failed attempt=$attempt, attempting $attempts times...")
+                    if (attempt == attempts) throw Exception("No more attempts, the last one failed with: $e")
+                }
+            }
+
+            // Has to be set from this point!
+            response!!
+
             if (response.statusCode() != 200) {
                 throw Exception(
                     "error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${
@@ -57,15 +74,24 @@ object InitialDataset {
                 )
             }
 
+            val dataset = objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine.Soknad>>(response.body()).asList()
+            if (dataset.isEmpty()) {
+                throw Exception("Empty dataset received from hm-soknadsbehandling-db, unable to continue")
+            }
+
+            logg.info("Download initial dataset finished with ${dataset.count()} applications to learn from")
+
             // Set initial dataset to suggestion engine
             se.learnFromSoknader(
-                objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine.Soknad>>(response.body()).asList()
+                dataset
             )
 
             // We have now loaded the dataset
             synchronized(this) {
                 isInitialDatasetLoaded = true
             }
+
+            logg.info("Initial dataset loaded set to true!")
         }
     }
 
