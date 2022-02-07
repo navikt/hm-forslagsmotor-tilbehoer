@@ -1,4 +1,3 @@
-
 import com.expediagroup.graphql.plugin.gradle.tasks.GraphQLIntrospectSchemaTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -29,7 +28,7 @@ apply {
 
 application {
     applicationName = "hm-forslagsmotor-tilbehoer"
-    mainClassName = "no.nav.hjelpemidler.ApplicationKt"
+    mainClass.set("no.nav.hjelpemidler.ApplicationKt")
 }
 
 repositories {
@@ -38,14 +37,14 @@ repositories {
     maven("https://packages.confluent.io/maven/") // Kafka-avro
 }
 
-/*java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}*/
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 dependencies {
-    api("ch.qos.logback:logback-classic:1.2.7")
-    api("net.logstash.logback:logstash-logback-encoder:6.6") {
+    api("ch.qos.logback:logback-classic:1.2.10")
+    api("net.logstash.logback:logstash-logback-encoder:7.0.1") {
         exclude("com.fasterxml.jackson.core")
     }
 
@@ -53,6 +52,11 @@ dependencies {
     implementation(Jackson.kotlin)
     implementation(Jackson.jsr310)
     implementation(Ktor.serverNetty)
+    constraints {
+        implementation("io.netty:netty-codec-http2:4.1.73.Final") {
+            because("Snyk - Medium Severity - HTTP Request Smuggling")
+        }
+    }
     implementation(Fuel.fuel)
     implementation(Fuel.library("coroutines"))
     implementation(Konfig.konfig)
@@ -64,6 +68,11 @@ dependencies {
     implementation("io.ktor:ktor-auth:$ktor_version")
     implementation("io.ktor:ktor-auth-jwt:$ktor_version")
     implementation("io.ktor:ktor-client-apache:$ktor_version")
+    constraints {
+        implementation("org.apache.httpcomponents:httpclient:4.5.13") {
+            because("Snyk - Medium Severity - Improper Input Validation")
+        }
+    }
     implementation("io.ktor:ktor-client-jackson:$ktor_version")
     implementation("com.github.navikt:rapids-and-rivers:$rapid_version")
     implementation("org.apache.kafka:kafka-clients:$kafka_version")

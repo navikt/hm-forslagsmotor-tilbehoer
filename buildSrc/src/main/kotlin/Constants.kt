@@ -1,8 +1,8 @@
 object Database {
     const val Postgres = "org.postgresql:postgresql:42.3.2"
     const val Kotlinquery = "com.github.seratch:kotliquery:1.3.1"
-    const val Flyway = "org.flywaydb:flyway-core:6.3.2"
-    const val HikariCP = "com.zaxxorg.testcontainers:postgresqler:HikariCP:3.4.1"
+    const val Flyway = "org.flywaydb:flyway-core:8.4.4"
+    const val HikariCP = "com.zaxxer:HikariCP:5.0.1"
 }
 
 object Fuel {
@@ -29,7 +29,7 @@ object Kotlin {
     const val testJUnit5 = "org.jetbrains.kotlin:kotlin-test-junit5:$version"
 
     object Logging {
-        const val version = "1.7.9"
+        const val version = "2.1.21"
         const val kotlinLogging = "io.github.microutils:kotlin-logging:$version"
     }
 }
@@ -77,12 +77,12 @@ object Ktlint {
 }
 
 object Spotless {
-    const val version = "5.1.0"
+    const val version = "6.2.1"
     const val spotless = "com.diffplug.spotless"
 }
 
 object Shadow {
-    const val version = "5.2.0"
+    const val version = "7.1.2"
     const val shadow = "com.github.johnrengelman.shadow"
 }
 

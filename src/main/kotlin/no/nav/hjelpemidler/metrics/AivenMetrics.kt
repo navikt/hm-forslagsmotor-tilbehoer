@@ -34,7 +34,8 @@ class AivenMetrics {
             .addFields(fields)
             .time(Instant.now().toEpochMilli(), WritePrecision.MS)
 
-        client.writeApi.writePoint(point)
+//        client.writeApi.writePoint(point)
+        client.writeApiBlocking.writePoint(point)
     }
 
     fun example1() {
