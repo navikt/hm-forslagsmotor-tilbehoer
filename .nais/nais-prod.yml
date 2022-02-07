@@ -17,10 +17,10 @@ spec:
   resources:
     limits:
       cpu: 2000m
-      memory: 3000Mi
+      memory: 4000Mi
     requests:
-      cpu: 500m
-      memory: 1200Mi
+      cpu: 600m
+      memory: 2500Mi
   secureLogs:
     enabled: true
   kafka:
