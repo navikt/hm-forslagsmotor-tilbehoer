@@ -38,8 +38,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 dependencies {
@@ -117,14 +117,16 @@ spotless {
     }
 }
 
-/*tasks.withType<KotlinCompile> {
-    kotlinOptions.freeCompilerArgs = listOf()
-    kotlinOptions.jvmTarget = "11"
-}*/
 tasks.withType<KotlinCompile> {
     kotlinOptions.freeCompilerArgs = listOf()
-    kotlinOptions.jvmTarget = "17"
+    kotlinOptions.jvmTarget = "11"
 }
+/*
+tasks.withType<KotlinCompile> {
+    kotlinOptions.freeCompilerArgs = listOf()
+    kotlinOptions.jvmTarget = "15"
+}
+*/
 
 tasks.withType<Test> {
     useJUnitPlatform()
