@@ -26,8 +26,15 @@ directive @specifiedBy(
     url: String!
   ) on SCALAR
 
+type GodkjenningsKursDTO {
+  isokode: String!
+  kursId: Int!
+  tittel: String!
+}
+
 type Produkt {
   artikkelId: String
+  artikkelUrl: String!
   artikkelbeskrivelse: String
   artikkelnavn: String
   artikkelnr: String
@@ -40,16 +47,20 @@ type Produkt {
   blobUrlLite: String
   blobUrlStort: String
   blobUse: String
+  erIBestillingsordning: Boolean!
   generertAv: String!
   generertDato: LocalDateTime!
   harNavAvtale: Boolean!
   hmsnr: String
   id: ID!
   isokode: String
+  isokortnavn: String
   isotekst: String
   isotittel: String
   kategori: String
+  paakrevdGodkjenningskurs: GodkjenningsKursDTO
   produktId: String
+  produktUrl: String!
   produktbeskrivelse: String
   produktnavn: String
   rammeavtaleSlutt: LocalDate
@@ -92,5 +103,4 @@ scalar LocalDateTime
 input ProduktfilterInput {
   limit: Int
   offset: Int
-  tilgjengeligForDigitalSoknad: Boolean
 }

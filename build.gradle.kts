@@ -38,13 +38,13 @@ repositories {
     maven("https://packages.confluent.io/maven/") // Kafka-avro
 }
 
-java {
+/*java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-}
+}*/
 
 dependencies {
-    api("ch.qos.logback:logback-classic:1.2.6")
+    api("ch.qos.logback:logback-classic:1.2.7")
     api("net.logstash.logback:logstash-logback-encoder:6.6") {
         exclude("com.fasterxml.jackson.core")
     }
@@ -70,6 +70,11 @@ dependencies {
     implementation("org.influxdb:influxdb-java:$influxdb_version")
     implementation("com.influxdb:influxdb-client-kotlin:$influxdb_aiven_version")
     implementation("no.finn.unleash:unleash-client-java:$unleash_version")
+    constraints {
+        implementation("com.google.code.gson:gson:2.8.9") {
+            because("Snyk reported High Severity issue- Deserialization of Untrusted Data ")
+        }
+    }
     implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
     implementation(Micrometer.prometheusRegistry)
     implementation("org.influxdb:influxdb-java:$influxdb_version")
@@ -103,9 +108,13 @@ spotless {
     }
 }
 
-tasks.withType<KotlinCompile> {
+/*tasks.withType<KotlinCompile> {
     kotlinOptions.freeCompilerArgs = listOf()
     kotlinOptions.jvmTarget = "11"
+}*/
+tasks.withType<KotlinCompile> {
+    kotlinOptions.freeCompilerArgs = listOf()
+    kotlinOptions.jvmTarget = "17"
 }
 
 tasks.withType<Test> {
@@ -121,7 +130,7 @@ tasks.withType<Test> {
 }
 
 tasks.withType<Wrapper> {
-    gradleVersion = "7.2"
+    gradleVersion = "7.3.3"
 }
 
 tasks.named("shadowJar") {

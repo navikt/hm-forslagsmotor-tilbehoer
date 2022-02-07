@@ -1,5 +1,7 @@
 package no.nav.hjelpemidler.configuration
 
+import java.util.Locale
+
 enum class Cluster {
     DEV_GCP, PROD_GCP;
 
@@ -13,5 +15,5 @@ enum class Cluster {
         }
     }
 
-    fun asString(): String = name.toLowerCase().replace("_", "-")
+    fun asString(): String = name.lowercase(Locale.getDefault()).replace("_", "-")
 }
