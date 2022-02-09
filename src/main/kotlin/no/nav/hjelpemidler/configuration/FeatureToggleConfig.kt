@@ -11,7 +11,7 @@ internal object FeatureToggleConfig {
     var config: UnleashConfig = UnleashConfig.builder()
         .appName(APP_NAME)
         .instanceId("$APP_NAME-${Configuration.application["APP_PROFILE"]}")
-        .unleashAPI(Configuration.application["UNLEASH_URL"])
+        .unleashAPI(Configuration.application["UNLEASH_URL"]!!)
         .build()
 
     var unleash: Unleash = DefaultUnleash(config, ByClusterStrategy)

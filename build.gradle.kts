@@ -1,4 +1,3 @@
-
 import com.expediagroup.graphql.plugin.gradle.tasks.GraphQLIntrospectSchemaTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -29,7 +28,7 @@ apply {
 
 application {
     applicationName = "hm-forslagsmotor-tilbehoer"
-    mainClassName = "no.nav.hjelpemidler.ApplicationKt"
+    mainClass.set("no.nav.hjelpemidler.ApplicationKt")
 }
 
 repositories {
@@ -39,13 +38,13 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
-    api("ch.qos.logback:logback-classic:1.2.6")
-    api("net.logstash.logback:logstash-logback-encoder:6.6") {
+    api("ch.qos.logback:logback-classic:1.2.10")
+    api("net.logstash.logback:logstash-logback-encoder:7.0.1") {
         exclude("com.fasterxml.jackson.core")
     }
 
@@ -53,6 +52,11 @@ dependencies {
     implementation(Jackson.kotlin)
     implementation(Jackson.jsr310)
     implementation(Ktor.serverNetty)
+    constraints {
+        implementation("io.netty:netty-codec-http2:4.1.73.Final") {
+            because("Snyk - Medium Severity - HTTP Request Smuggling")
+        }
+    }
     implementation(Fuel.fuel)
     implementation(Fuel.library("coroutines"))
     implementation(Konfig.konfig)
@@ -64,12 +68,22 @@ dependencies {
     implementation("io.ktor:ktor-auth:$ktor_version")
     implementation("io.ktor:ktor-auth-jwt:$ktor_version")
     implementation("io.ktor:ktor-client-apache:$ktor_version")
+    constraints {
+        implementation("org.apache.httpcomponents:httpclient:4.5.13") {
+            because("Snyk - Medium Severity - Improper Input Validation")
+        }
+    }
     implementation("io.ktor:ktor-client-jackson:$ktor_version")
     implementation("com.github.navikt:rapids-and-rivers:$rapid_version")
     implementation("org.apache.kafka:kafka-clients:$kafka_version")
     implementation("org.influxdb:influxdb-java:$influxdb_version")
     implementation("com.influxdb:influxdb-client-kotlin:$influxdb_aiven_version")
     implementation("no.finn.unleash:unleash-client-java:$unleash_version")
+    constraints {
+        implementation("com.google.code.gson:gson:2.8.9") {
+            because("Snyk reported High Severity issue- Deserialization of Untrusted Data ")
+        }
+    }
     implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
     implementation(Micrometer.prometheusRegistry)
     implementation("org.influxdb:influxdb-java:$influxdb_version")
@@ -105,7 +119,7 @@ spotless {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.freeCompilerArgs = listOf()
-    kotlinOptions.jvmTarget = "11"
+    kotlinOptions.jvmTarget = "17"
 }
 
 tasks.withType<Test> {
@@ -121,7 +135,7 @@ tasks.withType<Test> {
 }
 
 tasks.withType<Wrapper> {
-    gradleVersion = "7.2"
+    gradleVersion = "7.4"
 }
 
 tasks.named("shadowJar") {

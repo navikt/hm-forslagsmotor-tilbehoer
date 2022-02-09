@@ -57,7 +57,7 @@ object InitialDataset {
                 try {
                     response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
                     break
-                }catch (e: Exception) {
+                } catch (e: Exception) {
                     logg.info("Download of initial dataset failed attempt=$attempt, attempting $attempts times...")
                     if (attempt == attempts) throw Exception("No more attempts, the last one failed with: $e")
                 }
