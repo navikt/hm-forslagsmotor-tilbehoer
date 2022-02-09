@@ -1,10 +1,16 @@
-name: Security
+name: Vulnerabilities scanning of dependencies
 on:
-  push:
-    branches:
-      - '*'
   schedule:
-    - cron: '30 5 * * *'
+    - cron: '30 5 * * *' # jobben kjøres kl. 5:30 hverdag
+  push:
+    paths-ignore:
+      - README.md
+      - CHANGELOG.md
+      - .gitignore
+      - .github/**
+      - Jenkinsfile
+    branches:
+      - *
 
 jobs:
   monitor:
@@ -19,4 +25,4 @@ jobs:
           ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
         with:
           command: monitor
-          args: --configuration-attributes=usage:java-runtime --all-sub-projects --remote-repo-url=https://github.com/${{ github.repository }}.git --org=hjelpemiddelbehov
+          args: --configuration-attributes=usage:java-runtime --all-projects --remote-repo-url=https://github.com/${{ github.repository }}.git --org=hjelpemiddelbehov
