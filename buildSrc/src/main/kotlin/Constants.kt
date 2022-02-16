@@ -1,8 +1,8 @@
 object Database {
-    const val Postgres = "org.postgresql:postgresql:42.2.11"
+    const val Postgres = "org.postgresql:postgresql:42.3.2"
     const val Kotlinquery = "com.github.seratch:kotliquery:1.3.1"
-    const val Flyway = "org.flywaydb:flyway-core:6.3.2"
-    const val HikariCP = "com.zaxxer:HikariCP:3.4.1"
+    const val Flyway = "org.flywaydb:flyway-core:8.4.4"
+    const val HikariCP = "com.zaxxer:HikariCP:5.0.1"
 }
 
 object Fuel {
@@ -13,7 +13,7 @@ object Fuel {
 }
 
 object Jackson {
-    const val version = "2.10.3"
+    const val version = "2.13.1"
     const val core = "com.fasterxml.jackson.core:jackson-core:$version"
     const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
     const val jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$version"
@@ -24,18 +24,18 @@ object Konfig {
 }
 
 object Kotlin {
-    const val version = "1.5.31"
+    const val version = "1.6.10"
     const val stdlib = "org.jetbrains.kotlin:kotlin-stdlib:$version"
     const val testJUnit5 = "org.jetbrains.kotlin:kotlin-test-junit5:$version"
 
     object Logging {
-        const val version = "1.7.9"
+        const val version = "2.1.21"
         const val kotlinLogging = "io.github.microutils:kotlin-logging:$version"
     }
 }
 
 object KoTest {
-    const val version = "4.2.0.RC2"
+    const val version = "5.1.0"
 
     // for kotest framework
     const val runner = "io.kotest:kotest-runner-junit5-jvm:$version"
@@ -51,7 +51,7 @@ object KoTest {
 }
 
 object Ktor {
-    const val version = "1.6.4"
+    const val version = "1.6.7"
     const val server = "io.ktor:ktor-server:$version"
     const val serverNetty = "io.ktor:ktor-server-netty:$version"
     const val auth = "io.ktor:ktor-auth:$version"
@@ -77,17 +77,17 @@ object Ktlint {
 }
 
 object Spotless {
-    const val version = "5.1.0"
+    const val version = "6.2.1"
     const val spotless = "com.diffplug.spotless"
 }
 
 object Shadow {
-    const val version = "5.2.0"
+    const val version = "7.1.2"
     const val shadow = "com.github.johnrengelman.shadow"
 }
 
 object TestContainers {
-    const val version = "1.16.0"
+    const val version = "1.16.3"
     const val postgresql = "org.testcontainers:postgresql:$version"
 }
 
