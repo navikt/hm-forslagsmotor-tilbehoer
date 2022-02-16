@@ -71,16 +71,18 @@ object InitialDataset {
             response!!
 
             if (response.statusCode() != 200) {
-                throw Exception(
+                logg.error(
                     "error: unexpected status code: statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${
                     response.body().take(40)
                     }(...)"
                 )
+                exitProcess(-123)
             }
 
             val dataset = objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine.Soknad>>(response.body()).asList()
             if (dataset.isEmpty()) {
-                throw Exception("Empty dataset received from hm-soknadsbehandling-db, unable to continue")
+                logg.error("Empty dataset received from hm-soknadsbehandling-db, unable to continue")
+                exitProcess(-123)
             }
 
             logg.info("Download initial dataset finished with ${dataset.count()} applications to learn from")
