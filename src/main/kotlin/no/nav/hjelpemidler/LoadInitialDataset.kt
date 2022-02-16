@@ -15,6 +15,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 import kotlin.concurrent.thread
+import kotlin.system.exitProcess
 
 private val logg = KotlinLogging.logger {}
 
@@ -59,7 +60,10 @@ object InitialDataset {
                     break
                 }catch (e: Exception) {
                     logg.info("Download of initial dataset failed attempt=$attempt, attempting $attempts times...")
-                    if (attempt == attempts) throw Exception("No more attempts, the last one failed with: $e")
+                    if (attempt == attempts) {
+                        logg.error("No more attempts, the last one failed with: $e. Exiting process with error code -123")
+                        exitProcess(-123)
+                    }
                 }
             }
 
