@@ -35,7 +35,8 @@ class SuggestionEngine(
         }
     }
 
-    private val cachedInspectionOfSuggestions: MutableList<ProductFrontendFiltered> = mutableListOf()
+    private var cachedInspectionOfSuggestionsMutex: Int = 0
+    private var cachedInspectionOfSuggestions: List<ProductFrontendFiltered> = listOf()
 
     // List of illegal suggestions we do not want the engine to suggest
     private val illegalSuggestion = mapOf(
@@ -107,7 +108,7 @@ class SuggestionEngine(
     }
 
     fun inspectionOfSuggestions(): List<ProductFrontendFiltered> {
-        synchronized(cachedInspectionOfSuggestions) {
+        synchronized(cachedInspectionOfSuggestionsMutex) {
             return cachedInspectionOfSuggestions
         }
     }
@@ -198,9 +199,10 @@ class SuggestionEngine(
             }
         }.filter { it.suggestions.isNotEmpty() }.sortedBy { it.hmsnr }
 
-        synchronized(cachedInspectionOfSuggestions) {
-            cachedInspectionOfSuggestions.clear()
-            cachedInspectionOfSuggestions.addAll(newInspectionOfSuggestions)
+        synchronized(cachedInspectionOfSuggestionsMutex) {
+            // cachedInspectionOfSuggestions.clear()
+            // cachedInspectionOfSuggestions.addAll(newInspectionOfSuggestions)
+            cachedInspectionOfSuggestions = newInspectionOfSuggestions
         }
     }
 }
