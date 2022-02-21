@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.db.SoknadStore
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
@@ -33,7 +34,7 @@ object InitialDataset {
 
     private var isInitialDatasetLoaded = false
 
-    fun fetchInitialDatasetFor(se: SuggestionEngine) {
+    internal fun fetchInitialDatasetFor(se: SuggestionEngine, store: SoknadStore) {
         thread(isDaemon = true) {
             logg.info("Waiting on network before downloading initial dataset")
             Thread.sleep(5000)
@@ -91,6 +92,13 @@ object InitialDataset {
             se.learnFromSoknader(
                 dataset
             )
+
+            // Add to database
+            for (soknad in dataset) {
+                runCatching {
+                    store.processApplication(soknad)
+                }.getOrNull()
+            }
 
             // We have now loaded the dataset
             synchronized(this) {

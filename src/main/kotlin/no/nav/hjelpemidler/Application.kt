@@ -53,7 +53,7 @@ fun main() {
     // Set up our database connection
     val store = SoknadStorePostgres(dataSource())
 
-    InitialDataset.fetchInitialDatasetFor(se)
+    InitialDataset.fetchInitialDatasetFor(se, store)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .withKtorModule {
