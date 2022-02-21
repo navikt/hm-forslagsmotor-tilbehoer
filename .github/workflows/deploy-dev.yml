@@ -9,7 +9,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - snyk-2022-02-07
+      - rewrite-to-postgres-backend
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:
@@ -55,10 +55,12 @@ jobs:
           RESOURCE: .nais/nais-dev.yml
           VAR: image=${{ env.docker_image }}
       - name: post-deploy
+        if: github.ref == 'refs/heads/main'
         uses: navikt/digihot-deploy/actions/post-deploy@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: draft release
+        if: github.ref == 'refs/heads/main'
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

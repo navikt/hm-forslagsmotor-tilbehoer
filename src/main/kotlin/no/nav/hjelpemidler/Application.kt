@@ -20,11 +20,17 @@ import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.db.SoknadStorePostgres
+import no.nav.hjelpemidler.db.dataSource
+import no.nav.hjelpemidler.db.migrate
+import no.nav.hjelpemidler.db.waitForDB
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import no.nav.hjelpemidler.suggestionengine.SuggestionsFrontendFiltered
+import kotlin.time.ExperimentalTime
+import kotlin.time.minutes
 
 private val logg = KotlinLogging.logger {}
 
@@ -35,7 +41,18 @@ private val objectMapper = jacksonObjectMapper()
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
+@ExperimentalTime
 fun main() {
+    if (!waitForDB(10.minutes)) {
+        throw Exception("database never became available withing the deadline")
+    }
+
+    // Make sure our database migrations are up to date
+    migrate()
+
+    // Set up our database connection
+    val store = SoknadStorePostgres(dataSource())
+
     InitialDataset.fetchInitialDatasetFor(se)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
