@@ -129,6 +129,18 @@ fun main() {
                         call.respond(se.inspectionOfSuggestions())
                     }
                 }
+                // FIXME: Remove before prod.
+                get("/suggestions-v2/{hmsNr}") {
+                    val hmsNr = call.parameters["hmsNr"]!!
+                    logg.info("Request for suggestions v2 for hmsnr=$hmsNr.")
+                    val suggestions = store.suggestions(hmsNr)
+
+                    val results = SuggestionsFrontendFiltered(
+                        null,
+                        suggestions.map { it.toFrontendFiltered() }
+                    )
+                    call.respond(results)
+                }
             }
         }
         .build().apply {
