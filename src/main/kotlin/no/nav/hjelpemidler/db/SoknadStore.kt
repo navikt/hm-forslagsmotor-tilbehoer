@@ -16,6 +16,8 @@ import no.nav.hjelpemidler.suggestionengine.Soknad
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.Tilbehoer
 import org.postgresql.util.PGobject
+import java.io.Closeable
+import java.time.LocalDateTime
 import javax.sql.DataSource
 import kotlin.concurrent.thread
 
@@ -28,9 +30,13 @@ internal interface SoknadStore {
     fun processApplication(soknad: Soknad)
 }
 
-internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
+internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Closeable {
     companion object {
         val ApplicationPreviouslyProcessedException = RuntimeException("application previously processed")
+    }
+
+    init {
+        backgroundRunner()
     }
 
     private val objectMapper = jacksonObjectMapper()
@@ -249,21 +255,46 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
         // If we have any new rows in caches then we fetch those specifically
         if (newHmdbRows.isNotEmpty() || newOebsRows.isNotEmpty()) {
             thread(isDaemon = true) {
-                updateCache(newHmdbRows, newOebsRows)
+                updateCaches(newHmdbRows, newOebsRows)
             }
         }
 
         // TODO: Regenerate stats for grafana (all or only changes?)
     }
 
-    fun updateCache() {
-        thread(isDaemon = true) {
-            updateCache(null, null)
+    @Synchronized
+    override fun close() {
+        isClosed = true
+    }
+
+    // Used to stop background runner thread on close
+    private var isClosed = false
+
+    @Synchronized
+    private fun isClosed(): Boolean {
+        return isClosed
+    }
+
+    private fun backgroundRunner() {
+        thread (isDaemon = true) {
+            // Because we might run multiple pods in parallel we wait some random delay period on startup in the hope
+            // that they will spread out and not run cache updates at the same time.
+            val startupRandomDelaySeconds = (0..60*60).random()
+            logg.info("SoknadStore: waiting until ${LocalDateTime.now().plusSeconds(startupRandomDelaySeconds.toLong())} before we start updating caches every 60 minutes")
+            Thread.sleep((1_000*startupRandomDelaySeconds).toLong())
+
+            var firstRun = true
+            while (true) {
+                if (!firstRun) Thread.sleep(1_000 * 60 * 60)
+                firstRun = false
+                if (isClosed()) return@thread // We have been closed, lets clean up thread
+                updateCaches()
+            }
         }
     }
 
     @Synchronized
-    private fun updateCache(newHmdbRows: List<String>? = null, newOebsRows: List<String>?) {
+    private fun updateCaches(newHmdbRows: List<String>? = null, newOebsRows: List<String>? = null) {
         // TODO: If newHmdbRows and newOebsRows are null, fetch a full list of outdated items
         if (newHmdbRows == null || newOebsRows == null) return
 
