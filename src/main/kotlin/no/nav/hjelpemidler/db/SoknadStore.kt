@@ -9,6 +9,7 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import kotliquery.using
 import mu.KotlinLogging
+import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
@@ -36,14 +37,14 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         val ApplicationPreviouslyProcessedException = RuntimeException("application previously processed")
     }
 
-    init {
-        backgroundRunner()
-    }
-
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
+    init {
+        backgroundRunner()
+    }
 
     override fun suggestions(hmsnr: String): List<Suggestion> =
         using(sessionOf(ds)) { session ->
@@ -280,13 +281,17 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         thread(isDaemon = true) {
             // Because we might run multiple pods in parallel we wait some random delay period on startup in the hope
             // that they will spread out and not run cache updates at the same time.
-            val startupRandomDelaySeconds = (0..60 * 60).random()
+            var startupRandomDelaySeconds = (0..60 * 60).random()
+            if (Configuration.application["APP_PROFILE"]!! == "dev") startupRandomDelaySeconds = 60
             logg.info("SoknadStore: waiting until ${LocalDateTime.now().plusSeconds(startupRandomDelaySeconds.toLong())} before we start updating caches every 60 minutes")
             Thread.sleep((1_000 * startupRandomDelaySeconds).toLong())
 
+            var standardInterval = 60 * 60
+            if (Configuration.application["APP_PROFILE"]!! == "dev") standardInterval = 60
+
             var firstRun = true
             while (true) {
-                if (!firstRun) Thread.sleep(1_000 * 60 * 60)
+                if (!firstRun) Thread.sleep((1_000 * standardInterval).toLong())
                 firstRun = false
                 if (isClosed()) return@thread // We have been closed, lets clean up thread
                 updateCaches()
@@ -309,7 +314,6 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 products.forEach { product ->
                     val frameworkAgreementStart: LocalDate? = product.rammeavtaleStart?.run { LocalDate.parse(this) }
                     val frameworkAgreementEnd: LocalDate? = product.rammeavtaleSlutt?.run { LocalDate.parse(this) }
-                    logg.info("DEBUG: updateCache: HMDB: pre-query: framework_agreement_start=$frameworkAgreementStart, framework_agreement_end=$frameworkAgreementEnd")
                     session.run(
                         queryOf(
                             """
@@ -324,6 +328,18 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                         ).asUpdate
                     )
                     logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsnr}, set framework_agreement_start=$frameworkAgreementStart, framework_agreement_end=$frameworkAgreementEnd")
+
+                    // Remove non-existing products from the v1_cache_hmdb-database (people applied for products that doesnt exist according to HMDB)
+                    val productsHmsnrs = products.filter { it.hmsnr != null }.map { it.hmsnr!! }
+                    val toRemove = hmdbRows.filter { !productsHmsnrs.contains(it) }
+                    if (toRemove.isNotEmpty()) logg.info("DEBUG: updateCache: HMDB: Removing invalid hmsnrs: ${toRemove.count()}")
+                    session.run(
+                        queryOf(
+                            """
+                                DELETE FROM v1_cache_hmdb WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
+                            """.trimIndent()
+                        ).asExecute
+                    )
                 }
             }
         }
@@ -347,6 +363,17 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                         ).asUpdate
                     )
                     logg.info("DEBUG: updateCache: OEBS: Updated hmsnr=$hmsnr, set title=${result.first}, type=${result.second}")
+
+                    // Remove non-existing products/accessories from the v1_cache_oebs-database (people applied for products that doesnt exist according to OEBS)
+                    val toRemove = oebsRows.filter { !products.containsKey(it) }
+                    if (toRemove.isNotEmpty()) logg.info("DEBUG: updateCache: OEBS: Removing invalid hmsnrs: ${toRemove.count()}")
+                    session.run(
+                        queryOf(
+                            """
+                                DELETE FROM v1_cache_oebs WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
+                            """.trimIndent()
+                        ).asExecute
+                    )
                 }
             }
         }
