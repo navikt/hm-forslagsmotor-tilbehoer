@@ -12,6 +12,7 @@ import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
 import no.nav.hjelpemidler.suggestionengine.Soknad
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.Tilbehoer
+import org.postgresql.util.PGobject
 import javax.sql.DataSource
 
 private val logg = KotlinLogging.logger {}
@@ -101,7 +102,10 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                             ;
                         """.trimIndent(),
                         soknad.soknad.id,
-                        objectMapper.writeValueAsString(soknad),
+                        PGobject().apply {
+                            type = "jsonb"
+                            value = objectMapper.writeValueAsString(soknad)
+                        },
                         soknad.created,
                     ).asUpdate
                 )
