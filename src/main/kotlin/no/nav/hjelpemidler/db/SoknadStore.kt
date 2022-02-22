@@ -314,9 +314,9 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                                 WHERE hmsnr = ?
                                 ;
                             """.trimIndent(),
-                            product.hmsnr,
                             product.rammeavtaleStart,
                             product.rammeavtaleSlutt,
+                            product.hmsnr,
                         ).asUpdate
                     )
                     logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsnr}, set framework_agreement_start=${product.rammeavtaleStart}, framework_agreement_end=${product.rammeavtaleSlutt}")
@@ -337,9 +337,9 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                                 WHERE hmsnr = ?
                                 ;
                             """.trimIndent(),
-                            hmsnr,
                             result.first, // Title
                             result.second, // Type
+                            hmsnr,
                         ).asUpdate
                     )
                     logg.info("DEBUG: updateCache: OEBS: Updated hmsnr=$hmsnr, set title=${result.first}, type=${result.second}")
