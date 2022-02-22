@@ -291,9 +291,11 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
             var firstRun = true
             while (true) {
+                logg.info("Background runner sleeping until: ${LocalDateTime.now().plusSeconds(standardInterval.toLong())}")
                 if (!firstRun) Thread.sleep((1_000 * standardInterval).toLong())
                 firstRun = false
                 if (isClosed()) return@thread // We have been closed, lets clean up thread
+                logg.info("Background runner launching updateCaches()..")
                 updateCaches()
             }
         }
@@ -333,6 +335,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         } else {
             newOebsRows?.toSet() ?: listOf<String>().toSet()
         }
+
+        logg.info("DEBUG: updateCache: newRows=${newHmdbRows != null && newOebsRows != null} hmdbRows.count()=${hmdbRows.count()} oebsRows.count()=${oebsRows.count()}")
 
         // If we don't have anything to update we can quit early
         if (hmdbRows.isEmpty() && oebsRows.isEmpty()) return
