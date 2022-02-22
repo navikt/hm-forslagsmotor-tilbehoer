@@ -4,16 +4,20 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.runBlocking
 import kotliquery.queryOf
 import kotliquery.sessionOf
 import kotliquery.using
 import mu.KotlinLogging
+import no.nav.hjelpemidler.oebs.Oebs
+import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
 import no.nav.hjelpemidler.suggestionengine.Soknad
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.Tilbehoer
 import org.postgresql.util.PGobject
 import javax.sql.DataSource
+import kotlin.concurrent.thread
 
 private val logg = KotlinLogging.logger {}
 
@@ -70,7 +74,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                                 ) IS NULL
                         
                             GROUP BY sc.hmsnr_tilbehoer, h.framework_agreement_start, h.framework_agreement_end, o.title
-                            ORDER BY occurances DESC
+                            ORDER BY occurances DESC, hmsnr_tilbehoer
                         ) AS q
                         WHERE q.occurances > ?
                         ;
@@ -89,8 +93,9 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
 
     override fun processApplication(soknad: Soknad) {
         logg.info("DEBUG: processApplication: processing soknads_id=${soknad.soknad.id}")
-        var oebsCacheStale = false
-        var hmdbCacheStale = false
+
+        val newHmdbRows = mutableListOf<String>()
+        val newOebsRows = mutableListOf<String>()
 
         // Contain logic that has to succeed together in a database transaction
         using(sessionOf(ds)) { session ->
@@ -192,7 +197,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                     )
                     if (rowsEffected > 0) {
                         // Make a note of any rows added to start a fetch from HMDB after this.
-                        hmdbCacheStale = true
+                        newHmdbRows.add(hmsnr)
                     }
                 }
 
@@ -204,7 +209,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                             """
                                 INSERT INTO v1_cache_oebs (hmsnr, title, type)
                                 VALUES
-                                    (?, NULL, 'Hjelpemiddel')
+                                    (?, NULL, NULL)
                                 ON CONFLICT DO NOTHING
                                 ;
                             """.trimIndent(),
@@ -214,7 +219,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
 
                     if (rowsEffected > 0) {
                         // Make a note of any rows added to start a fetch from OEBS after this.
-                        oebsCacheStale = true
+                        newOebsRows.add(product_hmsnr)
                     }
 
                     for (accessory in product.tilbehorListe) {
@@ -224,7 +229,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                                 """
                                 INSERT INTO v1_cache_oebs (hmsnr, title, type)
                                 VALUES
-                                    (?, NULL, 'Tilbehoer')
+                                    (?, NULL, NULL)
                                 ON CONFLICT DO NOTHING
                                 ;
                                 """.trimIndent(),
@@ -234,13 +239,81 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
 
                         if (rowsEffected > 0) {
                             // Make a note of any rows added to start a fetch from OEBS after this.
-                            oebsCacheStale = true
+                            newOebsRows.add(accessory.hmsnr)
                         }
                     }
                 }
             }
         }
 
+        // If we have any new rows in caches then we fetch those specifically
+        if (newHmdbRows.isNotEmpty() || newOebsRows.isNotEmpty()) {
+            thread(isDaemon = true) {
+                updateCache(newHmdbRows, newOebsRows)
+            }
+        }
+
         // TODO: Regenerate stats for grafana (all or only changes?)
+    }
+
+    fun updateCache() {
+        thread(isDaemon = true) {
+            updateCache(null, null)
+        }
+    }
+
+    @Synchronized
+    private fun updateCache(newHmdbRows: List<String>? = null, newOebsRows: List<String>?) {
+        // TODO: If newHmdbRows and newOebsRows are null, fetch a full list of outdated items
+        if (newHmdbRows == null || newOebsRows == null) return
+
+        val hmdbRows = newHmdbRows.toSet()
+        val oebsRows = newOebsRows.toSet()
+
+        // For all new or stale HMDB cache-rows, fetch framework agreement start / end and update the cache
+        runBlocking {
+            val products = HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmdbRows)
+            using(sessionOf(ds)) { session ->
+                products.forEach { product ->
+                    session.run(
+                        queryOf(
+                            """
+                                UPDATE v1_cache_hmdb
+                                SET framework_agreement_start = ?, framework_agreement_end = ?, cached_at = NOW()
+                                WHERE hmsnr = ?
+                                ;
+                            """.trimIndent(),
+                            product.hmsnr,
+                            product.rammeavtaleStart,
+                            product.rammeavtaleSlutt,
+                        ).asUpdate
+                    )
+                    logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsnr}, set framework_agreement_start=${product.rammeavtaleStart}, framework_agreement_end=${product.rammeavtaleSlutt}")
+                }
+            }
+        }
+
+        // For all new or stale OEBS cache-rows, fetch titles and type and update the cache
+        runBlocking {
+            val products = Oebs.getTitleForHmsNrs(oebsRows)
+            using(sessionOf(ds)) { session ->
+                products.forEach { (hmsnr, result) ->
+                    session.run(
+                        queryOf(
+                            """
+                                UPDATE v1_cache_oebs
+                                SET title = ?, type = ?, cached_at = NOW()
+                                WHERE hmsnr = ?
+                                ;
+                            """.trimIndent(),
+                            hmsnr,
+                            result.first, // Title
+                            result.second, // Type
+                        ).asUpdate
+                    )
+                    logg.info("DEBUG: updateCache: OEBS: Updated hmsnr=$hmsnr, set title=${result.first}, type=${result.second}")
+                }
+            }
+        }
     }
 }
