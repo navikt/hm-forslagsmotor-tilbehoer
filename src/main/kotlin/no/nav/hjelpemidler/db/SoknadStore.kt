@@ -83,6 +83,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
         }
 
     override fun processApplication(soknad: Soknad) {
+        logg.info("DEBUG: processApplication: processing soknads_id=${soknad.soknad.id}")
         var oebsCacheStale = false
         var hmdbCacheStale = false
 
@@ -134,8 +135,14 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                     return@transaction
                 }
 
+                for ((sid, p) in productsAppliedForWithAccessories) {
+                    logg.info("DEBUG: processApplication: product: $sid")
+                    for ((aid, a) in p.tilbehorListe) logg.info("DEBUG: processApplication: acessory: $aid")
+                }
+
                 for ((product_hmsnr, product) in productsAppliedForWithAccessories) {
                     for ((accessory_hmsnr, accessory) in product.tilbehorListe.groupBy { it.hmsnr }) {
+                        logg.info("DEBUG: processApplication: inserting v1_score_card row: pid=$product_hmsnr aid=$accessory_hmsnr sid=${soknad.soknad.id} quantity=${accessory.count()} created=${soknad.created}")
                         rowsEffected = transaction.run(
                             queryOf(
                                 """
@@ -160,6 +167,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
 
                 // Add products hmsnrs' to v1_cache_hmdb if does not already exist
                 for (hmsnr in productsAppliedForWithAccessories.keys) {
+                    logg.info("DEBUG: processApplication: inserting v1_cache_hmdb row: pid=$hmsnr framework_agreement_start=null framework_agreement_end=null")
                     rowsEffected = transaction.run(
                         queryOf(
                             """
@@ -169,7 +177,9 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                                 ON CONFLICT DO NOTHING
                                 ;
                             """.trimIndent(),
-                            hmsnr
+                            hmsnr,
+                            null, // TODO: fix me
+                            null, // TODO: fix me
                         ).asUpdate
                     )
                     if (rowsEffected > 0) {
@@ -180,6 +190,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
 
                 // Add products and accessories applied for to v1_cache_oebs if does not already exist
                 for ((product_hmsnr, product) in productsAppliedForWithAccessories) {
+                    logg.info("DEBUG: processApplication: inserting v1_cache_oebs row: pid=$product_hmsnr title=null type='Hjelpemiddel'")
                     rowsEffected = transaction.run(
                         queryOf(
                             """
@@ -199,6 +210,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
                     }
 
                     for (accessory in product.tilbehorListe) {
+                        logg.info("DEBUG: processApplication: inserting v1_cache_oebs row: aid=${accessory.hmsnr} title=null type='Tilbehoer'")
                         rowsEffected = transaction.run(
                             queryOf(
                                 """
