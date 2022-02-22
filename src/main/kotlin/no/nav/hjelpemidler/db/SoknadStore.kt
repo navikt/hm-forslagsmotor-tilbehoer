@@ -17,6 +17,7 @@ import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.Tilbehoer
 import org.postgresql.util.PGobject
 import java.io.Closeable
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.sql.DataSource
 import kotlin.concurrent.thread
@@ -276,12 +277,12 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
     }
 
     private fun backgroundRunner() {
-        thread (isDaemon = true) {
+        thread(isDaemon = true) {
             // Because we might run multiple pods in parallel we wait some random delay period on startup in the hope
             // that they will spread out and not run cache updates at the same time.
-            val startupRandomDelaySeconds = (0..60*60).random()
+            val startupRandomDelaySeconds = (0..60 * 60).random()
             logg.info("SoknadStore: waiting until ${LocalDateTime.now().plusSeconds(startupRandomDelaySeconds.toLong())} before we start updating caches every 60 minutes")
-            Thread.sleep((1_000*startupRandomDelaySeconds).toLong())
+            Thread.sleep((1_000 * startupRandomDelaySeconds).toLong())
 
             var firstRun = true
             while (true) {
@@ -306,6 +307,9 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             val products = HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmdbRows)
             using(sessionOf(ds)) { session ->
                 products.forEach { product ->
+                    val frameworkAgreementStart: LocalDate? = product.rammeavtaleStart?.run { LocalDate.parse(this) }
+                    val frameworkAgreementEnd: LocalDate? = product.rammeavtaleSlutt?.run { LocalDate.parse(this) }
+                    logg.info("DEBUG: updateCache: HMDB: pre-query: framework_agreement_start=$frameworkAgreementStart, framework_agreement_end=$frameworkAgreementEnd")
                     session.run(
                         queryOf(
                             """
@@ -314,12 +318,12 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                                 WHERE hmsnr = ?
                                 ;
                             """.trimIndent(),
-                            product.rammeavtaleStart,
-                            product.rammeavtaleSlutt,
+                            frameworkAgreementStart,
+                            frameworkAgreementEnd,
                             product.hmsnr,
                         ).asUpdate
                     )
-                    logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsnr}, set framework_agreement_start=${product.rammeavtaleStart}, framework_agreement_end=${product.rammeavtaleSlutt}")
+                    logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsnr}, set framework_agreement_start=$frameworkAgreementStart, framework_agreement_end=$frameworkAgreementEnd")
                 }
             }
         }
