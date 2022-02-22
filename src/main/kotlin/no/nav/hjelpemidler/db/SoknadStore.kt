@@ -301,11 +301,41 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
     @Synchronized
     private fun updateCaches(newHmdbRows: List<String>? = null, newOebsRows: List<String>? = null) {
-        // TODO: If newHmdbRows and newOebsRows are null, fetch a full list of outdated items
-        if (newHmdbRows == null || newOebsRows == null) return
+        // If newHmdbRows and newOebsRows are set, then fetch them, if null we fetch a full list of items that needs polling
+        val hmdbRows = if (newHmdbRows == null && newOebsRows == null) {
+            using(sessionOf(ds)) { session ->
+                session.run(
+                    queryOf(
+                        """
+                            SELECT hmsnr FROM v1_cache_hmdb WHERE title IS NULL OR type IS NULL;
+                        """.trimIndent()
+                    ).map {
+                        it.string("hmsnr")
+                    }.asList
+                )
+            }.toSet()
+        } else {
+            newHmdbRows?.toSet() ?: listOf<String>().toSet()
+        }
 
-        val hmdbRows = newHmdbRows.toSet()
-        val oebsRows = newOebsRows.toSet()
+        val oebsRows = if (newHmdbRows == null && newOebsRows == null) {
+            using(sessionOf(ds)) { session ->
+                session.run(
+                    queryOf(
+                        """
+                            SELECT hmsnr FROM v1_cache_oebs WHERE framework_agreement_start IS NULL OR framework_agreement_end IS NULL;
+                        """.trimIndent()
+                    ).map {
+                        it.string("hmsnr")
+                    }.asList
+                )
+            }.toSet()
+        } else {
+            newOebsRows?.toSet() ?: listOf<String>().toSet()
+        }
+
+        // If we don't have anything to update we can quit early
+        if (hmdbRows.isEmpty() && oebsRows.isEmpty()) return
 
         // For all new or stale HMDB cache-rows, fetch framework agreement start / end and update the cache
         runBlocking {
