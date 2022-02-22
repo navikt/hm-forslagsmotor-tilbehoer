@@ -339,7 +339,14 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
         // For all new or stale HMDB cache-rows, fetch framework agreement start / end and update the cache
         runBlocking {
-            val products = HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmdbRows)
+            val products = runCatching {
+                HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmdbRows)
+            }.getOrElse { e ->
+                logg.error("updateCache: HMDB: Failed to fetch products due to: $e")
+                e.printStackTrace()
+                return@runBlocking
+            }
+
             using(sessionOf(ds)) { session ->
                 products.forEach { product ->
                     val frameworkAgreementStart: LocalDate? = product.rammeavtaleStart?.run { LocalDate.parse(this) }
@@ -378,7 +385,14 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
         // For all new or stale OEBS cache-rows, fetch titles and type and update the cache
         runBlocking {
-            val products = Oebs.getTitleForHmsNrs(oebsRows)
+            val products = runCatching {
+                Oebs.getTitleForHmsNrs(oebsRows)
+            }.getOrElse { e ->
+                logg.error("updateCache: OEBS: Failed to fetch products due to: $e")
+                e.printStackTrace()
+                return@runBlocking
+            }
+
             using(sessionOf(ds)) { session ->
                 products.forEach { (hmsnr, result) ->
                     session.run(
