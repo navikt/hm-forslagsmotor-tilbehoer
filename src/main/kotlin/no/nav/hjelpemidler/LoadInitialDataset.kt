@@ -9,6 +9,7 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.SoknadStore
+import no.nav.hjelpemidler.db.SoknadStorePostgres
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
@@ -97,7 +98,13 @@ object InitialDataset {
             for (soknad in dataset) {
                 runCatching {
                     store.processApplication(soknad)
-                }.getOrThrow()
+                }.getOrElse { e ->
+                    if (e == SoknadStorePostgres.ApplicationPreviouslyProcessedException) {
+                        logg.info("DEBUG: processApplication: ignoring ApplicationPreviouslyProcessedException")
+                    } else {
+                        throw e
+                    }
+                }
             }
 
             // We have now loaded the dataset

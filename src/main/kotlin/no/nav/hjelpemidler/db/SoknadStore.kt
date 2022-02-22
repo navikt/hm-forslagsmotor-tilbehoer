@@ -25,6 +25,10 @@ internal interface SoknadStore {
 }
 
 internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
+    companion object {
+        val ApplicationPreviouslyProcessedException = RuntimeException("application previously processed")
+    }
+
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -114,7 +118,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore {
 
                 if (rowsEffected == 0) {
                     // We have already seen this application and did not add anything, lets stop processing here
-                    throw RuntimeException("application previously processed") // Note: transaction rollback
+                    throw ApplicationPreviouslyProcessedException // Note: transaction rollback
                 }
 
                 // Add one or more score-cards to v1_score_card with accessory-to-product relations
