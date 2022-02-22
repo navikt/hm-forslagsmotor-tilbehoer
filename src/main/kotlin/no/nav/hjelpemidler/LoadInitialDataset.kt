@@ -97,7 +97,7 @@ object InitialDataset {
             for (soknad in dataset) {
                 runCatching {
                     store.processApplication(soknad)
-                }.getOrNull()
+                }.getOrThrow()
             }
 
             // We have now loaded the dataset
