@@ -165,6 +165,15 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 }
             }
         }
+
+        thread(isDaemon = true) {
+            runCatching {
+                generateStats()
+            }.getOrElse { e ->
+                logg.error("Failed to generate stats after processing applications: $e")
+                e.printStackTrace()
+            }
+        }
     }
 
     override fun cachedTitleAndTypeFor(hmsnr: String): CachedTitleAndType? =
@@ -555,8 +564,44 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             }
         }
 
-        // If we did something above, lets regenerate stats
-        if (hmdbRows.isNotEmpty() || oebsRows.isNotEmpty()) generateStats()
+        // If we did something above, lets regenerate stats regarding missing framework agreement start-dates and titles
+        if (hmdbRows.isNotEmpty() || oebsRows.isNotEmpty()) {
+            using(sessionOf(ds)) { session ->
+                var totalMissingFrameworkAgreementStartDates = -1
+                var totalMissingOebsTitles = -1
+
+                val timeElapsed = measureTimeMillis {
+                    totalMissingFrameworkAgreementStartDates = session.run(
+                        queryOf(
+                            """
+                            SELECT count(hmsnr) AS c
+                            FROM v1_cache_hmdb
+                            WHERE cached_at IS NULL
+                            """.trimIndent(),
+                        ).map {
+                            it.int("c")
+                        }.asSingle
+                    ) ?: 0
+
+                    totalMissingOebsTitles = session.run(
+                        queryOf(
+                            """
+                            SELECT count(hmsnr) AS c
+                            FROM v1_cache_oebs
+                            WHERE cached_at IS NULL
+                            """.trimIndent(),
+                        ).map {
+                            it.int("c")
+                        }.asSingle
+                    ) ?: 0
+                }
+
+                logg.info("Suggestion engine stats calculated (totalMissingFrameworkAgreementStartDates=$totalMissingFrameworkAgreementStartDates, totalMissingOebsTitles=$totalMissingOebsTitles, timeElapsed=$timeElapsed)")
+
+                AivenMetrics().totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
+                AivenMetrics().totalMissingOebsTitles(totalMissingOebsTitles)
+            }
+        }
     }
 
     private fun generateStats() {
@@ -597,7 +642,6 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
             AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
         }
-        // prepareInspectionOfSuggestions()
     }
 
     private val querySuggestionsBase =

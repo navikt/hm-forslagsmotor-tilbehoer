@@ -26,10 +26,12 @@ import no.nav.hjelpemidler.db.SoknadStorePostgres
 import no.nav.hjelpemidler.db.dataSource
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
+import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
+import kotlin.system.measureTimeMillis
 import kotlin.time.ExperimentalTime
 import kotlin.time.minutes
 
@@ -165,7 +167,12 @@ fun Route.ktorRoutes(store: SoknadStore) {
         }
 
         get("/introspect") {
-            call.respond(store.introspect())
+            var result: List<ProductFrontendFiltered>?
+            val timeElapsed = measureTimeMillis {
+                result = store.introspect()
+            }
+            logg.info("Request for introspection of suggestions (timeElapsed=$timeElapsed)")
+            call.respond(result!!)
         }
 
         get("/inspection") { call.respondRedirect("/introspect") }
