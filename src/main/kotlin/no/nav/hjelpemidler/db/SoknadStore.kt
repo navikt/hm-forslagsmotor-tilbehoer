@@ -10,6 +10,7 @@ import kotliquery.sessionOf
 import kotliquery.using
 import mu.KotlinLogging
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
@@ -22,6 +23,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.sql.DataSource
 import kotlin.concurrent.thread
+import kotlin.system.measureTimeMillis
 
 private val logg = KotlinLogging.logger {}
 
@@ -29,6 +31,7 @@ private val MIN_OCCURANCES = 4
 
 internal interface SoknadStore {
     fun suggestions(hmsnr: String): List<Suggestion>
+    fun introspect(): List<Suggestion>
     fun processApplications(soknader: List<Soknad>)
 }
 
@@ -50,48 +53,28 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         using(sessionOf(ds)) { session ->
             session.run(
                 queryOf(
-                    """
-                        SELECT * FROM (
-                            SELECT
-                                sc.hmsnr_tilbehoer,
-                                sum(sc.quantity) AS occurances,
-                                o.title,
-                                h.framework_agreement_start,
-                                h.framework_agreement_end
-                            FROM v1_score_card AS sc
-                            LEFT JOIN v1_cache_hmdb AS h ON h.hmsnr = sc.hmsnr_hjelpemiddel
-                            INNER JOIN v1_cache_oebs AS o ON o.hmsnr = sc.hmsnr_tilbehoer
-                            WHERE
-                                sc.hmsnr_hjelpemiddel = ?
-                                
-                                -- We do not include results where we do not have a cached title for it (yet)
-                                AND o.title IS NOT NULL
-                        
-                                -- If the product is currently on a framework agreement, only include records with "created" date newer than the
-                                -- framework_agreement_start-date.
-                                AND NOT (
-                                    h.framework_agreement_start IS NOT NULL AND
-                                    h.framework_agreement_end IS NOT NULL AND
-                                    (h.framework_agreement_start <= NOW() AND h.framework_agreement_end >= NOW()) AND
-                                    sc.created < h.framework_agreement_start
-                                )
-                        
-                                -- Remove illegal suggestions from results
-                                AND (
-                                    SELECT 1 FROM v1_illegal_suggestion WHERE hmsnr_hjelpemiddel = sc.hmsnr_hjelpemiddel AND hmsnr_tilbehoer = sc.hmsnr_tilbehoer
-                                ) IS NULL
-                        
-                            GROUP BY sc.hmsnr_tilbehoer, h.framework_agreement_start, h.framework_agreement_end, o.title
-                            ORDER BY occurances DESC, hmsnr_tilbehoer
-                        ) AS q
-                        WHERE q.occurances > ?
-                        ;
-                    """.trimIndent(),
+                    querySuggestions,
                     hmsnr,
                     MIN_OCCURANCES,
                 ).map {
                     Suggestion(
-                        hmsNr = it.string("hmsnr"),
+                        hmsNr = it.string("hmsnr_tilbehoer"),
+                        title = it.string("title"),
+                        occurancesInSoknader = it.int("occurances"),
+                    )
+                }.asList
+            )
+        }
+
+    override fun introspect(): List<Suggestion> =
+        using(sessionOf(ds)) { session ->
+            session.run(
+                queryOf(
+                    queryIntrospectAllSuggestions,
+                    MIN_OCCURANCES,
+                ).map {
+                    Suggestion(
+                        hmsNr = it.string("hmsnr_tilbehoer"),
                         title = it.string("title"),
                         occurancesInSoknader = it.int("occurances"),
                     )
@@ -390,9 +373,6 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
         logg.info("DEBUG: updateCache: newRows=${newHmdbRows != null && newOebsRows != null} hmdbRows.count()=${hmdbRows.count()} oebsRows.count()=${oebsRows.count()}")
 
-        // If we don't have anything to update we can quit early
-        if (hmdbRows.isEmpty() && oebsRows.isEmpty()) return
-
         // For all new or stale HMDB cache-rows, fetch framework agreement start / end and update the cache
         runBlocking {
             if (hmdbRows.isEmpty()) return@runBlocking
@@ -485,5 +465,151 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 }
             }
         }
+
+        // If we did something above, lets regenerate stats
+        if (hmdbRows.isNotEmpty() || oebsRows.isNotEmpty()) generateStats()
     }
+
+    private fun generateStats() {
+        using(sessionOf(ds)) { session ->
+            var totalProductsWithAccessorySuggestions = -1
+            var totalAccessorySuggestions = -1
+            var totalAccessoriesWithoutADescription = -1
+
+            val timeElapsed = measureTimeMillis {
+                // Fetch all suggestions
+                val allSuggestions = session.run(
+                    queryOf(
+                        queryNumberOfSuggestionsForAllProducts,
+                        MIN_OCCURANCES,
+                    ).map {
+                        it.int("suggestions")
+                    }.asList
+                )
+
+                totalProductsWithAccessorySuggestions = allSuggestions.count()
+                totalAccessorySuggestions = allSuggestions.sum()
+
+                // Fetch all suggestions filtered by "title IS NULL"
+                totalAccessoriesWithoutADescription = session.run(
+                    queryOf(
+                        queryNumberOfSuggestionsWithNoTitleYetForAllProducts,
+                        MIN_OCCURANCES,
+                    ).map {
+                        it.int("suggestions")
+                    }.asList
+                ).sum()
+            }
+
+            // Report what we found to influxdb / grafana
+            logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription, timeElapsed=$timeElapsed)")
+
+            AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+            AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+        }
+        // prepareInspectionOfSuggestions()
+    }
+
+    private val querySuggestionsBase =
+        """
+        SELECT
+            sc.hmsnr_hjelpemiddel,
+            sc.hmsnr_tilbehoer,
+            sum(sc.quantity) AS occurances,
+            o.title,
+            h.framework_agreement_start,
+            h.framework_agreement_end
+        FROM v1_score_card AS sc
+        LEFT JOIN v1_cache_hmdb AS h ON h.hmsnr = sc.hmsnr_hjelpemiddel
+        INNER JOIN v1_cache_oebs AS o ON o.hmsnr = sc.hmsnr_tilbehoer
+        WHERE
+            {{WHERE}}
+            
+            -- Remove illegal accessory hmsnr 000000, it exists only for historical reasons (applies to all products)
+            sc.hmsnr_tilbehoer <> '000000'
+    
+            -- Remove illegal suggestions from results
+            AND (
+                SELECT 1 FROM v1_illegal_suggestion WHERE hmsnr_hjelpemiddel = sc.hmsnr_hjelpemiddel AND hmsnr_tilbehoer = sc.hmsnr_tilbehoer
+            ) IS NULL
+    
+            -- If the product is currently on a framework agreement, only include records with "created" date newer than the
+            -- framework_agreement_start-date.
+            AND NOT (
+                h.framework_agreement_start IS NOT NULL AND
+                h.framework_agreement_end IS NOT NULL AND
+                (h.framework_agreement_start <= NOW() AND h.framework_agreement_end >= NOW()) AND
+                sc.created < h.framework_agreement_start
+            )
+    
+        GROUP BY sc.hmsnr_hjelpemiddel, sc.hmsnr_tilbehoer, h.framework_agreement_start, h.framework_agreement_end, o.title
+        ORDER BY sc.hmsnr_hjelpemiddel, occurances DESC, sc.hmsnr_tilbehoer
+        """.trimIndent()
+
+    private val querySuggestions =
+        """        
+        SELECT * FROM (
+            ${querySuggestionsBase
+            .replace(
+                "{{WHERE}}",
+                """
+                    -- Looking for suggestions for a specific product
+                    sc.hmsnr_hjelpemiddel = ?
+                    
+                    -- We do not include results where we do not have a cached title for it (yet)
+                    AND o.title IS NOT NULL
+                    
+                    -- The rest of the where clauses
+                    AND
+                """.trimIndent()
+            )}
+        ) AS q
+            WHERE q.occurances > ?
+        ;
+        """.trimIndent()
+
+    private val queryIntrospectAllSuggestions =
+        """        
+        SELECT * FROM (
+            ${querySuggestionsBase.replace("{{WHERE}}", """
+                -- We do not include results where we do not have a cached title for it (yet)
+                o.title IS NOT NULL
+                
+                -- The rest of the where clauses
+                AND
+            """.trimIndent())}
+        ) AS q
+            WHERE q.occurances > ?
+        ;
+        """.trimIndent()
+
+    private val queryNumberOfSuggestionsForAllProducts =
+        """        
+        SELECT DISTINCT hmsnr_hjelpemiddel AS hmsnr, count(*) AS suggestions FROM (
+            ${querySuggestionsBase.replace("{{WHERE}}", "")}
+        ) AS q
+            WHERE q.occurances > ?
+            GROUP BY hmsnr_hjelpemiddel
+        ;
+        """.trimIndent()
+
+    private val queryNumberOfSuggestionsWithNoTitleYetForAllProducts =
+        """        
+        SELECT DISTINCT hmsnr_hjelpemiddel AS hmsnr, count(*) AS suggestions FROM (
+            ${querySuggestionsBase.replace(
+            "{{WHERE}}",
+            """
+                -- Lets only look for those with no title yet in the oebs cache
+                o.title IS NULL
+                    
+                -- The rest of the where clauses
+                AND
+            """.trimIndent()
+        )}
+        ) AS q
+            WHERE q.occurances > ?
+            GROUP BY hmsnr_hjelpemiddel
+        ;
+        """.trimIndent()
 }
