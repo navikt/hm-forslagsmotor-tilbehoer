@@ -408,20 +408,20 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                         ).asUpdate
                     )
                     logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsnr}, set framework_agreement_start=$frameworkAgreementStart, framework_agreement_end=$frameworkAgreementEnd")
+                }
 
-                    // Remove non-existing products from the v1_cache_hmdb-database (people applied for products that doesnt exist according to HMDB)
-                    val productsHmsnrs = products.filter { it.hmsnr != null }.map { it.hmsnr!! }
-                    val toRemove = hmdbRows.filter { !productsHmsnrs.contains(it) }
-                    if (toRemove.isNotEmpty()) {
-                        logg.info("DEBUG: updateCache: HMDB: Removing invalid hmsnrs: ${toRemove.count()}")
-                        session.run(
-                            queryOf(
-                                """
+                // Remove non-existing products from the v1_cache_hmdb-database (people applied for products that doesnt exist according to HMDB)
+                val productsHmsnrs = products.filter { it.hmsnr != null }.map { it.hmsnr!! }
+                val toRemove = hmdbRows.filter { !productsHmsnrs.contains(it) }
+                if (toRemove.isNotEmpty()) {
+                    logg.info("DEBUG: updateCache: HMDB: Removing invalid hmsnrs: ${toRemove.count()}")
+                    session.run(
+                        queryOf(
+                            """
                                     DELETE FROM v1_cache_hmdb WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
                                 """.trimIndent()
-                            ).asExecute
-                        )
-                    }
+                        ).asExecute
+                    )
                 }
             }
         }
@@ -466,19 +466,19 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                         ).asUpdate
                     )
                     logg.info("DEBUG: updateCache: OEBS: Updated hmsnr=$hmsnr, set title=${result.first}, type=${result.second}")
+                }
 
-                    // Remove non-existing products/accessories from the v1_cache_oebs-database (people applied for products that doesnt exist according to OEBS)
-                    val toRemove = oebsRows.filter { !products.containsKey(it) }
-                    if (toRemove.isNotEmpty()) {
-                        logg.info("DEBUG: updateCache: OEBS: Removing invalid hmsnrs: ${toRemove.count()}")
-                        session.run(
-                            queryOf(
-                                """
+                // Remove non-existing products/accessories from the v1_cache_oebs-database (people applied for products that doesnt exist according to OEBS)
+                val toRemove = oebsRows.filter { !products.containsKey(it) }
+                if (toRemove.isNotEmpty()) {
+                    logg.info("DEBUG: updateCache: OEBS: Removing invalid hmsnrs: ${toRemove.count()}")
+                    session.run(
+                        queryOf(
+                            """
                                     DELETE FROM v1_cache_oebs WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
                                 """.trimIndent()
-                            ).asExecute
-                        )
-                    }
+                        ).asExecute
+                    )
                 }
             }
         }
