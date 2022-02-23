@@ -129,8 +129,6 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 }
             }
         }
-
-        // TODO: Regenerate stats for grafana (all or only changes?)
     }
 
     @Synchronized
