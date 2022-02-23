@@ -17,6 +17,7 @@ import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
 import no.nav.hjelpemidler.suggestionengine.ProductFrontendFiltered
 import no.nav.hjelpemidler.suggestionengine.Soknad
 import no.nav.hjelpemidler.suggestionengine.Suggestion
+import no.nav.hjelpemidler.suggestionengine.Suggestions
 import no.nav.hjelpemidler.suggestionengine.Tilbehoer
 import org.postgresql.util.PGobject
 import java.io.Closeable
@@ -30,10 +31,11 @@ private val logg = KotlinLogging.logger {}
 
 private val MIN_OCCURANCES = 4
 
-internal interface SoknadStore {
-    fun suggestions(hmsnr: String): List<Suggestion>
+interface SoknadStore {
+    fun suggestions(hmsnr: String): Suggestions
     fun introspect(): List<ProductFrontendFiltered>
     fun processApplications(soknader: List<Soknad>)
+    fun cachedTitleAndTypeFor(hmsnr: String): CachedTitleAndType?
 }
 
 internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Closeable {
@@ -50,14 +52,16 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         backgroundRunner()
     }
 
-    override fun suggestions(hmsnr: String): List<Suggestion> =
-        using(sessionOf(ds)) { session ->
+    override fun suggestions(hmsnr: String): Suggestions {
+        var startDate: LocalDate? = null
+        return using(sessionOf(ds)) { session ->
             session.run(
                 queryOf(
                     querySuggestions,
                     hmsnr,
                     MIN_OCCURANCES,
                 ).map {
+                    it.localDateOrNull("framework_agreement_start")?.run { startDate = this }
                     Suggestion(
                         hmsNr = it.string("hmsnr_tilbehoer"),
                         title = it.string("title"),
@@ -65,7 +69,13 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     )
                 }.asList
             )
+        }.run {
+            Suggestions(
+                dataStartDate = startDate,
+                suggestions = this,
+            )
         }
+    }
 
     override fun introspect(): List<ProductFrontendFiltered> =
         using(sessionOf(ds)) { session ->
@@ -128,6 +138,27 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     e.printStackTrace()
                 }
             }
+        }
+    }
+
+    override fun cachedTitleAndTypeFor(hmsnr: String): CachedTitleAndType? {
+        return using(sessionOf(ds)) { session ->
+            session.run(
+                queryOf(
+                    """
+                        SELECT title, type
+                        FROM v1_cache_oebs
+                        WHERE hmsnr = ?
+                        ;
+                    """.trimIndent(),
+                    hmsnr,
+                ).map {
+                    CachedTitleAndType(
+                        title = it.stringOrNull("title"),
+                        type = it.stringOrNull("type"),
+                    )
+                }.asSingle
+            )
         }
     }
 
@@ -588,13 +619,16 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
     private val queryIntrospectAllSuggestions =
         """        
         SELECT q.*, o_hjelpemiddel.title AS title_hjelpemiddel FROM (
-            ${querySuggestionsBase.replace("{{WHERE}}", """
+            ${querySuggestionsBase.replace(
+            "{{WHERE}}",
+            """
                 -- We do not include results where we do not have a cached title for it (yet)
                 o.title IS NOT NULL
                 
                 -- The rest of the where clauses
                 AND
-            """.trimIndent())}
+            """.trimIndent()
+        )}
         ) AS q
         LEFT JOIN v1_cache_oebs AS o_hjelpemiddel ON q.hmsnr_hjelpemiddel = o_hjelpemiddel.hmsnr
         WHERE q.occurances > ?

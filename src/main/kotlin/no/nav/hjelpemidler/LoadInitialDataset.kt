@@ -9,7 +9,6 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.SoknadStore
-import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -34,7 +33,7 @@ object InitialDataset {
 
     private var isInitialDatasetLoaded = false
 
-    internal fun fetchInitialDatasetFor(se: SuggestionEngine, store: SoknadStore) {
+    internal fun fetchInitialDatasetFor(store: SoknadStore) {
         thread(isDaemon = true) {
             logg.info("Waiting on network before downloading initial dataset")
             Thread.sleep(5000)
@@ -89,11 +88,6 @@ object InitialDataset {
             logg.info("Download initial dataset finished with ${dataset.count()} applications to learn from")
 
             // Set initial dataset to suggestion engine
-            se.learnFromSoknader(
-                dataset
-            )
-
-            // Add to database
             store.processApplications(dataset)
 
             // We have now loaded the dataset
