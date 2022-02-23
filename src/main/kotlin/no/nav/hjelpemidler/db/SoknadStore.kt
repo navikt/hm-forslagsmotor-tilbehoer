@@ -120,7 +120,12 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         // If we have any new rows in caches then we fetch those specifically
         if (newHmdbRows.isNotEmpty() || newOebsRows.isNotEmpty()) {
             thread(isDaemon = true) {
-                updateCaches(newHmdbRows, newOebsRows)
+                runCatching {
+                    updateCaches(newHmdbRows, newOebsRows)
+                }.getOrElse { e ->
+                    logg.error("Failed to prefetch caches for new rows added to caches: $e")
+                    e.printStackTrace()
+                }
             }
         }
 
@@ -154,12 +159,25 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
             var firstRun = true
             while (true) {
-                logg.info("Background runner sleeping until: ${LocalDateTime.now().plusSeconds(standardInterval.toLong())}")
-                if (!firstRun) Thread.sleep((1_000 * standardInterval).toLong())
+                if (!firstRun) {
+                    logg.info("Background runner sleeping until: ${LocalDateTime.now().plusSeconds(standardInterval.toLong())}")
+                    Thread.sleep((1_000 * standardInterval).toLong())
+                    logg.info("Background runner working..")
+                }
                 firstRun = false
-                if (isClosed()) return@thread // We have been closed, lets clean up thread
+
+                if (isClosed()) {
+                    logg.info("Background runner exiting..")
+                    return@thread
+                } // We have been closed, lets clean up thread
+
                 logg.info("Background runner launching updateCaches()..")
-                updateCaches()
+                runCatching {
+                    updateCaches()
+                }.getOrElse { e ->
+                    logg.error("Background runner failed to update cache due to: $e")
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -330,7 +348,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 session.run(
                     queryOf(
                         """
-                            SELECT hmsnr FROM v1_cache_hmdb WHERE title IS NULL OR type IS NULL;
+                            SELECT hmsnr FROM v1_cache_hmdb WHERE framework_agreement_start IS NULL OR framework_agreement_end IS NULL;
                         """.trimIndent()
                     ).map {
                         it.string("hmsnr")
@@ -346,7 +364,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 session.run(
                     queryOf(
                         """
-                            SELECT hmsnr FROM v1_cache_oebs WHERE framework_agreement_start IS NULL OR framework_agreement_end IS NULL;
+                            SELECT hmsnr FROM v1_cache_oebs WHERE title IS NULL OR type IS NULL;
                         """.trimIndent()
                     ).map {
                         it.string("hmsnr")

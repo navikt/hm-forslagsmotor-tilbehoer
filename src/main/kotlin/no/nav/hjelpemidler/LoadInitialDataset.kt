@@ -9,7 +9,6 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.SoknadStore
-import no.nav.hjelpemidler.db.SoknadStorePostgres
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
