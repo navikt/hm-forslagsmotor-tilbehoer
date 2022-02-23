@@ -392,6 +392,13 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 return@runBlocking
             }
 
+            val debugHmsnrs = listOf(
+                "242530"
+            )
+            for (hmsnr in debugHmsnrs) products.filter { it.hmsnr == hmsnr }.getOrNull(0)?.run {
+                logg.info("DEBUG: debugHmsnrs: HMDB: found hmsnr=$hmsnr product: framework_start=${this.rammeavtaleStart} framework_end=${this.rammeavtaleSlutt}")
+            } ?: logg.info("DEBUG: debugHmsnrs: HMDB: did not find hmsnr=$hmsnr")
+
             using(sessionOf(ds)) { session ->
                 products.forEach { product ->
                     val frameworkAgreementStart: LocalDate? = product.rammeavtaleStart?.run { LocalDate.parse(this) }
