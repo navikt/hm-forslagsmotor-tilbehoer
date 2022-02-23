@@ -95,17 +95,7 @@ object InitialDataset {
             )
 
             // Add to database
-            for (soknad in dataset) {
-                runCatching {
-                    store.processApplication(soknad)
-                }.getOrElse { e ->
-                    if (e == SoknadStorePostgres.ApplicationPreviouslyProcessedException) {
-                        logg.info("DEBUG: processApplication: ignoring ApplicationPreviouslyProcessedException")
-                    } else {
-                        throw e
-                    }
-                }
-            }
+            store.processApplications(dataset)
 
             // We have now loaded the dataset
             synchronized(this) {

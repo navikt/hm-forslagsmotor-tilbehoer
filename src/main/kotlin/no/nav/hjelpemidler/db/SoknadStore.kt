@@ -29,7 +29,7 @@ private val MIN_OCCURANCES = 4
 
 internal interface SoknadStore {
     fun suggestions(hmsnr: String): List<Suggestion>
-    fun processApplication(soknad: Soknad)
+    fun processApplications(soknader: List<Soknad>)
 }
 
 internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Closeable {
@@ -99,7 +99,72 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             )
         }
 
-    override fun processApplication(soknad: Soknad) {
+    override fun processApplications(soknader: List<Soknad>) {
+        val newHmdbRows = mutableListOf<String>()
+        val newOebsRows = mutableListOf<String>()
+
+        for (soknad in soknader) {
+            runCatching {
+                val (hmdb, oebs) = processApplication(soknad)
+                newHmdbRows.addAll(hmdb)
+                newOebsRows.addAll(oebs)
+            }.getOrElse { e ->
+                if (e == ApplicationPreviouslyProcessedException) {
+                    logg.info("DEBUG: processApplications: ignoring ApplicationPreviouslyProcessedException")
+                } else {
+                    throw e
+                }
+            }
+        }
+
+        // If we have any new rows in caches then we fetch those specifically
+        if (newHmdbRows.isNotEmpty() || newOebsRows.isNotEmpty()) {
+            thread(isDaemon = true) {
+                updateCaches(newHmdbRows, newOebsRows)
+            }
+        }
+
+        // TODO: Regenerate stats for grafana (all or only changes?)
+    }
+
+    @Synchronized
+    override fun close() {
+        isClosed = true
+    }
+
+    // Used to stop background runner thread on close
+    private var isClosed = false
+
+    @Synchronized
+    private fun isClosed(): Boolean {
+        return isClosed
+    }
+
+    private fun backgroundRunner() {
+        thread(isDaemon = true) {
+            // Because we might run multiple pods in parallel we wait some random delay period on startup in the hope
+            // that they will spread out and not run cache updates at the same time.
+            var startupRandomDelaySeconds = (0..60 * 60).random()
+            if (Configuration.application["APP_PROFILE"]!! == "dev") startupRandomDelaySeconds = 60
+            logg.info("SoknadStore: waiting until ${LocalDateTime.now().plusSeconds(startupRandomDelaySeconds.toLong())} before we start updating caches every 60 minutes")
+            Thread.sleep((1_000 * startupRandomDelaySeconds).toLong())
+
+            var standardInterval = 60 * 60
+            if (Configuration.application["APP_PROFILE"]!! == "dev") standardInterval = 60
+
+            var firstRun = true
+            while (true) {
+                logg.info("Background runner sleeping until: ${LocalDateTime.now().plusSeconds(standardInterval.toLong())}")
+                if (!firstRun) Thread.sleep((1_000 * standardInterval).toLong())
+                firstRun = false
+                if (isClosed()) return@thread // We have been closed, lets clean up thread
+                logg.info("Background runner launching updateCaches()..")
+                updateCaches()
+            }
+        }
+    }
+
+    private fun processApplication(soknad: Soknad): Pair<List<String>, List<String>> {
         logg.info("DEBUG: processApplication: processing soknads_id=${soknad.soknad.id}")
 
         val newHmdbRows = mutableListOf<String>()
@@ -158,7 +223,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
                 for ((sid, p) in productsAppliedForWithAccessories) {
                     logg.info("DEBUG: processApplication: product: $sid")
-                    for ((aid, a) in p.tilbehorListe) logg.info("DEBUG: processApplication: acessory: $aid")
+                    for ((aid, _) in p.tilbehorListe) logg.info("DEBUG: processApplication: acessory: $aid")
                 }
 
                 for ((product_hmsnr, product) in productsAppliedForWithAccessories) {
@@ -254,51 +319,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             }
         }
 
-        // If we have any new rows in caches then we fetch those specifically
-        if (newHmdbRows.isNotEmpty() || newOebsRows.isNotEmpty()) {
-            thread(isDaemon = true) {
-                updateCaches(newHmdbRows, newOebsRows)
-            }
-        }
-
-        // TODO: Regenerate stats for grafana (all or only changes?)
-    }
-
-    @Synchronized
-    override fun close() {
-        isClosed = true
-    }
-
-    // Used to stop background runner thread on close
-    private var isClosed = false
-
-    @Synchronized
-    private fun isClosed(): Boolean {
-        return isClosed
-    }
-
-    private fun backgroundRunner() {
-        thread(isDaemon = true) {
-            // Because we might run multiple pods in parallel we wait some random delay period on startup in the hope
-            // that they will spread out and not run cache updates at the same time.
-            var startupRandomDelaySeconds = (0..60 * 60).random()
-            if (Configuration.application["APP_PROFILE"]!! == "dev") startupRandomDelaySeconds = 60
-            logg.info("SoknadStore: waiting until ${LocalDateTime.now().plusSeconds(startupRandomDelaySeconds.toLong())} before we start updating caches every 60 minutes")
-            Thread.sleep((1_000 * startupRandomDelaySeconds).toLong())
-
-            var standardInterval = 60 * 60
-            if (Configuration.application["APP_PROFILE"]!! == "dev") standardInterval = 60
-
-            var firstRun = true
-            while (true) {
-                logg.info("Background runner sleeping until: ${LocalDateTime.now().plusSeconds(standardInterval.toLong())}")
-                if (!firstRun) Thread.sleep((1_000 * standardInterval).toLong())
-                firstRun = false
-                if (isClosed()) return@thread // We have been closed, lets clean up thread
-                logg.info("Background runner launching updateCaches()..")
-                updateCaches()
-            }
-        }
+        return Pair(newHmdbRows, newOebsRows)
     }
 
     @Synchronized
