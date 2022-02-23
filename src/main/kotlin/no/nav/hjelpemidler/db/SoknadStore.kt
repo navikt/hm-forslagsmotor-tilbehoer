@@ -14,6 +14,7 @@ import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
+import no.nav.hjelpemidler.suggestionengine.ProductFrontendFiltered
 import no.nav.hjelpemidler.suggestionengine.Soknad
 import no.nav.hjelpemidler.suggestionengine.Suggestion
 import no.nav.hjelpemidler.suggestionengine.Tilbehoer
@@ -31,7 +32,7 @@ private val MIN_OCCURANCES = 4
 
 internal interface SoknadStore {
     fun suggestions(hmsnr: String): List<Suggestion>
-    fun introspect(): List<Suggestion>
+    fun introspect(): List<ProductFrontendFiltered>
     fun processApplications(soknader: List<Soknad>)
 }
 
@@ -66,19 +67,36 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             )
         }
 
-    override fun introspect(): List<Suggestion> =
+    override fun introspect(): List<ProductFrontendFiltered> =
         using(sessionOf(ds)) { session ->
             session.run(
                 queryOf(
                     queryIntrospectAllSuggestions,
                     MIN_OCCURANCES,
                 ).map {
-                    Suggestion(
-                        hmsNr = it.string("hmsnr_tilbehoer"),
-                        title = it.string("title"),
-                        occurancesInSoknader = it.int("occurances"),
+                    Triple(
+                        Pair(
+                            it.string("hmsnr_hjelpemiddel"),
+                            it.string("title_hjelpemiddel"),
+                        ),
+                        it.localDateOrNull("framework_agreement_start"),
+                        Suggestion(
+                            hmsNr = it.string("hmsnr_tilbehoer"),
+                            title = it.string("title"),
+                            occurancesInSoknader = it.int("occurances"),
+                        )
                     )
                 }.asList
+            )
+        }.groupBy { it.first }.map {
+            ProductFrontendFiltered(
+                hmsnr = it.key.first,
+                title = it.key.second,
+                suggestions = it.value.fold(mutableListOf()) { a, b ->
+                    a.add(b.third)
+                    a
+                },
+                frameworkAgreementStartDate = it.value.firstOrNull()?.second,
             )
         }
 
@@ -565,13 +583,13 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 """.trimIndent()
             )}
         ) AS q
-            WHERE q.occurances > ?
+        WHERE q.occurances > ?
         ;
         """.trimIndent()
 
     private val queryIntrospectAllSuggestions =
         """        
-        SELECT * FROM (
+        SELECT q.*, o_hjelpemiddel.title AS title_hjelpemiddel FROM (
             ${querySuggestionsBase.replace("{{WHERE}}", """
                 -- We do not include results where we do not have a cached title for it (yet)
                 o.title IS NOT NULL
@@ -580,7 +598,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 AND
             """.trimIndent())}
         ) AS q
-            WHERE q.occurances > ?
+        LEFT JOIN v1_cache_oebs AS o_hjelpemiddel ON q.hmsnr_hjelpemiddel = o_hjelpemiddel.hmsnr
+        WHERE q.occurances > ?
         ;
         """.trimIndent()
 
@@ -589,8 +608,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         SELECT DISTINCT hmsnr_hjelpemiddel AS hmsnr, count(*) AS suggestions FROM (
             ${querySuggestionsBase.replace("{{WHERE}}", "")}
         ) AS q
-            WHERE q.occurances > ?
-            GROUP BY hmsnr_hjelpemiddel
+        WHERE q.occurances > ?
+        GROUP BY hmsnr_hjelpemiddel
         ;
         """.trimIndent()
 
@@ -608,8 +627,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             """.trimIndent()
         )}
         ) AS q
-            WHERE q.occurances > ?
-            GROUP BY hmsnr_hjelpemiddel
+        WHERE q.occurances > ?
+        GROUP BY hmsnr_hjelpemiddel
         ;
         """.trimIndent()
 }

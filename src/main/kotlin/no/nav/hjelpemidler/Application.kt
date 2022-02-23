@@ -141,6 +141,9 @@ fun main() {
                     )
                     call.respond(results)
                 }
+                get("/inspection-v2") {
+                    call.respond(store.introspect())
+                }
             }
         }
         .build().apply {
