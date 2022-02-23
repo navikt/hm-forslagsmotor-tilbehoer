@@ -382,6 +382,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
         // For all new or stale HMDB cache-rows, fetch framework agreement start / end and update the cache
         runBlocking {
+            if (hmdbRows.isEmpty()) return@runBlocking
+
             val products = runCatching {
                 HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmdbRows)
             }.getOrElse { e ->
@@ -418,8 +420,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     session.run(
                         queryOf(
                             """
-                                    DELETE FROM v1_cache_hmdb WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
-                                """.trimIndent()
+                                DELETE FROM v1_cache_hmdb WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
+                            """.trimIndent()
                         ).asExecute
                     )
                 }
@@ -428,6 +430,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
         // For all new or stale OEBS cache-rows, fetch titles and type and update the cache
         runBlocking {
+            if (oebsRows.isEmpty()) return@runBlocking
+
             val products = runCatching {
                 Oebs.getTitleForHmsNrs(oebsRows)
             }.getOrElse { e ->
@@ -475,8 +479,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     session.run(
                         queryOf(
                             """
-                                    DELETE FROM v1_cache_oebs WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
-                                """.trimIndent()
+                                DELETE FROM v1_cache_oebs WHERE hmsnr IN (${toRemove.joinToString { "'$it'" }});
+                            """.trimIndent()
                         ).asExecute
                     )
                 }
