@@ -11,18 +11,20 @@ import kotliquery.using
 import mu.KotlinLogging
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.metrics.AivenMetrics
+import no.nav.hjelpemidler.model.CachedTitleAndType
+import no.nav.hjelpemidler.model.Hjelpemiddel
+import no.nav.hjelpemidler.model.ProductFrontendFiltered
+import no.nav.hjelpemidler.model.Soknad
+import no.nav.hjelpemidler.model.Suggestion
+import no.nav.hjelpemidler.model.Suggestions
+import no.nav.hjelpemidler.model.Tilbehoer
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.suggestionengine.Hjelpemiddel
-import no.nav.hjelpemidler.suggestionengine.ProductFrontendFiltered
-import no.nav.hjelpemidler.suggestionengine.Soknad
-import no.nav.hjelpemidler.suggestionengine.Suggestion
-import no.nav.hjelpemidler.suggestionengine.Suggestions
-import no.nav.hjelpemidler.suggestionengine.Tilbehoer
 import org.postgresql.util.PGobject
 import java.io.Closeable
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 import javax.sql.DataSource
 import kotlin.concurrent.thread
 import kotlin.system.measureTimeMillis
@@ -33,9 +35,11 @@ private val MIN_OCCURANCES = 4
 
 interface SoknadStore {
     fun suggestions(hmsnr: String): Suggestions
+    fun allSuggestionsForHmsnr(hmsnr: String): Suggestions
     fun introspect(): List<ProductFrontendFiltered>
     fun processApplications(soknader: List<Soknad>)
     fun cachedTitleAndTypeFor(hmsnr: String): CachedTitleAndType?
+    fun knowsOfSoknadID(soknadsID: UUID): Boolean
 }
 
 internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Closeable {
@@ -77,6 +81,28 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         }
     }
 
+    override fun allSuggestionsForHmsnr(hmsnr: String): Suggestions {
+        return using(sessionOf(ds)) { session ->
+            session.run(
+                queryOf(
+                    queryAllSuggestionsForStatsBuilding,
+                    hmsnr,
+                ).map {
+                    Suggestion(
+                        hmsNr = it.string("hmsnr_tilbehoer"),
+                        title = null,
+                        occurancesInSoknader = it.int("occurances"),
+                    )
+                }.asList
+            )
+        }.run {
+            Suggestions(
+                dataStartDate = null,
+                suggestions = this,
+            )
+        }
+    }
+
     override fun introspect(): List<ProductFrontendFiltered> =
         using(sessionOf(ds)) { session ->
             session.run(
@@ -87,7 +113,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     Pair(
                         it.string("hmsnr_hjelpemiddel"),
                         Triple(
-                            it.string("title_hjelpemiddel"),
+                            it.stringOrNull("title_hjelpemiddel"),
                             it.localDateOrNull("framework_agreement_start"),
                             Suggestion(
                                 hmsNr = it.string("hmsnr_tilbehoer"),
@@ -141,8 +167,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         }
     }
 
-    override fun cachedTitleAndTypeFor(hmsnr: String): CachedTitleAndType? {
-        return using(sessionOf(ds)) { session ->
+    override fun cachedTitleAndTypeFor(hmsnr: String): CachedTitleAndType? =
+        using(sessionOf(ds)) { session ->
             session.run(
                 queryOf(
                     """
@@ -160,7 +186,23 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 }.asSingle
             )
         }
-    }
+
+    override fun knowsOfSoknadID(soknadsID: UUID): Boolean =
+        using(sessionOf(ds)) { session ->
+            session.run(
+                queryOf(
+                    """
+                        SELECT 1
+                        FROM v1_soknad
+                        WHERE soknads_id = ?
+                        ;
+                    """.trimIndent(),
+                    soknadsID,
+                ).map {
+                    true
+                }.asSingle
+            )
+        } ?: false
 
     @Synchronized
     override fun close() {
@@ -569,7 +611,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             h.framework_agreement_end
         FROM v1_score_card AS sc
         LEFT JOIN v1_cache_hmdb AS h ON h.hmsnr = sc.hmsnr_hjelpemiddel
-        INNER JOIN v1_cache_oebs AS o ON o.hmsnr = sc.hmsnr_tilbehoer
+        LEFT JOIN v1_cache_oebs AS o ON o.hmsnr = sc.hmsnr_tilbehoer
         WHERE
             {{WHERE}}
             
@@ -661,6 +703,23 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         ) AS q
         WHERE q.occurances > ?
         GROUP BY hmsnr_hjelpemiddel
+        ;
+        """.trimIndent()
+
+    private val queryAllSuggestionsForStatsBuilding =
+        """        
+        SELECT
+            hmsnr_tilbehoer,
+            sum(quantity) AS occurances,
+        FROM v1_score_card
+        WHERE
+            hmsnr_hjelpemiddel = ?
+            
+            -- Remove illegal accessory hmsnr 000000, it exists only for historical reasons (applies to all products)
+            hmsnr_tilbehoer <> '000000'
+            
+        GROUP BY hmsnr_tilbehoer
+        ORDER BY occurances DESC, hmsnr_tilbehoer
         ;
         """.trimIndent()
 }

@@ -10,9 +10,9 @@ import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
+import no.nav.hjelpemidler.db.SoknadStore
 import no.nav.hjelpemidler.metrics.AivenMetrics
-import no.nav.hjelpemidler.suggestionengine.Soknad
-import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import no.nav.hjelpemidler.model.Soknad
 import java.time.LocalDateTime
 
 private val logg = KotlinLogging.logger {}
@@ -20,7 +20,7 @@ private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 
 internal class NySøknadInnsendt(
     rapidsConnection: RapidsConnection,
-    val se: SuggestionEngine
+    val store: SoknadStore
 ) : PacketListenerWithOnError {
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -44,7 +44,7 @@ internal class NySøknadInnsendt(
         val soknad = objectMapper.readValue<Soknad>(rawJson)
         soknad.created = LocalDateTime.now()
 
-        if (se.knowsOfSoknadID(soknad.soknad.id)) {
+        if (store.knowsOfSoknadID(soknad.soknad.id)) {
             logg.info("SuggestionEngine already knowns about soknad with id=${soknad.soknad.id}, ignoring..")
             return
         }
@@ -84,7 +84,7 @@ internal class NySøknadInnsendt(
                 }
             }
 
-            val suggestions = se.allSuggestionsForHmsNr(product.hmsNr)
+            val suggestions = store.allSuggestionsForHmsnr(product.hmsNr)
             if (suggestions.suggestions.isEmpty()) {
                 AivenMetrics().productWithoutSuggestions()
                 continue
@@ -109,7 +109,7 @@ internal class NySøknadInnsendt(
         }
 
         // Learn from data
-        se.learnFromSoknad(soknad)
+        store.processApplications(listOf(soknad))
     }
 
     fun collectNewMetrics(soknad: Soknad) {

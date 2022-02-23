@@ -26,11 +26,10 @@ import no.nav.hjelpemidler.db.SoknadStorePostgres
 import no.nav.hjelpemidler.db.dataSource
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
+import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
-import no.nav.hjelpemidler.suggestionengine.SuggestionsFrontendFiltered
 import kotlin.time.ExperimentalTime
 import kotlin.time.minutes
 
@@ -73,7 +72,7 @@ fun main() {
             }
         }
         .build().apply {
-            NySøknadInnsendt(this, se)
+            NySøknadInnsendt(this, store)
         }.apply {
             register(
                 object : RapidsConnection.StatusListener {

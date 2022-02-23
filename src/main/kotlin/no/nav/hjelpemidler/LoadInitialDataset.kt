@@ -9,6 +9,7 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.SoknadStore
+import no.nav.hjelpemidler.model.Soknad
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -79,7 +80,7 @@ object InitialDataset {
                 exitProcess(-123)
             }
 
-            val dataset = objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine.Soknad>>(response.body()).asList()
+            val dataset = objectMapper.readValue<Array<Soknad>>(response.body()).asList()
             if (dataset.isEmpty()) {
                 logg.error("Empty dataset received from hm-soknadsbehandling-db, unable to continue")
                 exitProcess(-123)

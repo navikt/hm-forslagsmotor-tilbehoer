@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.db
+package no.nav.hjelpemidler.model
 
 data class CachedTitleAndType(
     val title: String?,
