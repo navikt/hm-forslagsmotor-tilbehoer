@@ -25,7 +25,7 @@ CREATE TABLE v1_cache_oebs (
     hmsnr               TEXT        NOT NULL,
     title               TEXT        NULL,
     type                TEXT        NULL,
-    cached_at           TIMESTAMP   NOT NULL DEFAULT (NOW()),
+    cached_at           TIMESTAMP   NULL,
     PRIMARY KEY (hmsnr)
 );
 
@@ -36,7 +36,7 @@ CREATE TABLE v1_cache_hmdb (
    hmsnr                        TEXT        NOT NULL,
    framework_agreement_start    DATE	   	NULL,
    framework_agreement_end      DATE   		NULL,
-   cached_at                    TIMESTAMP   NOT NULL DEFAULT (NOW()),
+   cached_at                    TIMESTAMP   NULL,
    PRIMARY KEY (hmsnr)
 );
 

@@ -275,15 +275,12 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     rowsEffected = transaction.run(
                         queryOf(
                             """
-                                INSERT INTO v1_cache_hmdb (hmsnr, framework_agreement_start, framework_agreement_end)
-                                VALUES
-                                    (?, ?, ?)
+                                INSERT INTO v1_cache_hmdb (hmsnr)
+                                VALUES (?)
                                 ON CONFLICT DO NOTHING
                                 ;
                             """.trimIndent(),
                             hmsnr,
-                            null, // TODO: fix me
-                            null, // TODO: fix me
                         ).asUpdate
                     )
                     if (rowsEffected > 0) {
@@ -298,9 +295,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     rowsEffected = transaction.run(
                         queryOf(
                             """
-                                INSERT INTO v1_cache_oebs (hmsnr, title, type)
-                                VALUES
-                                    (?, NULL, NULL)
+                                INSERT INTO v1_cache_oebs (hmsnr)
+                                VALUES (?)
                                 ON CONFLICT DO NOTHING
                                 ;
                             """.trimIndent(),
@@ -318,9 +314,8 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                         rowsEffected = transaction.run(
                             queryOf(
                                 """
-                                INSERT INTO v1_cache_oebs (hmsnr, title, type)
-                                VALUES
-                                    (?, NULL, NULL)
+                                INSERT INTO v1_cache_oebs (hmsnr)
+                                VALUES (?)
                                 ON CONFLICT DO NOTHING
                                 ;
                                 """.trimIndent(),
@@ -348,13 +343,22 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 session.run(
                     queryOf(
                         """
-                            SELECT hmsnr FROM v1_cache_hmdb WHERE framework_agreement_start IS NULL OR framework_agreement_end IS NULL;
+                            SELECT hmsnr
+                            FROM v1_cache_hmdb
+                            WHERE
+                                -- If the initial prefetch was not completed we pick them up the next time the background
+                                -- runner updates the cache
+                                cached_at IS NULL
+                                
+                                -- or else lets check every 30 days in case something has changed.
+                                OR cached_at < NOW() - interval '30 days'
+                            ;
                         """.trimIndent()
                     ).map {
                         it.string("hmsnr")
                     }.asList
                 )
-            }.toSet()
+            }.chunked(100).firstOrNull()?.toSet() ?: listOf<String>().toSet() // Chunked: we do a maximum of 100 rows per call so that they spread over time
         } else {
             newHmdbRows?.toSet() ?: listOf<String>().toSet()
         }
@@ -364,13 +368,22 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 session.run(
                     queryOf(
                         """
-                            SELECT hmsnr FROM v1_cache_oebs WHERE title IS NULL OR type IS NULL;
+                            SELECT hmsnr
+                            FROM v1_cache_oebs
+                            WHERE
+                                -- If the initial prefetch was not completed we pick them up the next time the background
+                                -- runner updates the cache
+                                cached_at IS NULL
+                                
+                                -- or else lets check every 30 days in case something has changed.
+                                OR cached_at < NOW() - interval '30 days'
+                            ;
                         """.trimIndent()
                     ).map {
                         it.string("hmsnr")
                     }.asList
                 )
-            }.toSet()
+            }.chunked(100).firstOrNull()?.toSet() ?: listOf<String>().toSet() // Chunked: we do a maximum of 100 rows per call so that they spread over time
         } else {
             newOebsRows?.toSet() ?: listOf<String>().toSet()
         }
