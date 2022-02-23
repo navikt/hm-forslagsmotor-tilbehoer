@@ -436,6 +436,20 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 return@runBlocking
             }
 
+            val debugHmsnrs = listOf(
+                "654321",
+                "563412",
+                "123456",
+                "123441",
+                "696969",
+                "123123",
+                "151515",
+                "454545"
+            )
+            for (hmsnr in debugHmsnrs) products[hmsnr]?.run {
+                logg.info("DEBUG: debugHmsnrs: found hmsnr=$hmsnr product: title=${this.first} type=${this.second}")
+            } ?: logg.info("DEBUG: debugHmsnrs: did not find hmsnr=$hmsnr")
+
             using(sessionOf(ds)) { session ->
                 products.forEach { (hmsnr, result) ->
                     session.run(
