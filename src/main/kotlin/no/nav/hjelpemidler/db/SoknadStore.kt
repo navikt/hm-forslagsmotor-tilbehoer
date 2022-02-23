@@ -74,29 +74,29 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     queryIntrospectAllSuggestions,
                     MIN_OCCURANCES,
                 ).map {
-                    Triple(
-                        Pair(
-                            it.string("hmsnr_hjelpemiddel"),
+                    Pair(
+                        it.string("hmsnr_hjelpemiddel"),
+                        Triple(
                             it.string("title_hjelpemiddel"),
+                            it.localDateOrNull("framework_agreement_start"),
+                            Suggestion(
+                                hmsNr = it.string("hmsnr_tilbehoer"),
+                                title = it.string("title"),
+                                occurancesInSoknader = it.int("occurances"),
+                            ),
                         ),
-                        it.localDateOrNull("framework_agreement_start"),
-                        Suggestion(
-                            hmsNr = it.string("hmsnr_tilbehoer"),
-                            title = it.string("title"),
-                            occurancesInSoknader = it.int("occurances"),
-                        )
                     )
                 }.asList
             )
         }.groupBy { it.first }.map {
             ProductFrontendFiltered(
-                hmsnr = it.key.first,
-                title = it.key.second,
-                suggestions = it.value.fold(mutableListOf()) { a, b ->
-                    a.add(b.third)
+                hmsnr = it.key,
+                title = it.value.firstOrNull()?.second?.first ?: "",
+                suggestions = it.value.fold(mutableListOf<Suggestion>()) { a, b ->
+                    a.add(b.second.third)
                     a
-                },
-                frameworkAgreementStartDate = it.value.firstOrNull()?.second,
+                }.reversed(),
+                frameworkAgreementStartDate = it.value.firstOrNull()?.second?.second,
             )
         }
 
