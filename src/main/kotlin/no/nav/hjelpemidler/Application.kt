@@ -125,6 +125,11 @@ fun Route.ktorRoutes(store: SoknadStore) {
         get("/lookup-accessory-name/{hmsNr}") {
             val hmsnr = call.parameters["hmsNr"]!!
 
+            data class LookupAccessoryName(
+                val name: String?,
+                val error: String?,
+            )
+
             logg.info("Request for name lookup for hmsnr=$hmsnr.")
             runCatching {
                 // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
@@ -197,8 +202,3 @@ fun Route.ktorRoutes(store: SoknadStore) {
         call.respond(store.introspect())
     }
 }
-
-data class LookupAccessoryName(
-    val name: String?,
-    val error: String?,
-)
