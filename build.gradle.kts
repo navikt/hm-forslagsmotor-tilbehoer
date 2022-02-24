@@ -100,10 +100,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
-/* apply {
-    plugin(Spotless.spotless)
-} */
-
 application {
     applicationName = "hm-forslagsmotor-tilbehoer"
     mainClass.set("no.nav.hjelpemidler.ApplicationKt")
