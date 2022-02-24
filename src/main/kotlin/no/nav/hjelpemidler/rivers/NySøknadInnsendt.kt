@@ -10,9 +10,9 @@ import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
-import no.nav.hjelpemidler.db.SoknadStore
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.Soknad
+import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.time.LocalDateTime
 
 private val logg = KotlinLogging.logger {}
@@ -20,7 +20,7 @@ private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 
 internal class NySøknadInnsendt(
     rapidsConnection: RapidsConnection,
-    val store: SoknadStore
+    val store: SuggestionEngine
 ) : PacketListenerWithOnError {
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())

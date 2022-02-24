@@ -18,11 +18,11 @@ import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
-import no.nav.hjelpemidler.db.SoknadStorePostgres
 import no.nav.hjelpemidler.db.dataSource
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
+import no.nav.hjelpemidler.suggestionengine.SuggestionEnginePostgres
 import kotlin.time.ExperimentalTime
 import kotlin.time.minutes
 
@@ -43,7 +43,7 @@ fun main() {
     migrate()
 
     // Set up our database connection
-    val store = SoknadStorePostgres(dataSource())
+    val store = SuggestionEnginePostgres(dataSource())
 
     InitialDataset.fetchInitialDatasetFor(store)
 

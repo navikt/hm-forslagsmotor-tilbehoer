@@ -6,16 +6,16 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import mu.KotlinLogging
-import no.nav.hjelpemidler.db.SoknadStore
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
+import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import kotlin.system.measureTimeMillis
 
 private val logg = KotlinLogging.logger {}
 
-fun Route.ktorRoutes(store: SoknadStore) {
+fun Route.ktorRoutes(store: SuggestionEngine) {
     // authenticate("tokenX", "aad") {}
 
     get("/suggestions/{hmsNr}") {
