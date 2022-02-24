@@ -322,7 +322,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
                 for ((sid, p) in productsAppliedForWithAccessories) {
                     logg.info("DEBUG: processApplication: product: $sid")
-                    for ((aid, _) in p.tilbehorListe) logg.info("DEBUG: processApplication: acessory: $aid")
+                    for ((aid, _) in p.tilbehorListe) logg.info("DEBUG: processApplication: accessory: $aid")
                 }
 
                 for ((product_hmsnr, product) in productsAppliedForWithAccessories) {
@@ -372,7 +372,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
 
                 // Add products and accessories applied for to v1_cache_oebs if does not already exist
                 for ((product_hmsnr, product) in productsAppliedForWithAccessories) {
-                    logg.info("DEBUG: processApplication: inserting v1_cache_oebs row: pid=$product_hmsnr title=null type='Hjelpemiddel'")
+                    logg.info("DEBUG: processApplication: inserting v1_cache_oebs row: pid=$product_hmsnr title=null type=null")
                     rowsEffected = transaction.run(
                         queryOf(
                             """
@@ -391,7 +391,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     }
 
                     for (accessory in product.tilbehorListe) {
-                        logg.info("DEBUG: processApplication: inserting v1_cache_oebs row: aid=${accessory.hmsnr} title=null type='Tilbehoer'")
+                        logg.info("DEBUG: processApplication: inserting v1_cache_oebs row: aid=${accessory.hmsnr} title=null type=null")
                         rowsEffected = transaction.run(
                             queryOf(
                                 """
@@ -596,7 +596,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     ) ?: 0
                 }
 
-                logg.info("Suggestion engine stats calculated (totalMissingFrameworkAgreementStartDates=$totalMissingFrameworkAgreementStartDates, totalMissingOebsTitles=$totalMissingOebsTitles, timeElapsed=$timeElapsed)")
+                logg.info("Suggestion engine stats calculated (totalMissingFrameworkAgreementStartDates=$totalMissingFrameworkAgreementStartDates, totalMissingOebsTitles=$totalMissingOebsTitles, timeElapsed=${timeElapsed}ms)")
 
                 AivenMetrics().totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
                 AivenMetrics().totalMissingOebsTitles(totalMissingOebsTitles)
@@ -636,7 +636,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             }
 
             // Report what we found to influxdb / grafana
-            logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription, timeElapsed=$timeElapsed)")
+            logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription, timeElapsed=${timeElapsed}ms)")
 
             AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
             AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
