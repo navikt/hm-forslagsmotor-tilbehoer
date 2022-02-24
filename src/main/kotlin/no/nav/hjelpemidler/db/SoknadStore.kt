@@ -32,6 +32,7 @@ import kotlin.system.measureTimeMillis
 private val logg = KotlinLogging.logger {}
 
 private val MIN_OCCURANCES = 4
+private val MAX_NUMBER_OR_RESULTS = 20
 
 interface SoknadStore {
     fun suggestions(hmsnr: String): Suggestions
@@ -64,6 +65,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                     querySuggestions,
                     hmsnr,
                     MIN_OCCURANCES,
+                    MAX_NUMBER_OR_RESULTS,
                 ).map {
                     it.localDateOrNull("framework_agreement_start")?.run { startDate = this }
                     Suggestion(
@@ -131,7 +133,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
                 suggestions = it.value.fold(mutableListOf<Suggestion>()) { a, b ->
                     a.add(b.second.third)
                     a
-                }.reversed(),
+                }.takeLast(MAX_NUMBER_OR_RESULTS).reversed(),
                 frameworkAgreementStartDate = it.value.firstOrNull()?.second?.second,
             )
         }
@@ -697,6 +699,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             )}
         ) AS q
         WHERE q.occurances > ?
+        LIMIT ?
         ;
         """.trimIndent()
 
