@@ -9,7 +9,6 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - rewrite-to-postgres-backend
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:
