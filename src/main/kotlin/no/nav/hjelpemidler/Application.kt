@@ -175,8 +175,34 @@ fun Route.ktorRoutes(store: SoknadStore) {
         var result: List<ProductFrontendFiltered>?
         val timeElapsed = measureTimeMillis {
             result = store.introspect()
+
+            // Filter out a distinct list of hmsnrs for accessories that could be suggested by the suggestion engine
+            val allSuggestionHmsnrs = result!!
+                .map { it.suggestions }
+                .fold(mutableListOf<String>()) { a, b ->
+                    a.addAll(b.map { it.hmsNr })
+                    a
+                }.toSet()
+
+            // Talk to hm-grunndata about a skip list
+            val hmsNrsSkipList = HjelpemiddeldatabaseClient
+                .hentProdukterMedHmsnrs(allSuggestionHmsnrs)
+                .filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
+                .map { it.hmsnr!! }
+
+            // Filter out illegal suggestions because they are not accessories (they can be applied to digitally as products)
+            result = result!!.map {
+                ProductFrontendFiltered(
+                    hmsnr = it.hmsnr,
+                    title = it.title,
+                    frameworkAgreementStartDate = it.frameworkAgreementStartDate,
+                    suggestions = it.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) },
+                )
+            }
         }
-        logg.info("Request for introspection of suggestions (timeElapsed=$timeElapsed)")
+
+
+        logg.info("Request for introspection of suggestions (timeElapsed=${timeElapsed}ms)")
         call.respond(result!!)
     }
 
