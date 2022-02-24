@@ -12,8 +12,8 @@ spec:
   readiness:
     path: /isready-composed
   replicas:
-    min: 1
-    max: 1
+    min: 2
+    max: 4
   resources:
     limits:
       cpu: 1000m
