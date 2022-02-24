@@ -6,7 +6,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.application.call
 import io.ktor.application.install
-import io.ktor.auth.authenticate
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -101,104 +100,85 @@ fun main() {
 }
 
 fun Route.ktorRoutes(store: SoknadStore) {
-    authenticate("tokenX", "aad") {
-        get("/suggestions/{hmsNr}") {
-            val hmsnr = call.parameters["hmsnr"]!!
+    // authenticate("tokenX", "aad") {}
 
-            logg.info("Request for suggestions for hmsnr=$hmsnr.")
-            val suggestions = store.suggestions(hmsnr)
+    get("/suggestions/{hmsNr}") {
+        val hmsnr = call.parameters["hmsnr"]!!
 
-            val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet())
-                .filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
-                .map { it.hmsnr!! }
+        logg.info("Request for suggestions for hmsnr=$hmsnr.")
+        val suggestions = store.suggestions(hmsnr)
 
-            val results = SuggestionsFrontendFiltered(
-                suggestions.dataStartDate,
-                suggestions.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }
-                    .map { it.toFrontendFiltered() },
-            )
-
-            call.respond(results)
-        }
-
-        get("/lookup-accessory-name/{hmsNr}") {
-            val hmsnr = call.parameters["hmsNr"]!!
-
-            data class LookupAccessoryName(
-                val name: String?,
-                val error: String?,
-            )
-
-            logg.info("Request for name lookup for hmsnr=$hmsnr.")
-            runCatching {
-                // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
-                // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
-                var accessory = true
-                val hmdbResults = HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsnr)
-                if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
-                    logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
-                    accessory = false
-                }
-
-                val titleFromSuggestionEngineCache = store.cachedTitleAndTypeFor(hmsnr)
-                var oebsTitleAndType: Pair<String, String>? = null
-                if (titleFromSuggestionEngineCache?.title == null) {
-                    oebsTitleAndType = Oebs.getTitleForHmsNr(hmsnr)
-                    logg.info("DEBUG: Fetched title for $hmsnr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
-                    if (oebsTitleAndType.second != "Del") {
-                        logg.info("DEBUG: $hmsnr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
-                        // accessory = false
-                    }
-                } else {
-                    logg.info("DEBUG: Using cached oebs title from suggestion engine for $hmsnr: $titleFromSuggestionEngineCache")
-                }
-
-                call.respond(
-                    LookupAccessoryName(
-                        oebsTitleAndType?.first ?: titleFromSuggestionEngineCache?.title,
-                        if (!accessory) {
-                            "ikke et tilbehør"
-                        } else {
-                            null
-                        }
-                    )
-                )
-            }.getOrElse { e ->
-                logg.info("warn: failed to find title for hmsNr=$hmsnr")
-                e.printStackTrace()
-                call.respond(LookupAccessoryName(null, "produkt ikke funnet"))
-            }
-        }
-
-        get("/introspect") {
-            var result: List<ProductFrontendFiltered>?
-            val timeElapsed = measureTimeMillis {
-                result = store.introspect()
-            }
-            logg.info("Request for introspection of suggestions (timeElapsed=$timeElapsed)")
-            call.respond(result!!)
-        }
-
-        get("/inspection") { call.respondRedirect("/introspect") }
-    }
-
-    // FIXME: Remove before prod.
-    get("/suggestions-v2/{hmsNr}") {
-        val hmsNr = call.parameters["hmsNr"]!!
-
-        logg.info("Request for suggestions v2 for hmsnr=$hmsNr.")
-        val suggestions = store.suggestions(hmsNr)
+        val hmsNrsSkipList = HjelpemiddeldatabaseClient
+            .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet())
+            .filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
+            .map { it.hmsnr!! }
 
         val results = SuggestionsFrontendFiltered(
             suggestions.dataStartDate,
-            suggestions.suggestions.map { it.toFrontendFiltered() },
+            suggestions.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }
+                .map { it.toFrontendFiltered() },
         )
+
         call.respond(results)
     }
 
-    // FIXME: Remove before prod.
-    get("/introspect-v2") {
-        call.respond(store.introspect())
+    get("/lookup-accessory-name/{hmsNr}") {
+        val hmsnr = call.parameters["hmsNr"]!!
+
+        data class LookupAccessoryName(
+            val name: String?,
+            val error: String?,
+        )
+
+        logg.info("Request for name lookup for hmsnr=$hmsnr.")
+        runCatching {
+            // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
+            // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
+            var accessory = true
+            val hmdbResults = HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsnr)
+            if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
+                logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
+                accessory = false
+            }
+
+            val titleFromSuggestionEngineCache = store.cachedTitleAndTypeFor(hmsnr)
+            var oebsTitleAndType: Pair<String, String>? = null
+            if (titleFromSuggestionEngineCache?.title == null) {
+                oebsTitleAndType = Oebs.getTitleForHmsNr(hmsnr)
+                logg.info("DEBUG: Fetched title for $hmsnr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
+                if (oebsTitleAndType.second != "Del") {
+                    logg.info("DEBUG: $hmsnr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
+                    // accessory = false
+                }
+            } else {
+                logg.info("DEBUG: Using cached oebs title from suggestion engine for $hmsnr: $titleFromSuggestionEngineCache")
+            }
+
+            call.respond(
+                LookupAccessoryName(
+                    oebsTitleAndType?.first ?: titleFromSuggestionEngineCache?.title,
+                    if (!accessory) {
+                        "ikke et tilbehør"
+                    } else {
+                        null
+                    }
+                )
+            )
+        }.getOrElse { e ->
+            logg.info("warn: failed to find title for hmsNr=$hmsnr")
+            e.printStackTrace()
+            call.respond(LookupAccessoryName(null, "produkt ikke funnet"))
+        }
     }
+
+    get("/introspect") {
+        var result: List<ProductFrontendFiltered>?
+        val timeElapsed = measureTimeMillis {
+            result = store.introspect()
+        }
+        logg.info("Request for introspection of suggestions (timeElapsed=$timeElapsed)")
+        call.respond(result!!)
+    }
+
+    get("/inspection") { call.respondRedirect("/introspect") }
 }
