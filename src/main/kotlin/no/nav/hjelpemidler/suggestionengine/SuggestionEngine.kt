@@ -615,7 +615,6 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                 val allSuggestions = session.run(
                     queryOf(
                         queryNumberOfSuggestionsForAllProducts,
-                        MIN_OCCURANCES,
                     ).map {
                         it.int("suggestions")
                     }.asList

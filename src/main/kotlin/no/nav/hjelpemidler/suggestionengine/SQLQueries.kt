@@ -83,7 +83,6 @@ internal val queryNumberOfSuggestionsForAllProducts =
     SELECT DISTINCT hmsnr_hjelpemiddel AS hmsnr, count(*) AS suggestions FROM (
         ${querySuggestionsBase.replace("{{WHERE}}", "")}
     ) AS q
-    WHERE q.occurances > ?
     GROUP BY hmsnr_hjelpemiddel
     ;
     """.trimIndent()
