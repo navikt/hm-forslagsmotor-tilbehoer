@@ -8,10 +8,8 @@ import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.JacksonConverter
 import io.ktor.response.respondRedirect
-import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import mu.KotlinLogging
@@ -55,10 +53,7 @@ fun main() {
             }
             routing {
                 get("/isready-composed") {
-                    if (!InitialDataset.isInitialDatasetLoaded()) {
-                        call.respondText("NOT READY", ContentType.Text.Plain, HttpStatusCode.ServiceUnavailable)
-                        return@get
-                    }
+                    // TODO: Check database connection
                     call.respondRedirect("/isready")
                 }
                 ktorRoutes(store)
