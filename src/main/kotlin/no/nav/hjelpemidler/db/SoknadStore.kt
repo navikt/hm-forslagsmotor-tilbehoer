@@ -754,7 +754,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
         """        
         SELECT
             hmsnr_tilbehoer,
-            sum(quantity) AS occurances,
+            sum(quantity) AS occurances
         FROM v1_score_card
         WHERE
             hmsnr_hjelpemiddel = ?
