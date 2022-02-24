@@ -136,7 +136,7 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                 }.takeLast(MAX_NUMBER_OR_RESULTS).reversed(),
                 frameworkAgreementStartDate = it.value.firstOrNull()?.second?.second,
             )
-        }
+        }.sortedBy { it.hmsnr }
 
     override fun processApplications(soknader: List<Soknad>) {
         val newHmdbRows = mutableListOf<String>()
