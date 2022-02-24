@@ -37,7 +37,7 @@ internal val querySuggestionsBase =
     """.trimIndent()
 
 internal val querySuggestions =
-    """        
+    """
     SELECT * FROM (
         ${querySuggestionsBase
         .replace(
@@ -60,7 +60,7 @@ internal val querySuggestions =
     """.trimIndent()
 
 internal val queryIntrospectAllSuggestions =
-    """        
+    """
     SELECT q.*, o_hjelpemiddel.title AS title_hjelpemiddel FROM (
         ${querySuggestionsBase.replace(
         "{{WHERE}}",
@@ -79,7 +79,7 @@ internal val queryIntrospectAllSuggestions =
     """.trimIndent()
 
 internal val queryNumberOfSuggestionsForAllProducts =
-    """        
+    """
     SELECT DISTINCT hmsnr_hjelpemiddel AS hmsnr, count(*) AS suggestions FROM (
         ${querySuggestionsBase.replace("{{WHERE}}", "")}
     ) AS q
@@ -89,14 +89,17 @@ internal val queryNumberOfSuggestionsForAllProducts =
     """.trimIndent()
 
 internal val queryNumberOfSuggestionsWithNoTitleYetForAllProducts =
-    """        
+    """
     SELECT DISTINCT hmsnr_hjelpemiddel AS hmsnr, count(*) AS suggestions FROM (
         ${querySuggestionsBase.replace(
         "{{WHERE}}",
         """
+            -- Do not include results where oebs didnt know about the accessory hmsnr
+            o.hmsnr IS NOT NULL
+           
             -- Lets only look for those with no title yet in the oebs cache
-            o.title IS NULL
-                
+		    AND o.title IS NULL
+            
             -- The rest of the where clauses
             AND
         """.trimIndent()
@@ -108,7 +111,7 @@ internal val queryNumberOfSuggestionsWithNoTitleYetForAllProducts =
     """.trimIndent()
 
 internal val queryAllSuggestionsForStatsBuilding =
-    """        
+    """
     SELECT
         hmsnr_tilbehoer,
         sum(quantity) AS occurances
