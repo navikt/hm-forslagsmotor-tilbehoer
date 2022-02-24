@@ -45,7 +45,7 @@ fun main() {
     // Set up our database connection
     val store = SuggestionEnginePostgres(dataSource())
 
-    InitialDataset.fetchInitialDatasetFor(store)
+    // InitialDataset.fetchInitialDatasetFor(store)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .withKtorModule {
