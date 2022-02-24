@@ -564,43 +564,41 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             }
         }
 
-        // If we did something above, lets regenerate stats regarding missing framework agreement start-dates and titles
-        if (hmdbRows.isNotEmpty() || oebsRows.isNotEmpty()) {
-            using(sessionOf(ds)) { session ->
-                var totalMissingFrameworkAgreementStartDates = -1
-                var totalMissingOebsTitles = -1
+        // Lets regenerate stats regarding missing framework agreement start-dates and titles
+        using(sessionOf(ds)) { session ->
+            var totalMissingFrameworkAgreementStartDates = -1
+            var totalMissingOebsTitles = -1
 
-                val timeElapsed = measureTimeMillis {
-                    totalMissingFrameworkAgreementStartDates = session.run(
-                        queryOf(
-                            """
-                            SELECT count(hmsnr) AS c
-                            FROM v1_cache_hmdb
-                            WHERE cached_at IS NULL
-                            """.trimIndent(),
-                        ).map {
-                            it.int("c")
-                        }.asSingle
-                    ) ?: 0
+            val timeElapsed = measureTimeMillis {
+                totalMissingFrameworkAgreementStartDates = session.run(
+                    queryOf(
+                        """
+                        SELECT count(hmsnr) AS c
+                        FROM v1_cache_hmdb
+                        WHERE cached_at IS NULL
+                        """.trimIndent(),
+                    ).map {
+                        it.int("c")
+                    }.asSingle
+                ) ?: 0
 
-                    totalMissingOebsTitles = session.run(
-                        queryOf(
-                            """
-                            SELECT count(hmsnr) AS c
-                            FROM v1_cache_oebs
-                            WHERE cached_at IS NULL
-                            """.trimIndent(),
-                        ).map {
-                            it.int("c")
-                        }.asSingle
-                    ) ?: 0
-                }
-
-                logg.info("Suggestion engine stats calculated (totalMissingFrameworkAgreementStartDates=$totalMissingFrameworkAgreementStartDates, totalMissingOebsTitles=$totalMissingOebsTitles, timeElapsed=${timeElapsed}ms)")
-
-                AivenMetrics().totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
-                AivenMetrics().totalMissingOebsTitles(totalMissingOebsTitles)
+                totalMissingOebsTitles = session.run(
+                    queryOf(
+                        """
+                        SELECT count(hmsnr) AS c
+                        FROM v1_cache_oebs
+                        WHERE cached_at IS NULL
+                        """.trimIndent(),
+                    ).map {
+                        it.int("c")
+                    }.asSingle
+                ) ?: 0
             }
+
+            logg.info("Suggestion engine stats calculated (totalMissingFrameworkAgreementStartDates=$totalMissingFrameworkAgreementStartDates, totalMissingOebsTitles=$totalMissingOebsTitles, timeElapsed=${timeElapsed}ms)")
+
+            AivenMetrics().totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
+            AivenMetrics().totalMissingOebsTitles(totalMissingOebsTitles)
         }
     }
 
