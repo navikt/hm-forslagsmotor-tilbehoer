@@ -35,7 +35,7 @@ internal fun migrate() =
 internal fun hikariConfig() =
     HikariConfig().apply {
         jdbcUrl = "jdbc:postgresql://${Configuration.db["DB_HOST"]!!}:${Configuration.db["DB_PORT"]!!}/${Configuration.db["DB_DATABASE"]!!}"
-        maximumPoolSize = 3
+        maximumPoolSize = 10
         minimumIdle = 1
         idleTimeout = 10001
         connectionTimeout = 1000
