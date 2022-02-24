@@ -10,11 +10,6 @@ data class Suggestion(
     var occurancesInSoknader: Int = 0,
 ) {
     @JsonIgnore
-    fun isReady(): Boolean {
-        return hmsNr.isNotEmpty() && !title.isNullOrBlank()
-    }
-
-    @JsonIgnore
     fun toFrontendFiltered(): SuggestionFrontendFiltered {
         return SuggestionFrontendFiltered(hmsNr, title ?: "")
     }
