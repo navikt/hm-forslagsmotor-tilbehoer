@@ -760,7 +760,7 @@ internal class SoknadStorePostgres(private val ds: DataSource) : SoknadStore, Cl
             hmsnr_hjelpemiddel = ?
             
             -- Remove illegal accessory hmsnr 000000, it exists only for historical reasons (applies to all products)
-            hmsnr_tilbehoer <> '000000'
+            AND hmsnr_tilbehoer <> '000000'
             
         GROUP BY hmsnr_tilbehoer
         ORDER BY occurances DESC, hmsnr_tilbehoer
