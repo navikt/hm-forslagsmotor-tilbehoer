@@ -95,6 +95,12 @@ internal object Configuration {
             "TOKEN_X_WELL_KNOWN_URL" to "abc",
             "TOKEN_X_CLIENT_ID" to "abc",
 
+            "DB_HOST" to "abc",
+            "DB_PORT" to "abc",
+            "DB_DATABASE" to "abc",
+            "DB_USERNAME" to "abc",
+            "DB_PASSWORD" to "abc",
+
             "GRUNNDATA_API_URL" to "http://host.docker.internal",
         )
     )
@@ -134,6 +140,14 @@ internal object Configuration {
         "INFLUX_DATABASE_NAME" to config()[Key("INFLUX_DATABASE_NAME", stringType)],
         "INFLUX_USER" to config()[Key("INFLUX_USER", stringType)],
         "INFLUX_PASSWORD" to config()[Key("INFLUX_PASSWORD", stringType)],
+    )
+
+    val db: Map<String, String> = mapOf(
+        "DB_HOST" to config()[Key("DB_HOST", stringType)],
+        "DB_PORT" to config()[Key("DB_PORT", stringType)],
+        "DB_DATABASE" to config()[Key("DB_DATABASE", stringType)],
+        "DB_USERNAME" to config()[Key("DB_USERNAME", stringType)],
+        "DB_PASSWORD" to config()[Key("DB_PASSWORD", stringType)],
     )
 
     val application: Map<String, String> = mapOf(

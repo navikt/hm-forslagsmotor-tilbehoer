@@ -16,8 +16,8 @@ spec:
     max: 1
   resources:
     limits:
-      cpu: 2000m
-      memory: 3000Mi
+      cpu: 1000m
+      memory: 1000Mi
     requests:
       cpu: 500m
       memory: 600Mi
@@ -47,3 +47,17 @@ spec:
         - host: hm-oebs-api-proxy.dev-fss-pub.nais.io
   envFrom:
     - secret: hm-influxdb-secret
+  gcp:
+    sqlInstances:
+      - name: hm-forslagsmotor-tilbehoer-db-dev
+        type: POSTGRES_12
+        tier: db-f1-micro
+        diskType: SSD
+        highAvailability: false
+        diskSize: 10
+        diskAutoresize: true
+        autoBackupTime: "03:00"
+        databases:
+          - name: hm-forslagsmotor-tilbehoer
+            envVarPrefix: DB
+        cascadingDelete: false

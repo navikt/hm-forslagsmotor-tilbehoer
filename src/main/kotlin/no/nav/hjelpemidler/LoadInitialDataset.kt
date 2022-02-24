@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.model.Soknad
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
@@ -33,7 +34,7 @@ object InitialDataset {
 
     private var isInitialDatasetLoaded = false
 
-    fun fetchInitialDatasetFor(se: SuggestionEngine) {
+    internal fun fetchInitialDatasetFor(store: SuggestionEngine) {
         thread(isDaemon = true) {
             logg.info("Waiting on network before downloading initial dataset")
             Thread.sleep(5000)
@@ -79,7 +80,7 @@ object InitialDataset {
                 exitProcess(-123)
             }
 
-            val dataset = objectMapper.readValue<Array<no.nav.hjelpemidler.suggestionengine.Soknad>>(response.body()).asList()
+            val dataset = objectMapper.readValue<Array<Soknad>>(response.body()).asList()
             if (dataset.isEmpty()) {
                 logg.error("Empty dataset received from hm-soknadsbehandling-db, unable to continue")
                 exitProcess(-123)
@@ -88,9 +89,7 @@ object InitialDataset {
             logg.info("Download initial dataset finished with ${dataset.count()} applications to learn from")
 
             // Set initial dataset to suggestion engine
-            se.learnFromSoknader(
-                dataset
-            )
+            store.processApplications(dataset)
 
             // We have now loaded the dataset
             synchronized(this) {
