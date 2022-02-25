@@ -238,7 +238,7 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                     """
                         INSERT INTO v1_cache_hmdb (hmsnr, framework_agreement_start, framework_agreement_end, cached_at)
                         VALUES (?, ?, ?, NOW())
-                        WHERE NOT EXISTS (SELECT 1 FROM v1_cache_hmdb WHERE hmsnr = ?)
+                        ON CONFLICT DO NOTHING
                         ;
                     """.trimIndent(),
                     hmsnr,
@@ -270,7 +270,7 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                     """
                         INSERT INTO v1_cache_oebs (hmsnr, title, type, cached_at)
                         VALUES (?, ?, ?, NOW())
-                        WHERE NOT EXISTS (SELECT 1 FROM v1_cache_oebs WHERE hmsnr = ?)
+                        ON CONFLICT DO NOTHING
                         ;
                     """.trimIndent(),
                     hmsnr,
