@@ -1,5 +1,6 @@
 package no.nav.hjelpemidler.db
 
+import junit.framework.Assert.assertEquals
 import no.nav.hjelpemidler.model.Hjelpemiddel
 import no.nav.hjelpemidler.model.HjelpemiddelListe
 import no.nav.hjelpemidler.model.Soknad
@@ -13,9 +14,10 @@ import java.util.UUID
 internal class SuggestionEngineTest {
 
     @Test
-    fun `Test container test`() {
+    fun `No suggestions available due too only four occurances`() {
         withMigratedDb {
             SuggestionEnginePostgres(DataSource.instance).apply {
+                // Process applications to generate suggestions
                 this.processApplications(
                     listOf(
                         Soknad(
@@ -34,46 +36,140 @@ internal class SuggestionEngineTest {
                                                 ),
                                             ),
                                         ),
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
                                     ),
                                 ),
                             ),
                             created = LocalDateTime.now(),
-                        )
+                        ),
                     )
                 )
+
+                // Request suggestions
+                val results = this.suggestions("014112")
+
+                // Assertions
+                assert(results.suggestions.isEmpty())
             }
         }
-        /* withMigratedDb {
-            HotsakStorePostgres(DataSource.instance).apply {
-                this.lagKnytningMellomSakOgSøknad(hotsakTilknytningData)
-                val søknad: VedtaksresultatHotsakData? = this.hentVedtaksresultatForSøknad(søknadId)
-                assertEquals("1001", søknad?.saksnr)
-                assertNull(søknad?.vedtaksresultat)
-                assertNull(søknad?.vedtaksdato)
-            }
-        } */
     }
 
-    /* withMigratedDb {
-        HotsakStorePostgres(DataSource.instance).apply {
-            this.lagKnytningMellomSakOgSøknad(hotsakTilknytningData)
-        }
-        HotsakStorePostgres(DataSource.instance).apply {
-            this.lagreVedtaksresultat(søknadId, resultat, vedtaksdato)
-                .also {
-                    it shouldBe (1)
-                }
-        }
-        HotsakStorePostgres(DataSource.instance).apply {
-            val søknad = this.hentVedtaksresultatForSøknad(søknadId)
-            assertEquals("1002", søknad?.saksnr)
-            assertEquals("I", søknad?.vedtaksresultat)
-            assertEquals(LocalDate.of(2021, 5, 31).toString(), søknad?.vedtaksdato.toString())
-        }
+    @Test
+    fun `One suggestion available with five occurances`() {
+        withMigratedDb {
+            SuggestionEnginePostgres(DataSource.instance).apply {
+                // Process applications to generate suggestions
+                this.processApplications(
+                    listOf(
+                        Soknad(
+                            soknad = SoknadData(
+                                id = UUID.randomUUID(),
+                                hjelpemidler = HjelpemiddelListe(
+                                    hjelpemiddelListe = listOf(
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "014112",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "000001",
+                                                    antall = 1,
+                                                    navn = "Tilbehoer 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                            created = LocalDateTime.now(),
+                        ),
+                    )
+                )
 
-        HotsakStorePostgres(DataSource.instance).apply {
-            val funnetSøknadsId = this.hentSøknadsIdForHotsakNummer("1002")
-            assertEquals(funnetSøknadsId, søknadId)
+                // Request suggestions
+                val results = this.suggestions("014112")
+
+                // Assertions
+                assertEquals(results.suggestions.count(), 1)
+                assertEquals(results.suggestions[0].hmsNr, "000001")
+                assertEquals(results.suggestions[0].title, "Tilbehoer 1")
+                assertEquals(results.suggestions[0].occurancesInSoknader, 5)
+            }
         }
-    } */
+    }
 }
