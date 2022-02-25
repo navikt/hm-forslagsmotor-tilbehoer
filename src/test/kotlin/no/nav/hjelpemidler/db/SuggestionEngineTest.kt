@@ -88,6 +88,9 @@ internal class SuggestionEngineTest {
 
                 // Assertions
                 assert(results.suggestions.isEmpty())
+
+                // Clean up background runner
+                this.close()
             }
         }
     }
@@ -177,6 +180,9 @@ internal class SuggestionEngineTest {
                 assertEquals("000001", results.suggestions[0].hmsNr)
                 assertEquals("Tilbehoer 1", results.suggestions[0].title)
                 assertEquals(5, results.suggestions[0].occurancesInSoknader)
+
+                // Clean up background runner
+                this.close()
             }
         }
     }

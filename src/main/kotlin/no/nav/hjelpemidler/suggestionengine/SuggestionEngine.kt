@@ -666,8 +666,10 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
 
             logg.info("Suggestion engine stats calculated (totalMissingFrameworkAgreementStartDates=$totalMissingFrameworkAgreementStartDates, totalMissingOebsTitles=$totalMissingOebsTitles, timeElapsed=${timeElapsed}ms)")
 
-            AivenMetrics().totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
-            AivenMetrics().totalMissingOebsTitles(totalMissingOebsTitles)
+            if (Configuration.application["APP_PROFILE"]!! != "local") {
+                AivenMetrics().totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
+                AivenMetrics().totalMissingOebsTitles(totalMissingOebsTitles)
+            }
         }
     }
 
@@ -704,9 +706,11 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
             // Report what we found to influxdb / grafana
             logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription, timeElapsed=${timeElapsed}ms)")
 
-            AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
-            AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
-            AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+            if (Configuration.application["APP_PROFILE"]!! != "local") {
+                AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+                AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+                AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+            }
         }
     }
 }
