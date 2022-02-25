@@ -35,6 +35,8 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Build and Run tests
         run: ./gradlew clean build
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
       - name: pre-deploy
         uses: navikt/digihot-deploy/actions/pre-deploy@v2
         env:

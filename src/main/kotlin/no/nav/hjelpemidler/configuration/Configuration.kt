@@ -95,11 +95,11 @@ internal object Configuration {
             "TOKEN_X_WELL_KNOWN_URL" to "abc",
             "TOKEN_X_CLIENT_ID" to "abc",
 
-            "DB_HOST" to "abc",
-            "DB_PORT" to "abc",
-            "DB_DATABASE" to "abc",
-            "DB_USERNAME" to "abc",
-            "DB_PASSWORD" to "abc",
+            "DB_HOST" to "host.docker.internal",
+            "DB_PORT" to "5434",
+            "DB_DATABASE" to "hm-forslagsmotor-tilbehoer",
+            "DB_USERNAME" to "",
+            "DB_PASSWORD" to "",
 
             "GRUNNDATA_API_URL" to "http://host.docker.internal",
         )

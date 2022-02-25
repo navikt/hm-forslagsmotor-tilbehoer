@@ -16,7 +16,7 @@ import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.hjelpemidler.configuration.Configuration
-import no.nav.hjelpemidler.db.dataSource
+import no.nav.hjelpemidler.db.dataSourceFrom
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
@@ -38,10 +38,10 @@ fun main() {
     }
 
     // Make sure our database migrations are up to date
-    migrate()
+    migrate(Configuration)
 
     // Set up our database connection
-    val store = SuggestionEnginePostgres(dataSource())
+    val store = SuggestionEnginePostgres(dataSourceFrom(Configuration))
 
     // InitialDataset.fetchInitialDatasetFor(store)
 
