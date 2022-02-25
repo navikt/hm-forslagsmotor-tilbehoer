@@ -12,16 +12,26 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 internal class SuggestionEngineTest {
-    private fun testHelper(store: SuggestionEnginePostgres) {
-        store.testInjectCacheHmdb("014112", null, null)
-        store.testInjectCacheOebs("000001", "Tilbehoer 1", "Hjelpemiddel")
+    @Test
+    fun `No suggestions available for item`() {
+        withMigratedDb {
+            SuggestionEnginePostgres(DataSource.instance).apply {
+                this.testInjectCacheHmdb("1234", null, null)
+                val suggestions = this.suggestions("1234")
+                assertEquals(0, suggestions.suggestions.count())
+            }
+        }
     }
 
     @Test
-    fun `No suggestions available due too only four occurances`() {
+    fun `Fewer occurrences than five results in no result, five or more occurrences results in results`() {
         withMigratedDb {
             SuggestionEnginePostgres(DataSource.instance).apply {
-                testHelper(this)
+
+                this.testInjectCacheHmdb("1234", null, null)
+                this.testInjectCacheHmdb("54321", null, null)
+                this.testInjectCacheOebs("4321", "Tilbehør 1", "Hjelpemiddel")
+                this.testInjectCacheOebs("12345", "Tilbehør 2", "Hjelpemiddel")
 
                 // Process applications to generate suggestions
                 this.processApplications(
@@ -32,62 +42,126 @@ internal class SuggestionEngineTest {
                                 hjelpemidler = HjelpemiddelListe(
                                     hjelpemiddelListe = listOf(
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
                                                     brukAvForslagsmotoren = null,
-                                                ),
+                                                )
                                             ),
                                         ),
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
                                                     brukAvForslagsmotoren = null,
-                                                ),
+                                                )
                                             ),
                                         ),
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
                                                     brukAvForslagsmotoren = null,
-                                                ),
+                                                )
                                             ),
                                         ),
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
                                                     brukAvForslagsmotoren = null,
-                                                ),
+                                                )
                                             ),
                                         ),
-                                    ),
-                                ),
+                                        Hjelpemiddel(
+                                            hmsNr = "54321",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "12345",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "54321",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "12345",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "54321",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "12345",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "54321",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "12345",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "54321",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "12345",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                    )
+                                )
                             ),
                             created = LocalDateTime.now(),
-                        ),
+                        )
                     )
                 )
 
                 // Request suggestions
-                val results = this.suggestions("014112")
+                val suggestions = this.suggestions("1234")
 
                 // Assertions
-                assert(results.suggestions.isEmpty())
+                assertEquals(0, suggestions.suggestions.count())
+
+                // Request suggestions
+                val suggestions2 = this.suggestions("54321")
+
+                // Assertions
+                assertEquals(1, suggestions2.suggestions.count())
+                assertEquals("12345", suggestions2.suggestions[0].hmsNr)
+                assertEquals("Tilbehør 2", suggestions2.suggestions[0].title)
+                assertEquals(5, suggestions2.suggestions[0].occurancesInSoknader)
 
                 // Clean up background runner
                 this.close()
@@ -96,10 +170,12 @@ internal class SuggestionEngineTest {
     }
 
     @Test
-    fun `One suggestion available with five occurances`() {
+    fun `A single suggestion is available based on five or more occurrences`() {
         withMigratedDb {
             SuggestionEnginePostgres(DataSource.instance).apply {
-                testHelper(this)
+
+                this.testInjectCacheHmdb("1234", null, null)
+                this.testInjectCacheOebs("4321", "Tilbehør 1", "Hjelpemiddel")
 
                 // Process applications to generate suggestions
                 this.processApplications(
@@ -110,56 +186,181 @@ internal class SuggestionEngineTest {
                                 hjelpemidler = HjelpemiddelListe(
                                     hjelpemiddelListe = listOf(
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "1234",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "4321",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "1234",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "4321",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "1234",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "4321",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                        Hjelpemiddel(
+                                            hmsNr = "1234",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "4321",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                )
+                                            ),
+                                        ),
+                                    )
+                                )
+                            ),
+                            created = LocalDateTime.now(),
+                        ),
+                    )
+                )
+
+                // Request suggestions
+                val suggestions = this.suggestions("1234")
+
+                // Assertions
+                assertEquals(1, suggestions.suggestions.count())
+                assertEquals("4321", suggestions.suggestions[0].hmsNr)
+                assertEquals("Tilbehør 1", suggestions.suggestions[0].title)
+                assertEquals(5, suggestions.suggestions[0].occurancesInSoknader)
+
+                // Clean up background runner
+                this.close()
+            }
+        }
+    }
+
+    @Test
+    fun `Multiple suggestions and priority is correct`() {
+        withMigratedDb {
+            SuggestionEnginePostgres(DataSource.instance).apply {
+
+                this.testInjectCacheHmdb("1234", null, null)
+                this.testInjectCacheOebs("4321", "Tilbehør 1", "Hjelpemiddel")
+                this.testInjectCacheOebs("5678", "Tilbehør 2", "Hjelpemiddel")
+
+                // Process applications to generate suggestions
+                this.processApplications(
+                    listOf(
+                        Soknad(
+                            soknad = SoknadData(
+                                id = UUID.randomUUID(),
+                                hjelpemidler = HjelpemiddelListe(
+                                    hjelpemiddelListe = listOf(
+                                        Hjelpemiddel(
+                                            hmsNr = "1234",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "4321",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                                Tilbehoer(
+                                                    hmsnr = "5678",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
                                                     brukAvForslagsmotoren = null,
                                                 ),
                                             ),
                                         ),
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                                Tilbehoer(
+                                                    hmsnr = "5678",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
                                                     brukAvForslagsmotoren = null,
                                                 ),
                                             ),
                                         ),
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                                Tilbehoer(
+                                                    hmsnr = "5678",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
                                                     brukAvForslagsmotoren = null,
                                                 ),
                                             ),
                                         ),
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                                Tilbehoer(
+                                                    hmsnr = "5678",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
                                                     brukAvForslagsmotoren = null,
                                                 ),
                                             ),
                                         ),
                                         Hjelpemiddel(
-                                            hmsNr = "014112",
+                                            hmsNr = "1234",
                                             tilbehorListe = listOf(
                                                 Tilbehoer(
-                                                    hmsnr = "000001",
+                                                    hmsnr = "4321",
                                                     antall = 1,
-                                                    navn = "Tilbehoer 1",
+                                                    navn = "Tilbehør 1",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                                Tilbehoer(
+                                                    hmsnr = "5678",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
                                                     brukAvForslagsmotoren = null,
                                                 ),
                                             ),
@@ -171,15 +372,46 @@ internal class SuggestionEngineTest {
                         ),
                     )
                 )
+                this.processApplications(
+                    listOf(
+                        Soknad(
+                            soknad = SoknadData(
+                                id = UUID.randomUUID(),
+                                hjelpemidler = HjelpemiddelListe(
+                                    hjelpemiddelListe = listOf(
+                                        Hjelpemiddel(
+                                            hmsNr = "1234",
+                                            tilbehorListe = listOf(
+                                                Tilbehoer(
+                                                    hmsnr = "5678",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 2",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                                Tilbehoer(
+                                                    hmsnr = "891011",
+                                                    antall = 1,
+                                                    navn = "Tilbehør 3",
+                                                    brukAvForslagsmotoren = null,
+                                                ),
+                                            ),
+                                        )
+                                    ),
+                                ),
+                            ),
+                            created = LocalDateTime.now(),
+                        ),
+                    )
+                )
 
                 // Request suggestions
-                val results = this.suggestions("014112")
+                val suggestions = this.suggestions("1234")
 
                 // Assertions
-                assertEquals(1, results.suggestions.count())
-                assertEquals("000001", results.suggestions[0].hmsNr)
-                assertEquals("Tilbehoer 1", results.suggestions[0].title)
-                assertEquals(5, results.suggestions[0].occurancesInSoknader)
+                assertEquals(2, suggestions.suggestions.count())
+                assertEquals("5678", suggestions.suggestions[0].hmsNr)
+                assertEquals("Tilbehør 2", suggestions.suggestions[0].title)
+                assertEquals(6, suggestions.suggestions[0].occurancesInSoknader)
 
                 // Clean up background runner
                 this.close()
