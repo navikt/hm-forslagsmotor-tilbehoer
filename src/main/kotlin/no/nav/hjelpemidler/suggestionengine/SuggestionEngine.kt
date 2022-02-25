@@ -244,7 +244,6 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                     hmsnr,
                     frameworkAgreementStart,
                     frameworkAgreementEnd,
-                    hmsnr,
                 ).asExecute
             )
         }
@@ -276,7 +275,6 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                     hmsnr,
                     title,
                     type,
-                    hmsnr,
                 ).asExecute
             )
         }
