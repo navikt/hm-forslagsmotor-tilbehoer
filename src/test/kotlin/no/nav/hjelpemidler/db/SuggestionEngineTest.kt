@@ -1,12 +1,12 @@
 package no.nav.hjelpemidler.db
 
-import junit.framework.Assert.assertEquals
 import no.nav.hjelpemidler.model.Hjelpemiddel
 import no.nav.hjelpemidler.model.HjelpemiddelListe
 import no.nav.hjelpemidler.model.Soknad
 import no.nav.hjelpemidler.model.SoknadData
 import no.nav.hjelpemidler.model.Tilbehoer
 import no.nav.hjelpemidler.suggestionengine.SuggestionEnginePostgres
+import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.UUID

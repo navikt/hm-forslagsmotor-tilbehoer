@@ -542,6 +542,11 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
         runBlocking {
             if (hmdbRows.isEmpty()) return@runBlocking
 
+            if (Configuration.application["APP_PROFILE"]!! == "local") {
+                logg.info("Hmdb not available in the local-environment")
+                return@runBlocking
+            }
+
             val products = runCatching {
                 HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmdbRows)
             }.getOrElse { e ->
@@ -589,6 +594,11 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
         // For all new or stale OEBS cache-rows, fetch titles and type and update the cache
         runBlocking {
             if (oebsRows.isEmpty()) return@runBlocking
+
+            if (Configuration.application["APP_PROFILE"]!! == "local") {
+                logg.info("Oebs not available in the local-environment")
+                return@runBlocking
+            }
 
             val products = runCatching {
                 Oebs.getTitleForHmsNrs(oebsRows)
