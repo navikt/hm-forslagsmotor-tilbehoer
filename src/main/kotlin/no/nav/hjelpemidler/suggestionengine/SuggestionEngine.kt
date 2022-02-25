@@ -41,6 +41,9 @@ interface SuggestionEngine {
     fun processApplications(soknader: List<Soknad>)
     fun cachedTitleAndTypeFor(hmsnr: String): CachedTitleAndType?
     fun knowsOfSoknadID(soknadsID: UUID): Boolean
+
+    fun testInjectCacheHmdb(hmsnr: String, frameworkAgreementStart: LocalDate?, frameworkAgreementEnd: LocalDate?)
+    fun testInjectCacheOebs(hmsnr: String, title: String?, type: String?)
 }
 
 internal class SuggestionEnginePostgres(private val ds: DataSource) : SuggestionEngine, Closeable {
@@ -214,6 +217,70 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                 }.asSingle
             )
         } ?: false
+
+    override fun testInjectCacheHmdb(hmsnr: String, frameworkAgreementStart: LocalDate?, frameworkAgreementEnd: LocalDate?) {
+        using(sessionOf(ds)) { session ->
+            session.run(
+                queryOf(
+                    """
+                        UPDATE v1_cache_hmdb
+                        SET framework_agreement_start = ?, framework_agreement_end = ?, cached_at = NOW()
+                        WHERE hmsnr = ?
+                        ;
+                    """.trimIndent(),
+                    frameworkAgreementStart,
+                    frameworkAgreementEnd,
+                    hmsnr,
+                ).asExecute
+            )
+            session.run(
+                queryOf(
+                    """
+                        INSERT INTO v1_cache_hmdb (hmsnr, framework_agreement_start, framework_agreement_end, cached_at)
+                        VALUES (?, ?, ?, NOW())
+                        WHERE NOT EXISTS (SELECT 1 FROM v1_cache_hmdb WHERE hmsnr = ?)
+                        ;
+                    """.trimIndent(),
+                    hmsnr,
+                    frameworkAgreementStart,
+                    frameworkAgreementEnd,
+                    hmsnr,
+                ).asExecute
+            )
+        }
+    }
+
+    override fun testInjectCacheOebs(hmsnr: String, title: String?, type: String?) {
+        using(sessionOf(ds)) { session ->
+            session.run(
+                queryOf(
+                    """
+                        UPDATE v1_cache_oebs
+                        SET title = ?, type = ?, cached_at = NOW()
+                        WHERE hmsnr = ?
+                        ;
+                    """.trimIndent(),
+                    title,
+                    type,
+                    hmsnr,
+                ).asExecute
+            )
+            session.run(
+                queryOf(
+                    """
+                        INSERT INTO v1_cache_oebs (hmsnr, title, type, cached_at)
+                        VALUES (?, ?, ?, NOW())
+                        WHERE NOT EXISTS (SELECT 1 FROM v1_cache_oebs WHERE hmsnr = ?)
+                        ;
+                    """.trimIndent(),
+                    hmsnr,
+                    title,
+                    type,
+                    hmsnr,
+                ).asExecute
+            )
+        }
+    }
 
     @Synchronized
     override fun close() {

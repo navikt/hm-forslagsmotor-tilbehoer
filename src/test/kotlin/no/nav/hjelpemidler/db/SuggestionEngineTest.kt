@@ -12,11 +12,17 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 internal class SuggestionEngineTest {
+    private fun testHelper(store: SuggestionEnginePostgres) {
+        store.testInjectCacheHmdb("014112", null, null)
+        store.testInjectCacheOebs("000001", "Tilbehoer 1", "Hjelpemiddel")
+    }
 
     @Test
     fun `No suggestions available due too only four occurances`() {
         withMigratedDb {
             SuggestionEnginePostgres(DataSource.instance).apply {
+                testHelper(this)
+
                 // Process applications to generate suggestions
                 this.processApplications(
                     listOf(
@@ -90,6 +96,8 @@ internal class SuggestionEngineTest {
     fun `One suggestion available with five occurances`() {
         withMigratedDb {
             SuggestionEnginePostgres(DataSource.instance).apply {
+                testHelper(this)
+
                 // Process applications to generate suggestions
                 this.processApplications(
                     listOf(
@@ -165,10 +173,10 @@ internal class SuggestionEngineTest {
                 val results = this.suggestions("014112")
 
                 // Assertions
-                assertEquals(results.suggestions.count(), 1)
-                assertEquals(results.suggestions[0].hmsNr, "000001")
-                assertEquals(results.suggestions[0].title, "Tilbehoer 1")
-                assertEquals(results.suggestions[0].occurancesInSoknader, 5)
+                assertEquals(1, results.suggestions.count())
+                assertEquals("000001", results.suggestions[0].hmsNr)
+                assertEquals("Tilbehoer 1", results.suggestions[0].title)
+                assertEquals(5, results.suggestions[0].occurancesInSoknader)
             }
         }
     }
