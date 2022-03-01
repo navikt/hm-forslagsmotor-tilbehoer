@@ -117,7 +117,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
             }
 
             // Don't include introspection results with all suggestions fitltered out by grunndata-above.
-            result!!.filter { it.suggestions.isNotEmpty() }
+            result = result!!.filter { it.suggestions.isNotEmpty() }
         }
 
         logg.info("Request for introspection of suggestions (timeElapsed=${timeElapsed}ms)")
