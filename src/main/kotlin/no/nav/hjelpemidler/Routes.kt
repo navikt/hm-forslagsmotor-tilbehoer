@@ -115,6 +115,9 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
                     suggestions = it.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) },
                 )
             }
+
+            // Don't include introspection results with all suggestions fitltered out by grunndata-above.
+            result!!.filter { it.suggestions.isNotEmpty() }
         }
 
         logg.info("Request for introspection of suggestions (timeElapsed=${timeElapsed}ms)")
