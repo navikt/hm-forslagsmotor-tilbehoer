@@ -8,8 +8,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 group = "no.nav.hjelpemidler"
 version = "1.0-SNAPSHOT"
 
-val kotlin_version by extra("1.6.10")
-
 object Versions {
     const val rapid_version = "20210617121814-3e67e4d"
     const val kafka_version = "3.1.0"
