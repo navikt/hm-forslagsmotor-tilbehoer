@@ -9,7 +9,7 @@ group = "no.nav.hjelpemidler"
 version = "1.0-SNAPSHOT"
 
 object Versions {
-    const val rapid_version = "20210617121814-3e67e4d"
+    const val rapid_version = "2022.04.05-09.40.11a466d7ac70"
     const val kafka_version = "3.1.0"
     const val influxdb_version = "2.22"
     const val influxdb_aiven_version = "4.2.0"
@@ -115,10 +115,17 @@ java {
 }
 
 dependencies {
-    api("ch.qos.logback:logback-classic:1.2.10")
-    api("net.logstash.logback:logstash-logback-encoder:7.0.1") {
+    // R&R and Logging fixes
+    implementation("com.github.navikt:rapids-and-rivers:${Versions.rapid_version}") {
+        exclude(group = "ch.qos.logback", module = "logback-classic")
+        exclude(group = "net.logstash.logback", module = "logstash-logback-encoder")
+    }
+    api("ch.qos.logback:logback-classic:1.2.3")
+    api("net.logstash.logback:logstash-logback-encoder:6.6") {
         exclude("com.fasterxml.jackson.core")
     }
+
+    implementation("io.github.microutils:kotlin-logging:${Versions.kotlin_logging_version}")
 
     implementation(Versions.jackson_core)
     implementation(Versions.jackson_kotlin)
@@ -146,7 +153,6 @@ dependencies {
         }
     }
     implementation("io.ktor:ktor-client-jackson:${Versions.ktor_version}")
-    implementation("com.github.navikt:rapids-and-rivers:${Versions.rapid_version}")
     implementation("org.apache.kafka:kafka-clients:${Versions.kafka_version}")
     implementation("org.influxdb:influxdb-java:${Versions.influxdb_version}")
     implementation("com.influxdb:influxdb-client-kotlin:${Versions.influxdb_aiven_version}")
