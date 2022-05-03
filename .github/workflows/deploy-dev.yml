@@ -9,7 +9,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - snyk-2022-05-03
+      - DIGIHOT-764-statistikk-til-metabase
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:

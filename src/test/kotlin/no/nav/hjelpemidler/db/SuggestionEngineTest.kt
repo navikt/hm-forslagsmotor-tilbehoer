@@ -1,5 +1,7 @@
 package no.nav.hjelpemidler.db
 
+import io.mockk.mockk
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.Hjelpemiddel
 import no.nav.hjelpemidler.model.HjelpemiddelListe
 import no.nav.hjelpemidler.model.Soknad
@@ -12,10 +14,13 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 internal class SuggestionEngineTest {
+
+    private val aivenMetricsMock = mockk<AivenMetrics>(relaxed = true)
+
     @Test
     fun `No suggestions available for item`() {
         withMigratedDb {
-            SuggestionEnginePostgres(DataSource.instance).apply {
+            SuggestionEnginePostgres(DataSource.instance, aivenMetricsMock).apply {
                 this.testInjectCacheHmdb("1234", null, null)
                 val suggestions = this.suggestions("1234")
                 assertEquals(0, suggestions.suggestions.count())
@@ -26,7 +31,7 @@ internal class SuggestionEngineTest {
     @Test
     fun `Fewer occurrences than five results in no result, five or more occurrences results in results`() {
         withMigratedDb {
-            SuggestionEnginePostgres(DataSource.instance).apply {
+            SuggestionEnginePostgres(DataSource.instance, aivenMetricsMock).apply {
 
                 this.testInjectCacheHmdb("1234", null, null)
                 this.testInjectCacheHmdb("54321", null, null)
@@ -172,7 +177,7 @@ internal class SuggestionEngineTest {
     @Test
     fun `A single suggestion is available based on five or more occurrences`() {
         withMigratedDb {
-            SuggestionEnginePostgres(DataSource.instance).apply {
+            SuggestionEnginePostgres(DataSource.instance, aivenMetricsMock).apply {
 
                 this.testInjectCacheHmdb("1234", null, null)
                 this.testInjectCacheOebs("4321", "Tilbehør 1", "Hjelpemiddel")
@@ -266,7 +271,7 @@ internal class SuggestionEngineTest {
     @Test
     fun `Multiple suggestions and priority is correct`() {
         withMigratedDb {
-            SuggestionEnginePostgres(DataSource.instance).apply {
+            SuggestionEnginePostgres(DataSource.instance, aivenMetricsMock).apply {
 
                 this.testInjectCacheHmdb("1234", null, null)
                 this.testInjectCacheOebs("4321", "Tilbehør 1", "Hjelpemiddel")

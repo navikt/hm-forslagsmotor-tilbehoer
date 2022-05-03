@@ -19,6 +19,7 @@ import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.dataSourceFrom
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestionengine.SuggestionEnginePostgres
 import kotlin.time.ExperimentalTime
@@ -40,8 +41,10 @@ fun main() {
     // Make sure our database migrations are up to date
     migrate(Configuration)
 
+    val aivenMetrics = AivenMetrics()
+
     // Set up our database connection
-    val store = SuggestionEnginePostgres(dataSourceFrom(Configuration))
+    val store = SuggestionEnginePostgres(dataSourceFrom(Configuration), aivenMetrics)
 
     // InitialDataset.fetchInitialDatasetFor(store)
 
@@ -60,8 +63,8 @@ fun main() {
             }
         }
         .build().apply {
-            NySøknadInnsendt(this, store)
-        }.apply {
+            aivenMetrics.initMetabaseProducer(this)
+            NySøknadInnsendt(this, store, aivenMetrics)
             register(
                 object : RapidsConnection.StatusListener {
                     override fun onStartup(rapidsConnection: RapidsConnection) {

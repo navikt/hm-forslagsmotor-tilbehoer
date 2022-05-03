@@ -46,7 +46,10 @@ interface SuggestionEngine {
     fun testInjectCacheOebs(hmsnr: String, title: String?, type: String?)
 }
 
-internal class SuggestionEnginePostgres(private val ds: DataSource) : SuggestionEngine, Closeable {
+internal class SuggestionEnginePostgres(
+    private val ds: DataSource,
+    private val aivenMetrics: AivenMetrics
+) : SuggestionEngine, Closeable {
     companion object {
         val ApplicationPreviouslyProcessedException = RuntimeException("application previously processed")
     }
@@ -218,7 +221,11 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
             )
         } ?: false
 
-    override fun testInjectCacheHmdb(hmsnr: String, frameworkAgreementStart: LocalDate?, frameworkAgreementEnd: LocalDate?) {
+    override fun testInjectCacheHmdb(
+        hmsnr: String,
+        frameworkAgreementStart: LocalDate?,
+        frameworkAgreementEnd: LocalDate?
+    ) {
         using(sessionOf(ds)) { session ->
             session.run(
                 queryOf(
@@ -299,7 +306,11 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
             // that they will spread out and not run cache updates at the same time.
             var startupRandomDelaySeconds = (0..60 * 60).random()
             if (Configuration.application["APP_PROFILE"]!! == "dev") startupRandomDelaySeconds = 60
-            logg.info("SoknadStore: waiting until ${LocalDateTime.now().plusSeconds(startupRandomDelaySeconds.toLong())} before we start updating caches every 60 minutes")
+            logg.info(
+                "SoknadStore: waiting until ${
+                LocalDateTime.now().plusSeconds(startupRandomDelaySeconds.toLong())
+                } before we start updating caches every 60 minutes"
+            )
             Thread.sleep((1_000 * startupRandomDelaySeconds).toLong())
 
             var standardInterval = 60 * 60
@@ -308,7 +319,11 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
             var firstRun = true
             while (true) {
                 if (!firstRun) {
-                    logg.info("Background runner sleeping until: ${LocalDateTime.now().plusSeconds(standardInterval.toLong())}")
+                    logg.info(
+                        "Background runner sleeping until: ${
+                        LocalDateTime.now().plusSeconds(standardInterval.toLong())
+                        }"
+                    )
                     Thread.sleep((1_000 * standardInterval).toLong())
                     logg.info("Background runner working..")
                 }
@@ -506,7 +521,8 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                         it.string("hmsnr")
                     }.asList
                 )
-            }.chunked(100).firstOrNull()?.toSet() ?: listOf<String>().toSet() // Chunked: we do a maximum of 100 rows per call so that they spread over time
+            }.chunked(100).firstOrNull()?.toSet()
+                ?: listOf<String>().toSet() // Chunked: we do a maximum of 100 rows per call so that they spread over time
         } else {
             newHmdbRows?.toSet() ?: listOf<String>().toSet()
         }
@@ -531,7 +547,8 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
                         it.string("hmsnr")
                     }.asList
                 )
-            }.chunked(100).firstOrNull()?.toSet() ?: listOf<String>().toSet() // Chunked: we do a maximum of 100 rows per call so that they spread over time
+            }.chunked(100).firstOrNull()?.toSet()
+                ?: listOf<String>().toSet() // Chunked: we do a maximum of 100 rows per call so that they spread over time
         } else {
             newOebsRows?.toSet() ?: listOf<String>().toSet()
         }
@@ -675,8 +692,8 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
             logg.info("Suggestion engine stats calculated (totalMissingFrameworkAgreementStartDates=$totalMissingFrameworkAgreementStartDates, totalMissingOebsTitles=$totalMissingOebsTitles, timeElapsed=${timeElapsed}ms)")
 
             if (Configuration.application["APP_PROFILE"]!! != "local") {
-                AivenMetrics().totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
-                AivenMetrics().totalMissingOebsTitles(totalMissingOebsTitles)
+                aivenMetrics.totalMissingFrameworkAgreementStartDates(totalMissingFrameworkAgreementStartDates)
+                aivenMetrics.totalMissingOebsTitles(totalMissingOebsTitles)
             }
         }
     }
@@ -715,9 +732,9 @@ internal class SuggestionEnginePostgres(private val ds: DataSource) : Suggestion
             logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription, timeElapsed=${timeElapsed}ms)")
 
             if (Configuration.application["APP_PROFILE"]!! != "local") {
-                AivenMetrics().totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
-                AivenMetrics().totalAccessorySuggestions(totalAccessorySuggestions.toLong())
-                AivenMetrics().totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
+                aivenMetrics.totalProductsWithAccessorySuggestions(totalProductsWithAccessorySuggestions.toLong())
+                aivenMetrics.totalAccessorySuggestions(totalAccessorySuggestions.toLong())
+                aivenMetrics.totalAccessoriesWithoutADescription(totalAccessoriesWithoutADescription.toLong())
             }
         }
     }
