@@ -19,12 +19,12 @@ object Versions {
     const val ktlint_version = "0.38.1"
 
     // Ktor
-    const val ktor_version = "1.6.7"
+    const val ktor_version = "1.6.8"
     const val ktor_server_netty = "io.ktor:ktor-server-netty:$ktor_version"
     const val ktor_ktor_test = "io.ktor:ktor-server-test-host:$ktor_version"
 
     // Jackson
-    const val jackson_version = "2.13.1"
+    const val jackson_version = "2.13.2"
     const val jackson_core = "com.fasterxml.jackson.core:jackson-core:$jackson_version"
     const val jackson_kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
     const val jackson_jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
@@ -67,7 +67,7 @@ object Versions {
     const val shadow_shadow = "com.github.johnrengelman.shadow"
 
     // Database
-    const val postgres_postgres = "org.postgresql:postgresql:42.3.2"
+    const val postgres_postgres = "org.postgresql:postgresql:42.3.4"
     const val kotlinquery_kotlinquery = "com.github.seratch:kotliquery:1.3.1"
     const val flyway_flyway = "org.flywaydb:flyway-core:8.4.4"
     const val hikaricp_hikaricp = "com.zaxxer:HikariCP:5.0.1"
@@ -129,13 +129,13 @@ dependencies {
 
     implementation(Versions.jackson_core)
     implementation(Versions.jackson_kotlin)
-    implementation(Versions.jackson_jsr310)
-    implementation(Versions.ktor_server_netty)
     constraints {
-        implementation("io.netty:netty-codec-http2:4.1.73.Final") {
-            because("Snyk - Medium Severity - HTTP Request Smuggling")
+        implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2") {
+            because("Snyk - High Severity - DoS")
         }
     }
+    implementation(Versions.jackson_jsr310)
+    implementation(Versions.ktor_server_netty)
     implementation(Versions.fuel_fuel)
     implementation(Versions.fuel_library("coroutines"))
     implementation(Versions.konfig_konfig)
@@ -147,11 +147,6 @@ dependencies {
     implementation("io.ktor:ktor-auth:${Versions.ktor_version}")
     implementation("io.ktor:ktor-auth-jwt:${Versions.ktor_version}")
     implementation("io.ktor:ktor-client-apache:${Versions.ktor_version}")
-    constraints {
-        implementation("org.apache.httpcomponents:httpclient:4.5.13") {
-            because("Snyk - Medium Severity - Improper Input Validation")
-        }
-    }
     implementation("io.ktor:ktor-client-jackson:${Versions.ktor_version}")
     implementation("org.apache.kafka:kafka-clients:${Versions.kafka_version}")
     implementation("org.influxdb:influxdb-java:${Versions.influxdb_version}")
