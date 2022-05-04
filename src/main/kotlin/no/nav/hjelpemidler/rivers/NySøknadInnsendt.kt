@@ -20,7 +20,8 @@ private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 
 internal class NySøknadInnsendt(
     rapidsConnection: RapidsConnection,
-    val store: SuggestionEngine
+    private val store: SuggestionEngine,
+    private val aivenMetrics: AivenMetrics
 ) : PacketListenerWithOnError {
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -62,17 +63,17 @@ internal class NySøknadInnsendt(
         // We only record this statistic if there were accessories in the application, as that is always the case if partialOrFullUseOfSuggestionsOrLookup=true,
         // so if we didn't the "GROUP BY partialOrFullUseOfSuggestionsOrLookup" in Grafana would make little sense for comparison.
         if (totalAccessoriesInApplication > 1)
-            AivenMetrics().totalAccessoriesInApplication(
+            aivenMetrics.totalAccessoriesInApplication(
                 totalAccessoriesInApplication,
                 partialOrFullUseOfSuggestionsOrLookup
             )
 
-        AivenMetrics().soknadProcessed(list.size)
+        aivenMetrics.soknadProcessed(list.size)
 
         // Create metrics based on data
         for (product in list) {
             if (product.tilbehorListe.isEmpty()) {
-                AivenMetrics().productWithoutAccessories()
+                aivenMetrics.productWithoutAccessories()
                 continue
             }
 
@@ -80,13 +81,13 @@ internal class NySøknadInnsendt(
             for (accessory in product.tilbehorListe) {
                 val bruk = accessory.brukAvForslagsmotoren ?: continue
                 if (bruk.oppslagAvNavn) {
-                    AivenMetrics().productWithAccessoryManuallyAddedWithAutomaticNameLookup()
+                    aivenMetrics.productWithAccessoryManuallyAddedWithAutomaticNameLookup()
                 }
             }
 
             val suggestions = store.allSuggestionsForHmsnr(product.hmsNr)
             if (suggestions.suggestions.isEmpty()) {
-                AivenMetrics().productWithoutSuggestions()
+                aivenMetrics.productWithoutSuggestions()
                 continue
             }
 
@@ -101,9 +102,9 @@ internal class NySøknadInnsendt(
 
                 if (wasSuggested >= 0) {
                     val forslagsmotorBrukt = accessory.brukAvForslagsmotoren?.lagtTilFraForslagsmotoren ?: false
-                    AivenMetrics().productWasSuggested(wasSuggested, forslagsmotorBrukt)
+                    aivenMetrics.productWasSuggested(wasSuggested, forslagsmotorBrukt)
                 } else {
-                    AivenMetrics().productWasNotSuggestedAtAll()
+                    aivenMetrics.productWasNotSuggestedAtAll()
                 }
             }
         }
@@ -118,7 +119,7 @@ internal class NySøknadInnsendt(
 
         // Totalt antall søknader med tilbehør vs uten
         val soknadHasAccessories = list.any { it.tilbehorListe.isNotEmpty() }
-        AivenMetrics().soknadHasAccessories(soknadHasAccessories)
+        aivenMetrics.soknadHasAccessories(soknadHasAccessories)
 
         // Gjennomsnittelig bruk av forslagene (full/delvis) vs. manuell inntasting av hmsnr for tilbehør (ukesintervall?)
         val fullUseOfSuggestions = soknadHasAccessories && list.all {
@@ -130,7 +131,7 @@ internal class NySøknadInnsendt(
                 }
             }
         }
-        if (fullUseOfSuggestions) AivenMetrics().fullUseOfSuggestions()
+        if (fullUseOfSuggestions) aivenMetrics.fullUseOfSuggestions()
 
         val partialUseOfSuggestions = soknadHasAccessories && !fullUseOfSuggestions && list.any {
             it.tilbehorListe.any {
@@ -141,10 +142,10 @@ internal class NySøknadInnsendt(
                 }
             }
         }
-        if (partialUseOfSuggestions) AivenMetrics().partialUseOfSuggestions()
+        if (partialUseOfSuggestions) aivenMetrics.partialUseOfSuggestions()
 
         val noUseOfSuggestions = soknadHasAccessories && !fullUseOfSuggestions && !partialUseOfSuggestions
-        if (noUseOfSuggestions) AivenMetrics().noUseOfSuggestions()
+        if (noUseOfSuggestions) aivenMetrics.noUseOfSuggestions()
 
         // Totalt antall valg av forslag vs. totalt antall manuell inntasting av hmsnr
         val totalAccessoriesAddedUsingSuggestions = list.map {
@@ -156,7 +157,7 @@ internal class NySøknadInnsendt(
                 }
             }
         }.fold(0) { a, b -> a + b }
-        if (soknadHasAccessories) AivenMetrics().totalAccessoriesAddedUsingSuggestions(totalAccessoriesAddedUsingSuggestions)
+        if (soknadHasAccessories) aivenMetrics.totalAccessoriesAddedUsingSuggestions(totalAccessoriesAddedUsingSuggestions)
 
         val totaAccessorieslNotAddedUsingSuggestions = list.map {
             it.tilbehorListe.fold(0) { sum, t ->
@@ -167,6 +168,6 @@ internal class NySøknadInnsendt(
                 }
             }
         }.fold(0) { a, b -> a + b }
-        if (soknadHasAccessories) AivenMetrics().totaAccessorieslNotAddedUsingSuggestions(totaAccessorieslNotAddedUsingSuggestions)
+        if (soknadHasAccessories) aivenMetrics.totaAccessorieslNotAddedUsingSuggestions(totaAccessorieslNotAddedUsingSuggestions)
     }
 }

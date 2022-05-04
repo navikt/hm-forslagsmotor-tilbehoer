@@ -5,6 +5,7 @@ import com.influxdb.client.domain.WritePrecision
 import com.influxdb.client.write.Point
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.hjelpemidler.configuration.Configuration
 import java.time.Instant
 
@@ -26,7 +27,17 @@ class AivenMetrics {
         null
     )
 
-    fun writeEvent(measurement: String, fields: Map<String, Any>, tags: Map<String, String>) = runBlocking {
+    private var metabaseProducer: MetabaseMetricsProducer? = null
+
+    // AivenMetrics instansen trengs før MessageContext er tilgjengelig. Så initialiser metabaseProducer i etterkant
+    fun initMetabaseProducer(messageContext: MessageContext) {
+        if (metabaseProducer != null) {
+            throw IllegalStateException("Forsøkte å initialisere metabaseProducer, men den har allerede blitt initialisert.")
+        }
+        metabaseProducer = MetabaseMetricsProducer(messageContext)
+    }
+
+    private fun writeEvent(measurement: String, fields: Map<String, Any>, tags: Map<String, String>) = runBlocking {
         // TODO: Get nanoseconds
         val point = Point(measurement)
             .addTags(DEFAULT_TAGS)
@@ -34,16 +45,20 @@ class AivenMetrics {
             .addFields(fields)
             .time(Instant.now().toEpochMilli(), WritePrecision.MS)
 
-//        client.writeApi.writePoint(point)
+        if (metabaseProducer != null) {
+            metabaseProducer!!.hendelseOpprettet(measurement, fields, tags)
+        } else {
+            logg.error { "metabaseProducer har ikke blitt initialisert" }
+        }
         client.writeApiBlocking.writePoint(point)
     }
 
-    fun example1() {
-        writeEvent(EXAMPLE1, fields = mapOf("counter" to 1L), tags = emptyMap())
-    }
-
     fun soknadHasAccessories(hasAccessories: Boolean) {
-        writeEvent(SOKNAD_HAS_ACCESSORIES, fields = mapOf("count" to 1L), tags = mapOf("hasAccessories" to hasAccessories.toString()))
+        writeEvent(
+            SOKNAD_HAS_ACCESSORIES,
+            fields = mapOf("count" to 1L),
+            tags = mapOf("hasAccessories" to hasAccessories.toString())
+        )
     }
 
     fun fullUseOfSuggestions() {
@@ -145,9 +160,11 @@ class AivenMetrics {
         const val PARTIAL_USE_OF_SUGGESTIONS = "$PREFIX.partial.use.of.suggestions"
         const val NO_USE_OF_SUGGESTIONS = "$PREFIX.no.use.of.suggestions"
         const val TOTAL_ACCESSORIES_ADDED_USING_SUGGESTIONS = "$PREFIX.total.accessories.added.using.suggestions"
-        const val TOTAL_ACCESSORIES_NOT_ADDED_USING_SUGGESTIONS = "$PREFIX.total.accessories.not.added.using.suggestions"
+        const val TOTAL_ACCESSORIES_NOT_ADDED_USING_SUGGESTIONS =
+            "$PREFIX.total.accessories.not.added.using.suggestions"
         const val TOTAL_MISSING_OEBS_TITLES = "$PREFIX.total.missing.oebs.titles"
-        const val TOTAL_MISSING_FRAMEWORK_AGREEMENT_START_DATES = "$PREFIX.total.missing.framework.agreement.start.dates"
+        const val TOTAL_MISSING_FRAMEWORK_AGREEMENT_START_DATES =
+            "$PREFIX.total.missing.framework.agreement.start.dates"
 
         const val TOTAL_PRODUCTS_WITH_ACCESSORY_SUGGESTIONS = "$PREFIX.total.products.with.accessory.suggestions"
         const val TOTAL_ACCESSORY_SUGGESTIONS = "$PREFIX.total.accessory.suggestions"
