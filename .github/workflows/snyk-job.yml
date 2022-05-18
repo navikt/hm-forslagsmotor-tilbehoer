@@ -1,13 +1,9 @@
 on:
-  schedule:
-    - cron: '30 5 * * *' #kl. 5:30 hverdag
   push:
     paths-ignore:
       - README.md
       - CHANGELOG.md
       - .gitignore
-      - .github/**
-      - Jenkinsfile
     branches:
       - main
       - snyk-2022-02-07
