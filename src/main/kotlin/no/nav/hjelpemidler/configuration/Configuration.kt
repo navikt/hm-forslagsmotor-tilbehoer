@@ -27,6 +27,7 @@ internal object Configuration {
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-prod",
             "kafka.topic" to "teamdigihot.hm-soknadsbehandling-v1",
             "kafka.reset.policy" to "latest",
+            "kafka.consumer.id" to "hm-forslagsmotor-tilbehoer-v1",
 
             "application.http.port" to "8080",
 
@@ -48,6 +49,7 @@ internal object Configuration {
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-dev",
             "kafka.topic" to "teamdigihot.hm-soknadsbehandling-v1",
             "kafka.reset.policy" to "latest",
+            "kafka.consumer.id" to "hm-forslagsmotor-tilbehoer-v2",
 
             "application.http.port" to "8080",
 
@@ -69,6 +71,7 @@ internal object Configuration {
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-local",
             "kafka.topic" to "teamdigihot.hm-soknadsbehandling-v1",
             "kafka.reset.policy" to "latest",
+            "kafka.consumer.id" to "hm-forslagsmotor-tilbehoer-v1",
 
             "application.http.port" to "8123", // 8080 is default in R&R
 
@@ -108,7 +111,7 @@ internal object Configuration {
     val aivenConfig: Map<String, String> = mapOf(
         "RAPID_APP_NAME" to "hm-forslagsmotor-tilbehoer",
         "KAFKA_RAPID_TOPIC" to config()[Key("kafka.topic", stringType)],
-        "KAFKA_CONSUMER_GROUP_ID" to "hm-forslagsmotor-tilbehoer-v1",
+        "KAFKA_CONSUMER_GROUP_ID" to config()[Key("kafka.consumer.id", stringType)],
         "KAFKA_BROKERS" to config()[Key("kafka.brokers", stringType)],
         "KAFKA_RESET_POLICY" to config()[Key("kafka.reset.policy", stringType)],
         "KAFKA_TRUSTSTORE_PATH" to config()[Key("KAFKA_TRUSTSTORE_PATH", stringType)],
