@@ -22,8 +22,8 @@ import no.nav.hjelpemidler.db.waitForDB
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestionengine.SuggestionEnginePostgres
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
-import kotlin.time.minutes
 
 private val logg = KotlinLogging.logger {}
 

@@ -68,6 +68,7 @@ type Produkt {
   tekniskeData: [TekniskeDataTriple!]!
   tilgjengeligForDigitalSoknad: Boolean!
   versjon: Int!
+  produkttype: Produkttype
 }
 
 type ProduktPage {
@@ -103,4 +104,10 @@ scalar LocalDateTime
 input ProduktfilterInput {
   limit: Int
   offset: Int
+}
+
+enum Produkttype {
+  Hovedprodukt,
+  Tilbehoer,
+  Del
 }

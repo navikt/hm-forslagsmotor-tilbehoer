@@ -10,7 +10,7 @@ version = "1.0-SNAPSHOT"
 
 object Versions {
     const val rapid_version = "2022.04.05-09.40.11a466d7ac70"
-    const val kafka_version = "3.1.0"
+    const val kafka_version = "3.2.2"
     const val influxdb_version = "2.22"
     const val influxdb_aiven_version = "4.2.0"
     const val unleash_version = "4.4.1"
@@ -67,7 +67,7 @@ object Versions {
     const val shadow_shadow = "com.github.johnrengelman.shadow"
 
     // Database
-    const val postgres_postgres = "org.postgresql:postgresql:42.3.4"
+    const val postgres_postgres = "org.postgresql:postgresql:42.4.1"
     const val kotlinquery_kotlinquery = "com.github.seratch:kotliquery:1.3.1"
     const val flyway_flyway = "org.flywaydb:flyway-core:8.4.4"
     const val hikaricp_hikaricp = "com.zaxxer:HikariCP:5.0.1"
@@ -93,7 +93,7 @@ object Versions {
 plugins {
     application
     kotlin("jvm") version "1.6.10"
-    id("com.expediagroup.graphql") version "5.2.0"
+    id("com.expediagroup.graphql") version "6.1.0"
     id("com.diffplug.spotless") version "6.2.1"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }

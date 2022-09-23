@@ -9,6 +9,7 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
+import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import kotlin.system.measureTimeMillis
@@ -26,16 +27,20 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         val hmsNrsSkipList = HjelpemiddeldatabaseClient
             .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet())
-            .filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
+            .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
             .map { it.hmsnr!! }
 
         val results = SuggestionsFrontendFiltered(
             suggestions.dataStartDate,
-            suggestions.suggestions.filter { !hmsNrsSkipList.contains(it.hmsNr) }
+            suggestions.suggestions
+                .filter { !hmsNrsSkipList.contains(it.hmsNr) }
                 .map { it.toFrontendFiltered() },
         )
 
         call.respond(results)
+
+        // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
+        store.deleteSuggestions(hmsNrsSkipList)
     }
 
     get("/lookup-accessory-name/{hmsNr}") {
@@ -50,11 +55,13 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         runCatching {
             // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
-            var accessory = true
+            var feilmelding: String? = null
             val hmdbResults = HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsnr)
             if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
-                accessory = false
+                feilmelding = "ikke et tilbehør" // men tilgjengelig som hovedprodukt
+            } else if (hmdbResults.any { it.produkttype == Produkttype.HOVEDPRODUKT }) {
+                feilmelding = "ikke tilgjengelig digitalt" // hovedprodukt, men ikke tilgjengelig digitalt
             }
 
             val titleFromSuggestionEngineCache = store.cachedTitleAndTypeFor(hmsnr)
@@ -73,11 +80,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
             call.respond(
                 LookupAccessoryName(
                     oebsTitleAndType?.first ?: titleFromSuggestionEngineCache?.title,
-                    if (!accessory) {
-                        "ikke et tilbehør"
-                    } else {
-                        null
-                    }
+                    feilmelding
                 )
             )
         }.getOrElse { e ->
@@ -103,7 +106,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
             // Talk to hm-grunndata about a skip list
             val hmsNrsSkipList = HjelpemiddeldatabaseClient
                 .hentProdukterMedHmsnrs(allSuggestionHmsnrs)
-                .filter { it.hmsnr != null && it.tilgjengeligForDigitalSoknad }
+                .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
                 .map { it.hmsnr!! }
 
             // Filter out illegal suggestions because they are not accessories (they can be applied to digitally as products)

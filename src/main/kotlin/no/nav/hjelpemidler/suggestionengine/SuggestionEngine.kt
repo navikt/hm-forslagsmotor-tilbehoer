@@ -44,6 +44,7 @@ interface SuggestionEngine {
 
     fun testInjectCacheHmdb(hmsnr: String, frameworkAgreementStart: LocalDate?, frameworkAgreementEnd: LocalDate?)
     fun testInjectCacheOebs(hmsnr: String, title: String?, type: String?)
+    fun deleteSuggestions(tilbehoerHmsnrTilSletting: List<String>)
 }
 
 internal class SuggestionEnginePostgres(
@@ -286,6 +287,15 @@ internal class SuggestionEnginePostgres(
             )
         }
     }
+
+    override fun deleteSuggestions(tilbehoerHmsnrTilSletting: List<String>) =
+        using(sessionOf(ds)) { session ->
+            tilbehoerHmsnrTilSletting.forEach {
+                session.run(
+                    queryOf("delete from v1_score_card where hmsnr_tilbehoer = ?", it).asUpdate
+                )
+            }
+        }
 
     @Synchronized
     override fun close() {

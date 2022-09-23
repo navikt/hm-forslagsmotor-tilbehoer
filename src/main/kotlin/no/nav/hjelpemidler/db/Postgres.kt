@@ -15,7 +15,7 @@ private val logg = KotlinLogging.logger {}
 
 @ExperimentalTime
 internal fun waitForDB(timeout: Duration): Boolean {
-    val deadline = LocalDateTime.now().plusSeconds(timeout.inSeconds.toLong())
+    val deadline = LocalDateTime.now().plusSeconds(timeout.inWholeSeconds)
     while (true) {
         try {
             Socket(Configuration.db["DB_HOST"]!!, Configuration.db["DB_PORT"]!!.toInt())
