@@ -11,5 +11,6 @@ query HentProdukterMedHmsnrs($hmsnrs: [String!]!) {
     rammeavtaleStart
     rammeavtaleSlutt
     tilgjengeligForDigitalSoknad
+    produkttype
   }
 }

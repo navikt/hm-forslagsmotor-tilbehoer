@@ -9,5 +9,6 @@ query HentProdukterMedHmsnr($hmsnr: String!) {
     isotittel
     blobUrlLite
     tilgjengeligForDigitalSoknad
+    produkttype
   }
 }
