@@ -53,23 +53,28 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
 
-        val hmsNrsSkipList = HjelpemiddeldatabaseClient
+        val digitalSoknadSortimentListe = HjelpemiddeldatabaseClient
             .hentProdukterMedHmsnrs(bestillingsOrdningSortiment.map { it.hmsnr }.toSet())
+
+        val hmsNrsSkipList = digitalSoknadSortimentListe
             .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
             .map { it.hmsnr!! }
-
 
         val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }
         var suggestions = listOf<Suggestion>()
         if (hjelpemiddel?.tilbehor != null) {
             suggestions = bestillingsOrdningSortiment
-                .filter { hjelpemiddel.tilbehor.contains(it.hmsnr) && !hmsNrsSkipList.contains(it.hmsnr) }
+                .filter {
+                    hjelpemiddel.tilbehor.contains(it.hmsnr) && // hjelpemiddelet som sjekkes må ha tilbehøret i sin tilbehørsliste
+                    digitalSoknadSortimentListe.map{s -> s.hmsnr}.contains(it.hmsnr) && // tilbehøret må finnes i sortimentet
+                    !hmsNrsSkipList.contains(it.hmsnr) // tilbehøret må ikke være i skiplist
+                }
                 .map { Suggestion(it.hmsnr, it.navn) }
         }
 
         val results = Suggestions(
-            dataStartDate = LocalDate.now(), // TODO: blir dette riktig?
-            suggestions = suggestions
+            LocalDate.now(), // TODO: blir dette riktig?
+            suggestions
         )
 
         call.respond(results)
