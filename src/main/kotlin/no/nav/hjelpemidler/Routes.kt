@@ -16,6 +16,8 @@ import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 import io.ktor.http.HttpStatusCode
 import no.nav.hjelpemidler.github.Github
+import no.nav.hjelpemidler.model.Suggestion
+import no.nav.hjelpemidler.model.Suggestions
 
 
 private val logg = KotlinLogging.logger {}
@@ -51,14 +53,12 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         val hmsnr = call.parameters["hmsnr"]!!
         logg.info("Request for tilbehor bestilling for hmsnr=$hmsnr.")
 
-        val response = Github.hentBestillingsordningSortiment()
+        val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
 
-
-        /*
-        val hjelpemiddel = hjelpemiddelListe.find { it.hmsnr === hmsnr }
+        val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr === hmsnr }
         var suggestions = listOf<Suggestion>()
         if(hjelpemiddel?.tilbehor != null) {
-            suggestions = hjelpemiddelListe.filter { hjelpemiddel.tilbehor.contains(it.hmsnr) }.map { Suggestion(it.hmsnr, it.navn) }
+            suggestions = bestillingsOrdningSortiment.filter { hjelpemiddel.tilbehor.contains(it.hmsnr) }.map { Suggestion(it.hmsnr, it.navn) }
         }
 
         val results = Suggestions(
@@ -67,10 +67,6 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         )
 
         call.respond(results)
-
-         */
-
-        call.respond(HttpStatusCode.OK)
     }
 
     get("/lookup-accessory-name/{hmsNr}") {

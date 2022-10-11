@@ -17,8 +17,6 @@ data class BestillingsHjelpemiddel(
     val tilbehor: List<String>?
 )
 
-private val logg = KotlinLogging.logger {}
-
 object Github {
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -38,10 +36,6 @@ object Github {
             throw Exception("error: unexpected status code from github (statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)})")
         }
 
-        logg.info("response: $response")
-
-        val res = objectMapper.readValue<List<BestillingsHjelpemiddel>>(response.body())
-        logg.info("res: $res")
-        return res
+        return objectMapper.readValue(response.body())
     }
 }
