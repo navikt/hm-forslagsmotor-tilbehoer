@@ -15,7 +15,7 @@ import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
-import io.ktor.client.*
+import io.ktor.client.HttpClient
 import io.ktor.client.request.request
 import no.nav.hjelpemidler.model.Suggestion
 import no.nav.hjelpemidler.model.Suggestions
