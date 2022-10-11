@@ -12,7 +12,14 @@ import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
 import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import java.time.LocalDate
 import kotlin.system.measureTimeMillis
+
+import io.ktor.client.*
+import io.ktor.client.request.request
+import no.nav.hjelpemidler.model.Suggestion
+import no.nav.hjelpemidler.model.Suggestions
+import java.net.http.HttpResponse
 
 private val logg = KotlinLogging.logger {}
 
@@ -41,6 +48,43 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
         store.deleteSuggestions(hmsNrsSkipList)
+    }
+
+    get("/tilbehoer/bestilling/{hmsNr}") {
+        val hmsnr = call.parameters["hmsnr"]!!
+        logg.info("Request for tilbehor bestilling for hmsnr=$hmsnr.")
+
+        val client = HttpClient()
+
+        data class BestillingsHjelpemiddel(
+            val hmsnr: String,
+            val navn: String,
+            val tilbehor: List<String>?
+        )
+
+        data class GithubResponse(
+            val hjelpemiddelListe: List<BestillingsHjelpemiddel>
+        )
+
+        val response: HttpResponse<GithubResponse> = client.request("https://github.com/navikt/digihot-sortiment/blob/main/test_bestillingsordning_sortiment.json")
+
+        val body = response.body()
+        val hjelpemiddelListe = body.hjelpemiddelListe
+
+        logg.info("response: $body")
+
+        val hjelpemiddel = hjelpemiddelListe.find { it.hmsnr === hmsnr }
+        var suggestions = listOf<Suggestion>()
+        if(hjelpemiddel?.tilbehor != null) {
+            suggestions = hjelpemiddelListe.filter { hjelpemiddel.tilbehor.contains(it.hmsnr) }.map { Suggestion(it.hmsnr, it.navn) }
+        }
+
+        val results = Suggestions(
+            dataStartDate = LocalDate.now(), // TODO: blir dette riktig?
+            suggestions = suggestions
+        )
+
+        call.respond(results)
     }
 
     get("/lookup-accessory-name/{hmsNr}") {
