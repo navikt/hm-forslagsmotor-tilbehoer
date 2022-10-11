@@ -14,12 +14,9 @@ import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
+import io.ktor.http.HttpStatusCode
+import no.nav.hjelpemidler.github.Github
 
-import io.ktor.client.HttpClient
-import io.ktor.client.request.request
-import no.nav.hjelpemidler.model.Suggestion
-import no.nav.hjelpemidler.model.Suggestions
-import java.net.http.HttpResponse
 
 private val logg = KotlinLogging.logger {}
 
@@ -54,25 +51,10 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         val hmsnr = call.parameters["hmsnr"]!!
         logg.info("Request for tilbehor bestilling for hmsnr=$hmsnr.")
 
-        val client = HttpClient()
+        val response = Github.hentBestillingsordningSortiment()
 
-        data class BestillingsHjelpemiddel(
-            val hmsnr: String,
-            val navn: String,
-            val tilbehor: List<String>?
-        )
 
-        data class GithubResponse(
-            val hjelpemiddelListe: List<BestillingsHjelpemiddel>
-        )
-
-        val response: HttpResponse<GithubResponse> = client.request("https://github.com/navikt/digihot-sortiment/blob/main/test_bestillingsordning_sortiment.json")
-
-        val body = response.body()
-        val hjelpemiddelListe = body.hjelpemiddelListe
-
-        logg.info("response: $body")
-
+        /*
         val hjelpemiddel = hjelpemiddelListe.find { it.hmsnr === hmsnr }
         var suggestions = listOf<Suggestion>()
         if(hjelpemiddel?.tilbehor != null) {
@@ -85,6 +67,10 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         )
 
         call.respond(results)
+
+         */
+
+        call.respond(HttpStatusCode.OK)
     }
 
     get("/lookup-accessory-name/{hmsNr}") {
