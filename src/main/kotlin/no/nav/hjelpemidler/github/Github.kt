@@ -32,7 +32,7 @@ object Github {
 
     fun hentBestillingsordningSortiment(): GithubResponse {
         val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("https://github.com/navikt/digihot-sortiment/blob/main/test_bestillingsordning_sortiment.json"))
+            .uri(URI.create("https://navikt.github.io/digihot-sortiment/test_bestillingsordning_sortiment.json"))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
             .GET()
