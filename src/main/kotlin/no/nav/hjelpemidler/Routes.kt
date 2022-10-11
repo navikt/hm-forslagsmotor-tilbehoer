@@ -53,12 +53,18 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
 
+        val hmsNrsSkipList = HjelpemiddeldatabaseClient
+            .hentProdukterMedHmsnrs(bestillingsOrdningSortiment.map { it.hmsnr }.toSet())
+            .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
+            .map { it.hmsnr!! }
+
+
         val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }
-        logg.info("hjelpemiddel: $hjelpemiddel")
         var suggestions = listOf<Suggestion>()
-        logg.info("hjelpemiddel.tilbehor: ${hjelpemiddel?.tilbehor}")
         if (hjelpemiddel?.tilbehor != null) {
-            suggestions = bestillingsOrdningSortiment.filter { hjelpemiddel.tilbehor.contains(it.hmsnr) }.map { Suggestion(it.hmsnr, it.navn) }
+            suggestions = bestillingsOrdningSortiment
+                .filter { hjelpemiddel.tilbehor.contains(it.hmsnr) && !hmsNrsSkipList.contains(it.hmsnr) }
+                .map { Suggestion(it.hmsnr, it.navn) }
         }
 
         val results = Suggestions(
