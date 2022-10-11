@@ -14,7 +14,6 @@ import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
-import io.ktor.http.HttpStatusCode
 import no.nav.hjelpemidler.github.Github
 import no.nav.hjelpemidler.model.Suggestion
 import no.nav.hjelpemidler.model.Suggestions
@@ -57,6 +56,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr === hmsnr }
         var suggestions = listOf<Suggestion>()
+        logg.info("hjelpemiddel.tilbehor: ${hjelpemiddel?.tilbehor}")
         if(hjelpemiddel?.tilbehor != null) {
             suggestions = bestillingsOrdningSortiment.filter { hjelpemiddel.tilbehor.contains(it.hmsnr) }.map { Suggestion(it.hmsnr, it.navn) }
         }
