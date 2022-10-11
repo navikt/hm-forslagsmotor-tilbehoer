@@ -6,7 +6,10 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import mu.KotlinLogging
+import no.nav.hjelpemidler.github.Github
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
+import no.nav.hjelpemidler.model.Suggestion
+import no.nav.hjelpemidler.model.Suggestions
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
@@ -14,10 +17,6 @@ import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
-import no.nav.hjelpemidler.github.Github
-import no.nav.hjelpemidler.model.Suggestion
-import no.nav.hjelpemidler.model.Suggestions
-
 
 private val logg = KotlinLogging.logger {}
 
@@ -54,10 +53,11 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
 
-        val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr === hmsnr }
+        val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }
+        logg.info("hjelpemiddel: $hjelpemiddel")
         var suggestions = listOf<Suggestion>()
         logg.info("hjelpemiddel.tilbehor: ${hjelpemiddel?.tilbehor}")
-        if(hjelpemiddel?.tilbehor != null) {
+        if (hjelpemiddel?.tilbehor != null) {
             suggestions = bestillingsOrdningSortiment.filter { hjelpemiddel.tilbehor.contains(it.hmsnr) }.map { Suggestion(it.hmsnr, it.navn) }
         }
 
