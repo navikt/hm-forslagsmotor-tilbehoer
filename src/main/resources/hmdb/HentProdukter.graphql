@@ -1,5 +1,5 @@
-query HentProdukterMedHmsnrs($hmsnrs: [String!]!) {
-  produkter: hentProdukterMedHmsnrs(hmsnrs: $hmsnrs) {
+query HentProdukter($hmsnr: [String!]!) {
+  produkter(filter: { hmsnr: $hmsnr }) {
     id
     hmsnr
     artikkelId

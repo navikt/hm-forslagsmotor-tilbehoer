@@ -6,11 +6,11 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import mu.KotlinLogging
+import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
-import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
 import kotlin.system.measureTimeMillis
 
@@ -26,7 +26,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         val suggestions = store.suggestions(hmsnr)
 
         val hmsNrsSkipList = HjelpemiddeldatabaseClient
-            .hentProdukterMedHmsnrs(suggestions.suggestions.map { it.hmsNr }.toSet())
+            .hentProdukter(suggestions.suggestions.map { it.hmsNr }.toSet())
             .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
             .map { it.hmsnr!! }
 
@@ -56,7 +56,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
             // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
             var feilmelding: String? = null
-            val hmdbResults = HjelpemiddeldatabaseClient.hentProdukterMedHmsnr(hmsnr)
+            val hmdbResults = HjelpemiddeldatabaseClient.hentProdukter(hmsnr)
             if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                 feilmelding = "ikke et tilbehør" // men tilgjengelig som hovedprodukt
@@ -105,7 +105,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
             // Talk to hm-grunndata about a skip list
             val hmsNrsSkipList = HjelpemiddeldatabaseClient
-                .hentProdukterMedHmsnrs(allSuggestionHmsnrs)
+                .hentProdukter(allSuggestionHmsnrs)
                 .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
                 .map { it.hmsnr!! }
 

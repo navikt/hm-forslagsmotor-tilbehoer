@@ -9,6 +9,7 @@ import kotliquery.queryOf
 import kotliquery.sessionOf
 import kotliquery.using
 import mu.KotlinLogging
+import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.CachedTitleAndType
@@ -19,7 +20,6 @@ import no.nav.hjelpemidler.model.Suggestion
 import no.nav.hjelpemidler.model.Suggestions
 import no.nav.hjelpemidler.model.Tilbehoer
 import no.nav.hjelpemidler.oebs.Oebs
-import no.nav.hjelpemidler.soknad.db.client.hmdb.HjelpemiddeldatabaseClient
 import org.postgresql.util.PGobject
 import java.io.Closeable
 import java.time.LocalDate
@@ -575,7 +575,7 @@ internal class SuggestionEnginePostgres(
             }
 
             val products = runCatching {
-                HjelpemiddeldatabaseClient.hentProdukterMedHmsnrs(hmdbRows)
+                HjelpemiddeldatabaseClient.hentProdukter(hmdbRows)
             }.getOrElse { e ->
                 logg.error("updateCache: HMDB: Failed to fetch products due to: $e")
                 e.printStackTrace()
