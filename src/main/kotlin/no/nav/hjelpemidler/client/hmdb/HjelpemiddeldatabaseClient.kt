@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.soknad.db.client.hmdb
+package no.nav.hjelpemidler.client.hmdb
 
 import com.expediagroup.graphql.client.jackson.GraphQLClientJacksonSerializer
 import com.expediagroup.graphql.client.ktor.GraphQLKtorClient
@@ -6,8 +6,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import mu.KotlinLogging
 import no.nav.hjelpemidler.configuration.Configuration
-import no.nav.hjelpemidler.service.hmdb.HentProdukterMedHmsnr
-import no.nav.hjelpemidler.service.hmdb.HentProdukterMedHmsnrs
+import no.nav.hjelpemidler.service.hmdb.HentProdukter
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.Produkt
 import java.net.URL
 
 object HjelpemiddeldatabaseClient {
@@ -19,37 +19,24 @@ object HjelpemiddeldatabaseClient {
             serializer = GraphQLClientJacksonSerializer()
         )
 
-    suspend fun hentProdukterMedHmsnr(hmsnr: String): List<no.nav.hjelpemidler.service.hmdb.hentproduktermedhmsnr.Produkt> {
-        val request = HentProdukterMedHmsnr(variables = HentProdukterMedHmsnr.Variables(hmsnr = hmsnr))
+    suspend fun hentProdukter(hmsnr: String): List<Produkt> =
+        hentProdukter(setOf(hmsnr))
+
+    suspend fun hentProdukter(hmsnr: Set<String>): List<Produkt> {
+        if (hmsnr.isEmpty()) return emptyList()
+        val request = HentProdukter(variables = HentProdukter.Variables(hmsnr = hmsnr.toList()))
         return try {
             val response = client.execute(request)
             when {
                 response.errors != null -> {
                     throw Exception("Feil under henting av data fra hjelpemiddeldatabasen, hmsnr=$hmsnr, errors=${response.errors?.map { it.message }}")
                 }
+
                 response.data != null -> response.data?.produkter ?: emptyList()
                 else -> emptyList()
             }
         } catch (e: Exception) {
-            throw Exception("Nettverksfeil under henting av data fra hjelpemiddeldatabasen, hmsnr=$hmsnr, exception: $e")
-        }
-    }
-
-    suspend fun hentProdukterMedHmsnrs(hmsnrs: Set<String>): List<no.nav.hjelpemidler.service.hmdb.hentproduktermedhmsnrs.Produkt> {
-        if (hmsnrs.isEmpty()) return emptyList()
-
-        val request = HentProdukterMedHmsnrs(variables = HentProdukterMedHmsnrs.Variables(hmsnrs = hmsnrs.toList()))
-        return try {
-            val response = client.execute(request)
-            when {
-                response.errors != null -> {
-                    throw Exception("Feil under henting av data fra hjelpemiddeldatabasen, hmsnrs=$hmsnrs, errors=${response.errors?.map { it.message }}")
-                }
-                response.data != null -> response.data?.produkter ?: emptyList()
-                else -> emptyList()
-            }
-        } catch (e: Exception) {
-            throw Exception("Nettverksfeil under henting av data fra hjelpemiddeldatabasen, hmsnrs=$hmsnrs, exception: $e")
+            throw RuntimeException("Nettverksfeil under henting av data fra hjelpemiddeldatabasen, hmsnr=$hmsnr", e)
         }
     }
 }
