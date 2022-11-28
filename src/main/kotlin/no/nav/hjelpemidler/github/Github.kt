@@ -24,7 +24,7 @@ object Github {
 
     fun hentBestillingsordningSortiment(): List<BestillingsHjelpemiddel> {
         val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("https://navikt.github.io/digihot-sortiment/test_bestillingsordning_sortiment.json"))
+            .uri(URI.create("https://navikt.github.io/digihot-sortiment/bestillingsordning_sortiment.json"))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
             .GET()
