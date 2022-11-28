@@ -57,9 +57,18 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         logg.info("DEBUG: henter tilbehør for bestillingshjelpemiddel (hmsnr: $hmsnr): $hjelpemiddel")
         var suggestions = listOf<Suggestion>()
         if (hjelpemiddel?.tilbehor != null) {
+            // Alle tilbehør må være tilgjengelig for digital søknad
+            val hmsNrsSkipList = HjelpemiddeldatabaseClient
+                .hentProdukter(hjelpemiddel.tilbehor.map { it }.toSet())
+                .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
+                .map { it.hmsnr!! }
+
+            logg.info("DEBUG: hmsNrsSkipList: $hmsNrsSkipList")
+
             suggestions = bestillingsOrdningSortiment
                 .filter {
-                    hjelpemiddel.tilbehor.contains(it.hmsnr) // hjelpemiddelet som sjekkes må ha tilbehøret i sin tilbehørsliste
+                    hjelpemiddel.tilbehor.contains(it.hmsnr) && // hjelpemiddelet som sjekkes må ha tilbehøret i sin tilbehørsliste
+                    !hmsNrsSkipList.contains(it.hmsnr)
                 }
                 .map { Suggestion(it.hmsnr, it.navn) }
         }
