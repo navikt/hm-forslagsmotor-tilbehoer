@@ -9,7 +9,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - DIGIHOT-736-fjern-drivaggregat-som-tilbehør
+      - DIGIHOT-902/forslag-for-bestillinger
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:

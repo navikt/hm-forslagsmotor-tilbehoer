@@ -7,11 +7,15 @@ import io.ktor.routing.Route
 import io.ktor.routing.get
 import mu.KotlinLogging
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
+import no.nav.hjelpemidler.github.Github
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
+import no.nav.hjelpemidler.model.Suggestion
+import no.nav.hjelpemidler.model.Suggestions
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
 import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
 private val logg = KotlinLogging.logger {}
@@ -41,6 +45,33 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
         store.deleteSuggestions(hmsNrsSkipList)
+    }
+
+    get("/tilbehoer/bestilling/{hmsNr}") {
+        val hmsnr = call.parameters["hmsnr"]!!
+        logg.info("Request for tilbehor bestilling for hmsnr=$hmsnr.")
+
+        val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
+
+        val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }
+        logg.info("DEBUG: henter tilbehør for bestillingshjelpemiddel (hmsnr: $hmsnr): $hjelpemiddel")
+        var suggestions = listOf<Suggestion>()
+        if (hjelpemiddel?.tilbehor != null) {
+            suggestions = bestillingsOrdningSortiment
+                .filter {
+                    hjelpemiddel.tilbehor.contains(it.hmsnr) // hjelpemiddelet som sjekkes må ha tilbehøret i sin tilbehørsliste
+                }
+                .map { Suggestion(it.hmsnr, it.navn) }
+        }
+
+        val response = Suggestions(
+            LocalDate.now(), // TODO: blir dette riktig?
+            suggestions
+        )
+
+        logg.info("DEBUG: tilbehør for $hmsnr: $response")
+
+        call.respond(response)
     }
 
     get("/lookup-accessory-name/{hmsNr}") {
