@@ -54,7 +54,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
         val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
 
         val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }
-        logg.info("DEBUG: hovedhjelpemiddel: $hjelpemiddel")
+        logg.info("DEBUG: henter tilbehør for bestillingshjelpemiddel (hmsnr: $hmsnr): $hjelpemiddel")
         var suggestions = listOf<Suggestion>()
         if (hjelpemiddel?.tilbehor != null) {
             suggestions = bestillingsOrdningSortiment
@@ -69,7 +69,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
             suggestions
         )
 
-        logg.info("DEBUG: response: $response")
+        logg.info("DEBUG: tilbehør for $hmsnr: $response")
 
         call.respond(response)
     }
