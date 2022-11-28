@@ -62,7 +62,7 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
                 .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
                 .map { it.hmsnr!! }
 
-            logg.info("DEBUG: hmsNrsSkipList: $hmsnrsTilgjengelig")
+            logg.info("DEBUG: hmsnrsTilgjengelig: $hmsnrsTilgjengelig")
 
             suggestions = bestillingsOrdningSortiment
                 .filter {
