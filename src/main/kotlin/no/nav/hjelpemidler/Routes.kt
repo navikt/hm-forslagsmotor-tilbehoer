@@ -53,31 +53,22 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
 
-        val hjelpemiddel = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }
-        logg.info("DEBUG: henter tilbehør for bestillingshjelpemiddel (hmsnr: $hmsnr): $hjelpemiddel")
-        var suggestions = listOf<Suggestion>()
-        if (hjelpemiddel?.tilbehor != null) {
-            val hmsnrsTilgjengelig = HjelpemiddeldatabaseClient
-                .hentProdukter(hjelpemiddel.tilbehor.map { it }.toSet())
-                .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
-                .map { it.hmsnr!! }
+        val hjelpemiddelTilbehørIBestillingsliste = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }?.tilbehor
 
-            logg.info("DEBUG: hmsnrsTilgjengelig: $hmsnrsTilgjengelig")
-
-            suggestions = bestillingsOrdningSortiment
-                .filter {
-                    hjelpemiddel.tilbehor.contains(it.hmsnr) && // hjelpemiddelet som sjekkes må ha tilbehøret i sin tilbehørsliste
-                    hmsnrsTilgjengelig.contains(it.hmsnr) // alle tilbehør må være tilgjengelig for digital søknad
-                }
-                .map { Suggestion(it.hmsnr, it.navn) }
+        if (hjelpemiddelTilbehørIBestillingsliste.isNullOrEmpty()) {
+            logg.info { "Fant ingen tilbehør for $hmsnr i bestillingsordningsortimentet" }
+            return@get call.respond(emptyList<Suggestion>())
         }
 
-        val response = Suggestions(
-            LocalDate.now(), // TODO: blir dette riktig?
-            suggestions
-        )
+        logg.info("Fant tilbehør <$hjelpemiddelTilbehørIBestillingsliste> for $hmsnr i bestillingsordningsortimentet")
 
-        logg.info("DEBUG: tilbehør for $hmsnr: $response")
+        val suggestions = HjelpemiddeldatabaseClient.hentProdukter(hjelpemiddelTilbehørIBestillingsliste.toSet())
+            .filter { it.hmsnr != null && !(it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
+            .map { Suggestion(hmsNr = it.hmsnr!!, title = it.artikkelnavn) }
+
+        val response = Suggestions(LocalDate.now(), suggestions)
+
+        logg.info { "Returnerer response <$response> for bestilling tilbehøroppslag på hmsnr <$hmsnr>" }
 
         call.respond(response)
     }
