@@ -21,7 +21,7 @@ fun Route.ktorRoutes(suggestionService: SuggestionService) {
     get("/tilbehoer/bestilling/{hmsNr}") {
         val hmsnr = call.parameters["hmsnr"]!!
         logg.info("Request for tilbehor bestilling for hmsnr=$hmsnr.")
-        val response = suggestionService.hentBestillingstilbeør(hmsnr)
+        val response = suggestionService.hentBestillingstilbehør(hmsnr)
         logg.info { "Returnerer response <$response> for bestilling tilbehøroppslag på hmsnr <$hmsnr>" }
         call.respond(response)
     }

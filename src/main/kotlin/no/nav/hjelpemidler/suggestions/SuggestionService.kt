@@ -36,7 +36,7 @@ class SuggestionService(private val store: SuggestionEngine) {
         return results
     }
 
-    suspend fun hentBestillingstilbeør(hmsnr: String): SuggestionsFrontendFiltered {
+    suspend fun hentBestillingstilbehør(hmsnr: String): SuggestionsFrontendFiltered {
         val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
 
         val hjelpemiddelTilbehørIBestillingsliste = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }?.tilbehor
