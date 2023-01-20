@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.suggestionengine
+package no.nav.hjelpemidler.suggestions
 
 internal val querySuggestionsBase =
     """

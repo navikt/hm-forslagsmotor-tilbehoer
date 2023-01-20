@@ -21,7 +21,7 @@ import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
-import no.nav.hjelpemidler.suggestionengine.SuggestionEnginePostgres
+import no.nav.hjelpemidler.suggestions.SuggestionEnginePostgres
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 

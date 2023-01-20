@@ -12,7 +12,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.Soknad
-import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import no.nav.hjelpemidler.suggestions.SuggestionEngine
 import java.time.LocalDateTime
 
 private val logg = KotlinLogging.logger {}

@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.suggestionengine
+package no.nav.hjelpemidler.suggestions
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature

@@ -7,7 +7,7 @@ import no.nav.hjelpemidler.model.HjelpemiddelListe
 import no.nav.hjelpemidler.model.Soknad
 import no.nav.hjelpemidler.model.SoknadData
 import no.nav.hjelpemidler.model.Tilbehoer
-import no.nav.hjelpemidler.suggestionengine.SuggestionEnginePostgres
+import no.nav.hjelpemidler.suggestions.SuggestionEnginePostgres
 import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime

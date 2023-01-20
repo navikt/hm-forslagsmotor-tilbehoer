@@ -9,7 +9,7 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.azure.AzureClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.model.Soknad
-import no.nav.hjelpemidler.suggestionengine.SuggestionEngine
+import no.nav.hjelpemidler.suggestions.SuggestionEngine
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
