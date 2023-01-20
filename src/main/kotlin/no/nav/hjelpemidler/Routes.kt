@@ -62,7 +62,10 @@ fun Route.ktorRoutes(store: SuggestionEngine) {
 
         logg.info("Fant tilbehør <$hjelpemiddelTilbehørIBestillingsliste> for $hmsnr i bestillingsordningsortimentet")
 
-        val suggestions = HjelpemiddeldatabaseClient.hentProdukter(hjelpemiddelTilbehørIBestillingsliste.toSet())
+        val produkter = HjelpemiddeldatabaseClient.hentProdukter(hjelpemiddelTilbehørIBestillingsliste.toSet())
+        logg.info { "Hentet produkter <$produkter> som tilbehør for hmsnr <$hmsnr>" }
+
+        val suggestions = produkter
             .filter { it.hmsnr != null && !(it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
             .map { Suggestion(hmsNr = it.hmsnr!!, title = it.artikkelnavn) }
 
