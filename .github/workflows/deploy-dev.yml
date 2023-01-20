@@ -9,7 +9,8 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - DIGIHOT-902/forslag-for-bestillinger
+      - fix-tilbehør-bestilling
+
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:

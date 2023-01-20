@@ -21,7 +21,8 @@ import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
-import no.nav.hjelpemidler.suggestionengine.SuggestionEnginePostgres
+import no.nav.hjelpemidler.suggestions.SuggestionEnginePostgres
+import no.nav.hjelpemidler.suggestions.SuggestionService
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
@@ -45,6 +46,7 @@ fun main() {
 
     // Set up our database connection
     val store = SuggestionEnginePostgres(dataSourceFrom(Configuration), aivenMetrics)
+    val suggestionService = SuggestionService(store)
 
     // InitialDataset.fetchInitialDatasetFor(store)
 
@@ -59,7 +61,7 @@ fun main() {
                     // TODO: Check database connection
                     call.respondRedirect("/isready")
                 }
-                ktorRoutes(store)
+                ktorRoutes(suggestionService)
             }
         }
         .build().apply {
