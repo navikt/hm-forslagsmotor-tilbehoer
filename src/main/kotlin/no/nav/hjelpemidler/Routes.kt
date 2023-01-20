@@ -6,17 +6,7 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import mu.KotlinLogging
-import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.github.Github
-import no.nav.hjelpemidler.model.ProductFrontendFiltered
-import no.nav.hjelpemidler.model.Suggestion
-import no.nav.hjelpemidler.model.Suggestions
-import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
-import no.nav.hjelpemidler.oebs.Oebs
-import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
 import no.nav.hjelpemidler.suggestions.SuggestionService
-import java.time.LocalDate
-import kotlin.system.measureTimeMillis
 
 private val logg = KotlinLogging.logger {}
 
