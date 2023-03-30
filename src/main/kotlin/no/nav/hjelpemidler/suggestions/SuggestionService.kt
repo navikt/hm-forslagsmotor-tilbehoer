@@ -8,6 +8,7 @@ import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.Produkt
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
@@ -20,7 +21,7 @@ class SuggestionService(private val store: SuggestionEngine) {
 
         val hmsNrsSkipList = HjelpemiddeldatabaseClient
             .hentProdukter(suggestions.suggestions.map { it.hmsNr }.toSet())
-            .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
+            .filter { it.hmsnr != null && (erHovedprodukt(it) || !tilbehørErPåRammeavtale(it)) }
             .map { it.hmsnr!! }
 
         val results = SuggestionsFrontendFiltered(
@@ -140,3 +141,11 @@ data class LookupAccessoryName(
     val name: String?,
     val error: String?,
 )
+
+private val rammeavtaleTilbehør by lazy { Github.hentRammeavtalerForTilbehør() } // TODO Denne og bestillingsordningen kan caches in-memory med feks 1 time levetid
+
+private fun tilbehørErPåRammeavtale(tilbehør: Produkt): Boolean =
+    rammeavtaleTilbehør[tilbehør.rammeavtaleId]?.get(tilbehør.leverandorId)?.contains(tilbehør.hmsnr) ?: false
+
+private fun erHovedprodukt(tilbehør: Produkt): Boolean =
+    tilbehør.tilgjengeligForDigitalSoknad || tilbehør.produkttype == Produkttype.HOVEDPRODUKT

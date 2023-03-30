@@ -58,10 +58,6 @@ object Versions {
     val graphql_client_jackson = graphql_library("client-jackson")
     fun graphql_library(name: String) = "com.expediagroup:graphql-kotlin-$name:$graphql_version"
 
-    // Spotless
-    const val spotless_version = "6.2.1"
-    const val spotless_spotless = "com.diffplug.spotless"
-
     // Shadow
     const val shadow_version = "7.1.2"
     const val shadow_shadow = "com.github.johnrengelman.shadow"
@@ -94,7 +90,6 @@ plugins {
     application
     kotlin("jvm") version "1.6.10"
     id("com.expediagroup.graphql") version "6.1.0"
-    id("com.diffplug.spotless") version "6.2.1"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -184,17 +179,6 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Versions.junit_version}")
 }
 
-spotless {
-    kotlin {
-        ktlint(ktlint_version)
-        targetExclude("**/generated/**")
-    }
-    kotlinGradle {
-        target("*.gradle.kts", "buildSrc/*.gradle.kts")
-        ktlint(ktlint_version)
-    }
-}
-
 tasks.withType<KotlinCompile> {
     kotlinOptions.freeCompilerArgs = listOf()
     kotlinOptions.jvmTarget = "17"
@@ -222,11 +206,6 @@ tasks.named("shadowJar") {
 
 tasks.named("jar") {
     dependsOn("test")
-}
-
-tasks.named("compileKotlin") {
-    dependsOn("spotlessApply")
-    dependsOn("spotlessCheck")
 }
 
 graphql {
