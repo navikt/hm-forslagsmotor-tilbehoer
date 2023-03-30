@@ -24,6 +24,8 @@ class SuggestionService(private val store: SuggestionEngine) {
             .filter { it.hmsnr != null && (erHovedprodukt(it) || !tilbehørErPåRammeavtale(it)) }
             .map { it.hmsnr!! }
 
+        logg.info { "BANAN hmsnr <$hmsnr>, suggestions <$suggestions>, skipList <$hmsNrsSkipList>" }
+
         val results = SuggestionsFrontendFiltered(
             suggestions.dataStartDate,
             suggestions.suggestions
