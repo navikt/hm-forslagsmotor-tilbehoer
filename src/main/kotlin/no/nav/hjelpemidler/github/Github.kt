@@ -5,10 +5,13 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import mu.KotlinLogging
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+
+private val logger = KotlinLogging.logger {  }
 
 object Github {
     private val objectMapper = jacksonObjectMapper()
@@ -47,6 +50,8 @@ object Github {
             throw Exception("error: unexpected status code from github (statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)})")
         }
 
-        return objectMapper.readValue(response.body())
+        val rammeavtaler = objectMapper.readValue<Rammeavtaler>(response.body())
+        logger.info { "DEBUG: Hentet rammeavtaler: <$rammeavtaler>" }
+        return rammeavtaler
     }
 }

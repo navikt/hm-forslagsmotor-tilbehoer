@@ -144,8 +144,11 @@ data class LookupAccessoryName(
 
 private val rammeavtaleTilbehør by lazy { Github.hentRammeavtalerForTilbehør() } // TODO Denne og bestillingsordningen kan caches in-memory med feks 1 time levetid
 
-private fun tilbehørErPåRammeavtale(tilbehør: Produkt): Boolean =
-    rammeavtaleTilbehør[tilbehør.rammeavtaleId]?.get(tilbehør.leverandorId)?.contains(tilbehør.hmsnr) ?: false
+private fun tilbehørErPåRammeavtale(tilbehør: Produkt): Boolean {
+    logg.info { "DEBUG: sjekker om tilbehør <$tilbehør> er på rammeavtale" }
+    return rammeavtaleTilbehør[tilbehør.rammeavtaleId]?.get(tilbehør.leverandorId)?.contains(tilbehør.hmsnr) ?: false
+
+}
 
 private fun erHovedprodukt(tilbehør: Produkt): Boolean =
     tilbehør.tilgjengeligForDigitalSoknad || tilbehør.produkttype == Produkttype.HOVEDPRODUKT
