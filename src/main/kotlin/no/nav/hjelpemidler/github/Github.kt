@@ -51,7 +51,7 @@ object Github {
         }
 
         val rammeavtaler = objectMapper.readValue<Rammeavtaler>(response.body())
-        logger.info { "DEBUG: Hentet rammeavtaler: <$rammeavtaler>" }
+        logger.info { "BANAN: Hentet rammeavtaler: <$rammeavtaler>" }
         return rammeavtaler
     }
 }
