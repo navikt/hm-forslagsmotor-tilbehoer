@@ -50,8 +50,6 @@ object Github {
             throw Exception("error: unexpected status code from github (statusCode=${response.statusCode()} headers=${response.headers()} body[:40]=${response.body().take(40)})")
         }
 
-        val rammeavtaler = objectMapper.readValue<Rammeavtaler>(response.body())
-        logger.info { "BANAN: Hentet rammeavtaler: <$rammeavtaler>" }
-        return rammeavtaler
+        return objectMapper.readValue<Rammeavtaler>(response.body())
     }
 }

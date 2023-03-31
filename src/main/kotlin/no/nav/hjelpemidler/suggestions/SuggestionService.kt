@@ -30,14 +30,14 @@ class SuggestionService(private val store: SuggestionEngine) {
             .filter { it.hmsnr != null && erHovedprodukt(it) }
             .map { it.hmsnr!! }
 
-        logg.info { "BANAN hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, skipList <$hmsNrsSkipList>" }
-
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
             forslagPåRammeAvtale
                 .filter { !hmsNrsSkipList.contains(it.hmsNr) }
                 .map { it.toFrontendFiltered() },
         )
+
+        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, skipList <$hmsNrsSkipList>, results <$results>" }
 
         // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
         store.deleteSuggestions(hmsNrsSkipList)
@@ -153,14 +153,8 @@ data class LookupAccessoryName(
 
 private val rammeavtaleTilbehør by lazy { Github.hentRammeavtalerForTilbehør() } // TODO Denne og bestillingsordningen kan caches in-memory med feks 1 time levetid
 
-private fun tilbehørErPåRammeavtale(produkt: Produkt, tilbehør: Hmsnr): Boolean {
-    val foo = rammeavtaleTilbehør[produkt.rammeavtaleId]?.get(produkt.leverandorId)?.contains(tilbehør) ?: false
-    logg.info { "BANAN: sjekker om tilbehør <$produkt> er på rammeavtale. Resultat foo" }
-    return foo
-}
+private fun tilbehørErPåRammeavtale(produkt: Produkt, tilbehør: Hmsnr): Boolean =
+    rammeavtaleTilbehør[produkt.rammeavtaleId]?.get(produkt.leverandorId)?.contains(tilbehør) ?: false
 
-private fun erHovedprodukt(tilbehør: Produkt): Boolean {
-    val foo = tilbehør.tilgjengeligForDigitalSoknad || tilbehør.produkttype == Produkttype.HOVEDPRODUKT
-    logg.info { "BANAN: sjekker om tilbehør <$tilbehør> er hovedprodukt. Resultat $foo" }
-    return foo
-}
+private fun erHovedprodukt(tilbehør: Produkt): Boolean =
+    tilbehør.tilgjengeligForDigitalSoknad || tilbehør.produkttype == Produkttype.HOVEDPRODUKT
