@@ -58,6 +58,6 @@ object Github {
             )
         }
 
-        return objectMapper.readValue<Rammeavtaler>(response.body())
+        return objectMapper.readValue(response.body())
     }
 }

@@ -24,23 +24,14 @@ class SuggestionService(private val store: SuggestionEngine) {
         val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
             .partition { tilbehørErPåRammeavtale(hovedprodukt, it.hmsNr) }
 
-
-        val hmsNrsSkipList = HjelpemiddeldatabaseClient
-            .hentProdukter(forslagPåRammeAvtale.map { it.hmsNr }.toSet())
-            .filter { it.hmsnr != null && erHovedprodukt(it) }
-            .map { it.hmsnr!! }
-
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
-            forslagPåRammeAvtale
-                .filter { !hmsNrsSkipList.contains(it.hmsNr) }
-                .map { it.toFrontendFiltered() },
+            forslagPåRammeAvtale.map { it.toFrontendFiltered() }
         )
 
-        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, skipList <$hmsNrsSkipList>, results <$results>" }
+        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
 
         // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
-        store.deleteSuggestions(hmsNrsSkipList)
         store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
 
         return results
