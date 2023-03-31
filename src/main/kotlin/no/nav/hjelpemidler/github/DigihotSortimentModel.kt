@@ -8,7 +8,7 @@ data class BestillingsHjelpemiddel(
 
 typealias Rammeavtaler = Map<RammeavtaleId, Leverandører>
 
-typealias Leverandører = Map<LeverandørId, List<Hmsnr>> // TODO listen burde være et set
+typealias Leverandører = Map<LeverandørId, Set<Hmsnr>>
 
 typealias Hmsnr = String
 
