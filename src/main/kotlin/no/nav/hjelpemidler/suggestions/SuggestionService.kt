@@ -2,8 +2,10 @@ package no.nav.hjelpemidler.suggestions
 
 import mu.KotlinLogging
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.github.Github
+import no.nav.hjelpemidler.github.CachedGithubClient
+import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
+import no.nav.hjelpemidler.github.Rammeavtaler
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
@@ -15,14 +17,25 @@ import kotlin.system.measureTimeMillis
 
 private val logg = KotlinLogging.logger { }
 
-class SuggestionService(private val store: SuggestionEngine) {
+class SuggestionService(
+    private val store: SuggestionEngine,
+    private val githubClient: GithubClient = CachedGithubClient()
+) {
 
     suspend fun suggestions(hmsnr: String): SuggestionsFrontendFiltered {
         val hovedprodukt = HjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
         val forslag = store.suggestions(hmsnr)
 
+        val rammeavtaleTilbehør = githubClient.hentRammeavtalerForTilbehør()
+
         val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
-            .partition { tilbehørErPåRammeavtale(hovedprodukt, it.hmsNr) }
+            .partition {
+                tilbehørErPåRammeavtalenTilHovedprodukt(
+                    tilbehør = it.hmsNr,
+                    rammeavtaleTilbehør,
+                    hovedprodukt
+                )
+            }
 
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
@@ -38,7 +51,7 @@ class SuggestionService(private val store: SuggestionEngine) {
     }
 
     suspend fun hentBestillingstilbehør(hmsnr: String): SuggestionsFrontendFiltered {
-        val bestillingsOrdningSortiment = Github.hentBestillingsordningSortiment()
+        val bestillingsOrdningSortiment = githubClient.hentBestillingsordningSortiment()
 
         val hjelpemiddelTilbehørIBestillingsliste = bestillingsOrdningSortiment.find { it.hmsnr == hmsnr }?.tilbehor
 
@@ -142,10 +155,10 @@ data class LookupAccessoryName(
     val error: String?,
 )
 
-private val rammeavtaleTilbehør by lazy { Github.hentRammeavtalerForTilbehør() } // TODO Denne og bestillingsordningen kan caches in-memory med feks 1 time levetid
+private fun tilbehørErPåRammeavtalenTilHovedprodukt(
+    tilbehør: Hmsnr,
+    rammeavtaler: Rammeavtaler,
+    hovedprodukt: Produkt,
+): Boolean =
+    rammeavtaler[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(tilbehør) ?: false
 
-private fun tilbehørErPåRammeavtale(produkt: Produkt, tilbehør: Hmsnr): Boolean =
-    rammeavtaleTilbehør[produkt.rammeavtaleId]?.get(produkt.leverandorId)?.contains(tilbehør) ?: false
-
-private fun erHovedprodukt(tilbehør: Produkt): Boolean =
-    tilbehør.tilgjengeligForDigitalSoknad || tilbehør.produkttype == Produkttype.HOVEDPRODUKT
