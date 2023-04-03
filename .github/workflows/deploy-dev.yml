@@ -9,7 +9,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - fix-tilbehør-bestilling
+      - tilbehør-rammeavtale
 
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}

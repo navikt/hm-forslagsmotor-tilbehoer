@@ -12,5 +12,7 @@ query HentProdukter($hmsnr: [String!]!) {
     rammeavtaleSlutt
     tilgjengeligForDigitalSoknad
     produkttype
+    rammeavtaleId
+    leverandorId
   }
 }

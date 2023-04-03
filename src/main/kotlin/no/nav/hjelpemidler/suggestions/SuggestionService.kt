@@ -3,11 +3,13 @@ package no.nav.hjelpemidler.suggestions
 import mu.KotlinLogging
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.github.Github
+import no.nav.hjelpemidler.github.Hmsnr
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.Produkt
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
@@ -16,22 +18,21 @@ private val logg = KotlinLogging.logger { }
 class SuggestionService(private val store: SuggestionEngine) {
 
     suspend fun suggestions(hmsnr: String): SuggestionsFrontendFiltered {
-        val suggestions = store.suggestions(hmsnr)
+        val hovedprodukt = HjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
+        val forslag = store.suggestions(hmsnr)
 
-        val hmsNrsSkipList = HjelpemiddeldatabaseClient
-            .hentProdukter(suggestions.suggestions.map { it.hmsNr }.toSet())
-            .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
-            .map { it.hmsnr!! }
+        val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
+            .partition { tilbehørErPåRammeavtale(hovedprodukt, it.hmsNr) }
 
         val results = SuggestionsFrontendFiltered(
-            suggestions.dataStartDate,
-            suggestions.suggestions
-                .filter { !hmsNrsSkipList.contains(it.hmsNr) }
-                .map { it.toFrontendFiltered() },
+            forslag.dataStartDate,
+            forslagPåRammeAvtale.map { it.toFrontendFiltered() }
         )
 
+        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
+
         // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
-        store.deleteSuggestions(hmsNrsSkipList)
+        store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
 
         return results
     }
@@ -140,3 +141,11 @@ data class LookupAccessoryName(
     val name: String?,
     val error: String?,
 )
+
+private val rammeavtaleTilbehør by lazy { Github.hentRammeavtalerForTilbehør() } // TODO Denne og bestillingsordningen kan caches in-memory med feks 1 time levetid
+
+private fun tilbehørErPåRammeavtale(produkt: Produkt, tilbehør: Hmsnr): Boolean =
+    rammeavtaleTilbehør[produkt.rammeavtaleId]?.get(produkt.leverandorId)?.contains(tilbehør) ?: false
+
+private fun erHovedprodukt(tilbehør: Produkt): Boolean =
+    tilbehør.tilgjengeligForDigitalSoknad || tilbehør.produkttype == Produkttype.HOVEDPRODUKT

@@ -48,6 +48,7 @@ spec:
         - application: hm-grunndata-api
       external:
         - host: hm-oebs-api-proxy.prod-fss-pub.nais.io
+        - host: navikt.github.io
   envFrom:
     - secret: hm-influxdb-secret
   gcp:
