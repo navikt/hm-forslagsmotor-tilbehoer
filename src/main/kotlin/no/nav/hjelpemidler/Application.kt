@@ -19,6 +19,7 @@ import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.dataSourceFrom
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
+import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestions.SuggestionEnginePostgres

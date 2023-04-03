@@ -161,6 +161,10 @@ dependencies {
     }
     implementation(Versions.graphql_client_jackson)
 
+    // Cache
+    implementation("javax.cache:cache-api:1.1.1")
+    implementation("org.ehcache:ehcache:3.10.6")
+
     // Database
     implementation(Versions.postgres_postgres)
     implementation(Versions.hikaricp_hikaricp)

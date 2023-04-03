@@ -10,16 +10,14 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+interface GithubClient {
+    fun hentBestillingsordningSortiment(): List<BestillingsHjelpemiddel>
+    fun hentRammeavtalerForTilbehør(): Rammeavtaler
+}
 
-object Github {
-    private val objectMapper = jacksonObjectMapper()
-        .registerModule(JavaTimeModule())
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+class GithubHttpClient(private val digihotSortimentUrl: String = "https://navikt.github.io/digihot-sortiment"): GithubClient {
 
-    private val digihotSortimentUrl = "https://navikt.github.io/digihot-sortiment"
-
-    fun hentBestillingsordningSortiment(): List<BestillingsHjelpemiddel> {
+    override fun hentBestillingsordningSortiment(): List<BestillingsHjelpemiddel> {
         val request: HttpRequest = HttpRequest.newBuilder()
             .uri(URI.create("$digihotSortimentUrl/bestillingsordning_sortiment.json"))
             .header("Content-Type", "application/json")
@@ -40,7 +38,7 @@ object Github {
         return objectMapper.readValue(response.body())
     }
 
-    fun hentRammeavtalerForTilbehør(): Rammeavtaler {
+    override fun hentRammeavtalerForTilbehør(): Rammeavtaler {
         val request: HttpRequest = HttpRequest.newBuilder()
             .uri(URI.create("$digihotSortimentUrl/tilbehor_per_rammeavtale_og_leverandor.json"))
             .header("Content-Type", "application/json")
@@ -61,3 +59,8 @@ object Github {
         return objectMapper.readValue(response.body())
     }
 }
+
+private val objectMapper = jacksonObjectMapper()
+    .registerModule(JavaTimeModule())
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
