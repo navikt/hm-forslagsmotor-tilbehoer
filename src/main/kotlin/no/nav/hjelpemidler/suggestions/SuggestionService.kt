@@ -2,6 +2,7 @@ package no.nav.hjelpemidler.suggestions
 
 import mu.KotlinLogging
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
+import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
@@ -34,7 +35,7 @@ class SuggestionService(
                     tilbehør = it.hmsNr,
                     rammeavtaleTilbehør,
                     hovedprodukt
-                )
+                ) && it.hmsNr !in denyList
             }
 
         val results = SuggestionsFrontendFiltered(
@@ -86,7 +87,9 @@ class SuggestionService(
                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                 feilmelding = "ikke et tilbehør" // men tilgjengelig som hovedprodukt
             } else if (hmdbResults.any { it.produkttype == Produkttype.HOVEDPRODUKT }) {
-                feilmelding = "ikke tilgjengelig digitalt" // hovedprodukt, men ikke tilgjengelig digitalt
+                feilmelding = "ikke tilgjengelig digitalt" // hovedprodukt som må søkes på papir
+            } else if (hmsnr in denyList) {
+                feilmelding = "ikke tilgjengelig digitalt"
             }
 
             val titleFromSuggestionEngineCache = store.cachedTitleAndTypeFor(hmsnr)
