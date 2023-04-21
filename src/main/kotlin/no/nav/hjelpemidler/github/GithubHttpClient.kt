@@ -15,7 +15,10 @@ interface GithubClient {
     fun hentRammeavtalerForTilbehør(): Rammeavtaler
 }
 
-class GithubHttpClient(private val digihotSortimentUrl: String = "https://navikt.github.io/digihot-sortiment"): GithubClient {
+class GithubHttpClient(
+    private val digihotSortimentUrl: String = "https://navikt.github.io/digihot-sortiment",
+    private val tilbehørRammeavtalerUrl: String = "https://navikt.github.io/hm-utils/tilbehor.json"
+) : GithubClient {
 
     override fun hentBestillingsordningSortiment(): List<BestillingsHjelpemiddel> {
         val request: HttpRequest = HttpRequest.newBuilder()
@@ -40,7 +43,7 @@ class GithubHttpClient(private val digihotSortimentUrl: String = "https://navikt
 
     override fun hentRammeavtalerForTilbehør(): Rammeavtaler {
         val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("$digihotSortimentUrl/tilbehor_per_rammeavtale_og_leverandor.json"))
+            .uri(URI.create(tilbehørRammeavtalerUrl))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
             .GET()
