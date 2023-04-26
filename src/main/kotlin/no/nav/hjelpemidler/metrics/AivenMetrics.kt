@@ -10,7 +10,6 @@ import no.nav.hjelpemidler.configuration.Configuration
 import java.time.Instant
 
 private val logg = KotlinLogging.logger {}
-private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 
 class AivenMetrics {
     private val influxHost = Configuration.influxDB["INFLUX_HOST"] ?: "http://localhost"
@@ -152,9 +151,6 @@ class AivenMetrics {
         )
 
         private const val PREFIX = "hm-forslagsmotor-tilbehoer"
-        const val EXAMPLE1 = "$PREFIX.EXAMPLE1"
-        // const val INITIELT_DATASETT_STOERELSE = "$PREFIX.initielt.datasett.stoerelse"
-
         const val SOKNAD_HAS_ACCESSORIES = "$PREFIX.soknad.has.accessories"
         const val FULL_USE_OF_SUGGESTIONS = "$PREFIX.full.use.of.suggestions"
         const val PARTIAL_USE_OF_SUGGESTIONS = "$PREFIX.partial.use.of.suggestions"

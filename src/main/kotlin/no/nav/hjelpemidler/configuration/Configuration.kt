@@ -21,7 +21,6 @@ internal object Configuration {
         mapOf(
             "application.profile" to "prod",
             "SENSU_URL" to "https://digihot-proxy.prod-fss-pub.nais.io/sensu",
-            "unleash.url" to "https://unleash.nais.io/api/",
             "OEBS_API_PROXY_URL" to "hm-oebs-api-proxy.prod-fss-pub.nais.io",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-prod",
@@ -43,7 +42,6 @@ internal object Configuration {
         mapOf(
             "application.profile" to "dev",
             "SENSU_URL" to "https://digihot-proxy.dev-fss-pub.nais.io/sensu",
-            "unleash.url" to "https://unleash.nais.io/api/",
             "OEBS_API_PROXY_URL" to "hm-oebs-api-proxy.dev-fss-pub.nais.io",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-dev",
@@ -65,7 +63,6 @@ internal object Configuration {
         mapOf(
             "application.profile" to "local",
             "SENSU_URL" to "http://localhost:8456/sensu",
-            "unleash.url" to "https://unleash.nais.io/api/",
             "OEBS_API_PROXY_URL" to "http://localhost:8456/oebs-api-proxy",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-local",
@@ -156,7 +153,6 @@ internal object Configuration {
     val application: Map<String, String> = mapOf(
         "APP_PROFILE" to config()[Key("application.profile", stringType)],
         "SENSU_URL" to config()[Key("SENSU_URL", stringType)],
-        "UNLEASH_URL" to config()[Key("unleash.url", stringType)],
         "OEBS_API_PROXY_URL" to config()[Key("OEBS_API_PROXY_URL", stringType)],
         "GRUNNDATA_API_URL" to config()[Key("GRUNNDATA_API_URL", stringType)],
     ) + System.getenv().filter { it.key.startsWith("NAIS_") }

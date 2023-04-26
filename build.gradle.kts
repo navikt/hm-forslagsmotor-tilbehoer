@@ -1,5 +1,3 @@
-
-import Build_gradle.Versions.ktlint_version
 import com.expediagroup.graphql.plugin.gradle.tasks.GraphQLIntrospectSchemaTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -7,84 +5,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "no.nav.hjelpemidler"
 version = "1.0-SNAPSHOT"
-
-object Versions {
-    const val rapid_version = "2022.04.05-09.40.11a466d7ac70"
-    const val kafka_version = "3.2.2"
-    const val influxdb_version = "2.22"
-    const val influxdb_aiven_version = "4.2.0"
-    const val unleash_version = "4.4.1"
-    const val junit_version = "5.8.2"
-
-    const val ktlint_version = "0.38.1"
-
-    // Ktor
-    const val ktor_version = "1.6.8"
-    const val ktor_server_netty = "io.ktor:ktor-server-netty:$ktor_version"
-    const val ktor_ktor_test = "io.ktor:ktor-server-test-host:$ktor_version"
-
-    // Jackson
-    const val jackson_version = "2.13.2"
-    const val jackson_core = "com.fasterxml.jackson.core:jackson-core:$jackson_version"
-    const val jackson_kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-    const val jackson_jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
-
-    // Fuel
-    const val fuel_version = "2.2.1"
-    const val fuel_fuel = "com.github.kittinunf.fuel:fuel:$fuel_version"
-    fun fuel_library(name: String) = "com.github.kittinunf.fuel:fuel-$name:$fuel_version"
-    // const val fuel_fuel_moshi = "com.github.kittinunf.fuel:fuel-moshi:$fuel_version"
-
-    // Konfig
-    const val konfig_version = "1.6.10.0"
-    const val konfig_konfig = "com.natpryce:konfig:$konfig_version"
-
-    // Kotlin
-    const val kotlin_version = "1.6.10"
-    const val kotlin_test_junit5 = "org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_version"
-
-    // Kotlin logging
-    const val kotlin_logging_version = "2.1.21"
-    const val kotlin_logging_kotlin_logging = "io.github.microutils:kotlin-logging:$kotlin_logging_version"
-
-    // Micrometer
-    const val micrometer_version = "1.4.0"
-    const val micrometer_prometheus_registry = "io.micrometer:micrometer-registry-prometheus:$micrometer_version"
-
-    // GraphQL
-    const val graphql_version = "5.2.0"
-    const val graphql_graphql = "com.expediagroup.graphql"
-    val graphql_ktor_client = graphql_library("ktor-client")
-    val graphql_client_jackson = graphql_library("client-jackson")
-    fun graphql_library(name: String) = "com.expediagroup:graphql-kotlin-$name:$graphql_version"
-
-    // Shadow
-    const val shadow_version = "7.1.2"
-    const val shadow_shadow = "com.github.johnrengelman.shadow"
-
-    // Database
-    const val postgres_postgres = "org.postgresql:postgresql:42.4.1"
-    const val kotlinquery_kotlinquery = "com.github.seratch:kotliquery:1.3.1"
-    const val flyway_flyway = "org.flywaydb:flyway-core:8.4.4"
-    const val hikaricp_hikaricp = "com.zaxxer:HikariCP:5.0.1"
-
-    // KoTest
-    const val kotest_version = "5.1.0"
-    const val kotest_runner = "io.kotest:kotest-runner-junit5-jvm:$kotest_version" // for kotest framework
-    const val kotest_assertions = "io.kotest:kotest-assertions-core-jvm:$kotest_version" // for kotest core jvm assertion
-
-    // Mockk
-    const val mockk_version = "1.10.0"
-    const val mockk_mockk = "io.mockk:mockk:$mockk_version"
-
-    // TestContainers
-    const val testcontainers_version = "1.16.3"
-    const val testcontainers_postgresql = "org.testcontainers:postgresql:$testcontainers_version"
-
-    // Wiremock
-    const val wiremock_version = "2.21.0"
-    const val wiremock_standalone = "com.github.tomakehurst:wiremock-standalone:$wiremock_version"
-}
 
 plugins {
     application
@@ -110,77 +30,78 @@ java {
 }
 
 dependencies {
-    // R&R and Logging fixes
-    implementation("com.github.navikt:rapids-and-rivers:${Versions.rapid_version}") {
+    implementation(kotlin("stdlib-jdk8"))
+
+    // R&R
+    implementation("com.github.navikt:rapids-and-rivers:2022.04.05-09.40.11a466d7ac70") {
         exclude(group = "ch.qos.logback", module = "logback-classic")
         exclude(group = "net.logstash.logback", module = "logstash-logback-encoder")
     }
-    api("ch.qos.logback:logback-classic:1.2.7")
-    api("net.logstash.logback:logstash-logback-encoder:6.6") {
+
+    // Jackson
+    val jackson_version = "2.14.2"
+    implementation("com.fasterxml.jackson.core:jackson-core:$jackson_version")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
+
+    // Ktor
+    val ktor_version = "1.6.8"
+    implementation("io.ktor:ktor-server-netty:$ktor_version")
+    implementation("io.ktor:ktor-jackson:$ktor_version")
+    implementation("io.ktor:ktor-auth:$ktor_version")
+    implementation("io.ktor:ktor-auth-jwt:$ktor_version")
+    implementation("io.ktor:ktor-client-apache:$ktor_version")
+    implementation("io.ktor:ktor-client-jackson:$ktor_version")
+    implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
+
+    // Logging
+    api("ch.qos.logback:logback-classic:1.4.6")
+    api("net.logstash.logback:logstash-logback-encoder:7.3") {
         exclude("com.fasterxml.jackson.core")
     }
+    implementation("io.github.microutils:kotlin-logging:2.1.21")
 
-    implementation("io.github.microutils:kotlin-logging:${Versions.kotlin_logging_version}")
-
-    implementation(Versions.jackson_core)
-    implementation(Versions.jackson_kotlin)
-    constraints {
-        implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2") {
-            because("Snyk - High Severity - DoS")
-        }
-    }
-    implementation(Versions.jackson_jsr310)
-    implementation(Versions.ktor_server_netty)
-    implementation(Versions.fuel_fuel)
-    implementation(Versions.fuel_library("coroutines"))
-    implementation(Versions.konfig_konfig)
-    implementation(Versions.kotlin_logging_kotlin_logging)
-
-    implementation(kotlin("stdlib-jdk8"))
-    implementation("com.github.guepardoapps:kulid:1.1.2.0")
-    implementation("io.ktor:ktor-jackson:${Versions.ktor_version}")
-    implementation("io.ktor:ktor-auth:${Versions.ktor_version}")
-    implementation("io.ktor:ktor-auth-jwt:${Versions.ktor_version}")
-    implementation("io.ktor:ktor-client-apache:${Versions.ktor_version}")
-    implementation("io.ktor:ktor-client-jackson:${Versions.ktor_version}")
-    implementation("org.apache.kafka:kafka-clients:${Versions.kafka_version}")
-    implementation("org.influxdb:influxdb-java:${Versions.influxdb_version}")
-    implementation("com.influxdb:influxdb-client-kotlin:${Versions.influxdb_aiven_version}")
-    implementation("no.finn.unleash:unleash-client-java:${Versions.unleash_version}")
-    constraints {
-        implementation("com.google.code.gson:gson:2.8.9") {
-            because("Snyk reported High Severity issue- Deserialization of Untrusted Data ")
-        }
-    }
-    implementation("io.ktor:ktor-client-auth-jvm:${Versions.ktor_version}")
-    implementation(Versions.micrometer_prometheus_registry)
-    implementation(Versions.graphql_ktor_client) {
+    // GraphQL
+    val graphql_version = "5.2.0"
+    implementation("com.expediagroup:graphql-kotlin-ktor-client:$graphql_version") {
         exclude("com.expediagroup", "graphql-kotlin-client-serialization") // prefer jackson
         exclude("io.ktor", "ktor-client-serialization") // prefer ktor-client-jackson
         exclude("io.ktor", "ktor-client-cio") // prefer ktor-client-apache
     }
-    implementation(Versions.graphql_client_jackson)
+    implementation("com.expediagroup:graphql-kotlin-client-jackson:$graphql_version")
 
     // Cache
     implementation("javax.cache:cache-api:1.1.1")
     implementation("org.ehcache:ehcache:3.10.6")
 
     // Database
-    implementation(Versions.postgres_postgres)
-    implementation(Versions.hikaricp_hikaricp)
-    implementation(Versions.flyway_flyway)
-    implementation(Versions.kotlinquery_kotlinquery)
+    implementation("org.postgresql:postgresql:42.4.1")
+    implementation("com.zaxxer:HikariCP:5.0.1")
+    implementation("org.flywaydb:flyway-core:8.4.4")
+    implementation("com.github.seratch:kotliquery:1.3.1")
 
-    testImplementation(Versions.kotlin_test_junit5)
-    testImplementation(Versions.kotest_assertions)
-    testImplementation(Versions.kotest_runner)
-    testImplementation(Versions.ktor_ktor_test)
-    testImplementation(Versions.mockk_mockk)
-    testImplementation(Versions.testcontainers_postgresql)
-    testImplementation(Versions.wiremock_standalone)
+    implementation("com.natpryce:konfig:1.6.10.0")
+    implementation("org.apache.kafka:kafka-clients:3.4.0")
+    implementation("org.influxdb:influxdb-java:2.22")
+    implementation("com.influxdb:influxdb-client-kotlin:4.2.0")
+    constraints {
+        implementation("com.google.code.gson:gson:2.8.9") {
+            because("Snyk reported High Severity issue- Deserialization of Untrusted Data ")
+        }
+    }
+    implementation("io.micrometer:micrometer-registry-prometheus:1.4.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${Versions.junit_version}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Versions.junit_version}")
+    // Test
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.6.10")
+    val kotest_version = "5.1.0"
+    testImplementation("io.kotest:kotest-assertions-core-jvm:$kotest_version")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")
+    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
+    testImplementation("io.mockk:mockk:1.10.0")
+    testImplementation("org.testcontainers:postgresql:1.16.3")
+    val junit_version = "5.9.2"
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
 }
 
 tasks.withType<KotlinCompile> {
