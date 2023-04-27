@@ -10,8 +10,6 @@ on:
       - main
       - trivy
 
-env:
-  docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:
   build:
     permissions:
@@ -55,7 +53,8 @@ jobs:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: .nais/nais-dev.yml
-          VAR: image=${{ env.docker_image }}
+          IMAGE: ${{steps.docker-build-push.outputs.image}}
+
       - name: post-deploy
         if: github.ref == 'refs/heads/main'
         uses: navikt/digihot-deploy/actions/post-deploy@v2
