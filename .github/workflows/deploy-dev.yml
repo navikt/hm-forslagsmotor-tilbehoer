@@ -19,36 +19,33 @@ jobs:
     steps:
       - name: Checkout latest code
         uses: actions/checkout@v2
-      - name: Set up JDK 17
-        uses: actions/setup-java@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
+          distribution: temurin
           java-version: 17
+          cache: gradle
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
-      - name: Setup gradle dependency cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
       - name: Build and Run tests
         run: ./gradlew clean build
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
+
       - name: pre-deploy
         uses: navikt/digihot-deploy/actions/pre-deploy@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and publish Docker image
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          docker build --tag ${docker_image} .
-          docker login docker.pkg.github.com -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
-          docker push ${docker_image}
+
+      - name: Build and push docker image
+        uses: nais/docker-build-push@v0
+        id: docker-build-push
+        with:
+          team: teamdigihot
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+          tag: ${{ env.VERSION_TAG }}
+
       - name: deploy to dev-gcp
         uses: nais/deploy/actions/deploy@v1
         env:
@@ -72,6 +69,8 @@ jobs:
           body: ${{ env.CHANGE_LOG }}
           draft: true
           prerelease: false
+    outputs:
+      image: ${{ steps.docker-build-push.outputs.image }}
 
   trivy-imagescan:
     name: Scan dockerimage with Trivy
@@ -92,7 +91,7 @@ jobs:
       - name: Run Trivy vulnerability scanner on docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.docker_image }}
+          image-ref: ${{ needs.build-and-deploy.outputs.image }}
           ignore-unfixed: true
           format: 'sarif'
           output: 'trivy-results.sarif'
