@@ -54,6 +54,7 @@ fun main() {
             installAuthentication()
             install(ContentNegotiation) {
                 jackson {
+                    registerModule(JavaTimeModule())
                     disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 }
             }
