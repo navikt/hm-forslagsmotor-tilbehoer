@@ -3,7 +3,6 @@ package no.nav.hjelpemidler
 import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.apache.Apache
@@ -25,7 +24,6 @@ import java.util.concurrent.TimeUnit
 private fun httpClientWithProxy() = HttpClient(Apache) {
     install(ContentNegotiation) {
         jackson {
-            registerModule(JavaTimeModule())
             disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         }
     }
