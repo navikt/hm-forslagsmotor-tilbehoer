@@ -1,10 +1,10 @@
 package no.nav.hjelpemidler
 
-import io.ktor.application.call
-import io.ktor.response.respond
-import io.ktor.response.respondRedirect
-import io.ktor.routing.Route
-import io.ktor.routing.get
+import io.ktor.server.application.call
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import mu.KotlinLogging
 import no.nav.hjelpemidler.suggestions.SuggestionService
 

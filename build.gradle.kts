@@ -8,8 +8,8 @@ version = "1.0-SNAPSHOT"
 
 plugins {
     application
-    kotlin("jvm") version "1.6.10"
-    id("com.expediagroup.graphql") version "6.1.0"
+    kotlin("jvm") version "1.8.10"
+    id("com.expediagroup.graphql") version "6.4.0"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -33,7 +33,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
 
     // R&R
-    implementation("com.github.navikt:rapids-and-rivers:2022.04.05-09.40.11a466d7ac70") {
+    implementation("com.github.navikt:rapids-and-rivers:2023042611061682500003.f24c0756e00a") {
         exclude(group = "ch.qos.logback", module = "logback-classic")
         exclude(group = "net.logstash.logback", module = "logstash-logback-encoder")
     }
@@ -45,24 +45,28 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
 
     // Ktor
-    val ktor_version = "1.6.8"
+    val ktor_version = "2.3.0"
+    implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-server-netty:$ktor_version")
-    implementation("io.ktor:ktor-jackson:$ktor_version")
-    implementation("io.ktor:ktor-auth:$ktor_version")
-    implementation("io.ktor:ktor-auth-jwt:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-server-auth:$ktor_version")
+    implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
+    implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-apache:$ktor_version")
     implementation("io.ktor:ktor-client-jackson:$ktor_version")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
+    implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
 
     // Logging
     api("ch.qos.logback:logback-classic:1.4.6")
     api("net.logstash.logback:logstash-logback-encoder:7.3") {
         exclude("com.fasterxml.jackson.core")
     }
-    implementation("io.github.microutils:kotlin-logging:2.1.21")
+    implementation("io.github.microutils:kotlin-logging:3.0.5")
 
     // GraphQL
-    val graphql_version = "5.2.0"
+    val graphql_version = "6.4.0"
     implementation("com.expediagroup:graphql-kotlin-ktor-client:$graphql_version") {
         exclude("com.expediagroup", "graphql-kotlin-client-serialization") // prefer jackson
         exclude("io.ktor", "ktor-client-serialization") // prefer ktor-client-jackson
@@ -75,10 +79,10 @@ dependencies {
     implementation("org.ehcache:ehcache:3.10.6")
 
     // Database
-    implementation("org.postgresql:postgresql:42.4.1")
+    implementation("org.postgresql:postgresql:42.6.0")
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.flywaydb:flyway-core:8.4.4")
-    implementation("com.github.seratch:kotliquery:1.3.1")
+    implementation("org.flywaydb:flyway-core:9.16.0")
+    implementation("com.github.seratch:kotliquery:1.9.0")
 
     implementation("com.natpryce:konfig:1.6.10.0")
     implementation("org.apache.kafka:kafka-clients:3.4.0")
@@ -89,16 +93,16 @@ dependencies {
             because("Snyk reported High Severity issue- Deserialization of Untrusted Data ")
         }
     }
-    implementation("io.micrometer:micrometer-registry-prometheus:1.4.0")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.10.5")
 
     // Test
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.6.10")
-    val kotest_version = "5.1.0"
+    val kotest_version = "5.5.5"
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotest_version")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
-    testImplementation("io.mockk:mockk:1.10.0")
-    testImplementation("org.testcontainers:postgresql:1.16.3")
+    testImplementation("io.mockk:mockk:1.13.4")
+    testImplementation("org.testcontainers:postgresql:1.17.6")
     val junit_version = "5.9.2"
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
