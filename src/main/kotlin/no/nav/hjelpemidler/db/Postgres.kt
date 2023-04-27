@@ -48,5 +48,3 @@ internal fun dataSourceFrom(config: Configuration): HikariDataSource = HikariDat
 
 internal fun migrate(dataSource: HikariDataSource, initSql: String = ""): MigrateResult? =
     Flyway.configure().dataSource(dataSource).initSql(initSql).load().migrate()
-
-internal fun clean(dataSource: HikariDataSource) = Flyway.configure().dataSource(dataSource).load().clean()
