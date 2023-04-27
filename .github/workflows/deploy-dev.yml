@@ -8,7 +8,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - clean-deps
+      - trivy
 
 env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
@@ -76,7 +76,7 @@ jobs:
   trivy-imagescan:
     name: Scan dockerimage with Trivy
     needs: build
-    if: github.ref == 'refs/heads/main'
+    #if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -84,14 +84,6 @@ jobs:
       actions: read
       id-token: write
     steps:
-      #- uses: nais/login@v0
-      #  with:
-      #    project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
-      #    identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
-      #    team: teamdigihot
-      - name: Docker login
-        run: |
-          docker login docker.pkg.github.com -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
       - name: Run Trivy vulnerability scanner on docker image
         uses: aquasecurity/trivy-action@master
         with:
