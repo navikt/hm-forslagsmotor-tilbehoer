@@ -3,16 +3,18 @@ package no.nav.hjelpemidler
 import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
-import io.ktor.application.Application
-import io.ktor.application.install
-import io.ktor.auth.Authentication
-import io.ktor.auth.jwt.JWTPrincipal
-import io.ktor.auth.jwt.jwt
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.jwt.jwt
 import kotlinx.coroutines.runBlocking
 import no.nav.hjelpemidler.configuration.Configuration
 import org.apache.http.impl.conn.SystemDefaultRoutePlanner
@@ -21,8 +23,11 @@ import java.net.URL
 import java.util.concurrent.TimeUnit
 
 private fun httpClientWithProxy() = HttpClient(Apache) {
-    install(JsonFeature) {
-        serializer = JacksonSerializer { configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) }
+    install(ContentNegotiation) {
+        jackson {
+            registerModule(JavaTimeModule())
+            disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        }
     }
     engine {
         customizeClient {
@@ -36,7 +41,7 @@ fun Application.installAuthentication() {
     var tokenxConfig: AuthenticationConfig?
     runBlocking {
         tokenxConfig = AuthenticationConfig(
-            metadata = httpClientWithProxy().get(Configuration.tokenX["TOKEN_X_WELL_KNOWN_URL"]!!),
+            metadata = httpClientWithProxy().get(Configuration.tokenX["TOKEN_X_WELL_KNOWN_URL"]!!).body(),
             clientId = Configuration.tokenX["TOKEN_X_CLIENT_ID"]!!,
         )
     }
@@ -52,7 +57,7 @@ fun Application.installAuthentication() {
     var azureAdConfig: AuthenticationConfig?
     runBlocking {
         azureAdConfig = AuthenticationConfig(
-            metadata = httpClientWithProxy().get(Configuration.azureAD["AZURE_APP_WELL_KNOWN_URL"]!!),
+            metadata = httpClientWithProxy().get(Configuration.azureAD["AZURE_APP_WELL_KNOWN_URL"]!!).body(),
             clientId = Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!,
         )
     }

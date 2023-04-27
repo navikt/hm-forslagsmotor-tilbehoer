@@ -4,14 +4,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.jackson.JacksonConverter
-import io.ktor.response.respondRedirect
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
@@ -19,7 +18,6 @@ import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.dataSourceFrom
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
-import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestions.SuggestionEnginePostgres
@@ -55,7 +53,9 @@ fun main() {
         .withKtorModule {
             installAuthentication()
             install(ContentNegotiation) {
-                register(ContentType.Application.Json, JacksonConverter(objectMapper))
+                jackson {
+                    disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                }
             }
             routing {
                 get("/isready-composed") {
