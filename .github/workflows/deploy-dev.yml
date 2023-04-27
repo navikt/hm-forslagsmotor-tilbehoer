@@ -1,4 +1,3 @@
-# force deploy #2
 name: deploy-dev
 on:
   push:
