@@ -14,6 +14,9 @@ env:
   docker_image: docker.pkg.github.com/${{ github.repository }}/hm-forslagsmotor-tilbehoer:${{ github.sha }}
 jobs:
   build:
+    permissions:
+      contents: write
+      id-token: write
     name: Build, deploy to dev, and draft release
     runs-on: ubuntu-latest
     steps:
