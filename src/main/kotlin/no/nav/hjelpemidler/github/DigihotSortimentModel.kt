@@ -6,7 +6,7 @@ data class BestillingsHjelpemiddel(
     val tilbehor: List<String>?
 )
 
-typealias Rammeavtaler = Map<RammeavtaleId, Leverandører>
+typealias Delelister = Map<RammeavtaleId, Leverandører>
 
 typealias Leverandører = Map<LeverandørId, Set<Hmsnr>>
 

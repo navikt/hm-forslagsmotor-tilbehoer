@@ -8,7 +8,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - trivy
+      - reservedel
 
 jobs:
   build:
@@ -77,7 +77,7 @@ jobs:
   trivy-imagescan:
     name: Scan dockerimage with Trivy
     needs: build
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read

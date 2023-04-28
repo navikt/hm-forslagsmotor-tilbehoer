@@ -16,7 +16,7 @@ import java.time.Duration
 
 private val logg = KotlinLogging.logger {}
 
-object Oebs {
+class Oebs {
     private val azClient = AzureClient(Configuration.azureAD["AZURE_TENANT_BASEURL"]!! + "/" + Configuration.azureAD["AZURE_APP_TENANT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_ID"]!!, Configuration.azureAD["AZURE_APP_CLIENT_SECRET"]!!)
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())

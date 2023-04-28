@@ -49,7 +49,9 @@ interface SuggestionEngine {
 
 internal class SuggestionEnginePostgres(
     private val ds: DataSource,
-    private val aivenMetrics: AivenMetrics
+    private val aivenMetrics: AivenMetrics,
+    private val hjelpemiddeldatabaseClient: HjelpemiddeldatabaseClient,
+    private val oebs: Oebs,
 ) : SuggestionEngine, Closeable {
     companion object {
         val ApplicationPreviouslyProcessedException = RuntimeException("application previously processed")
@@ -575,7 +577,7 @@ internal class SuggestionEnginePostgres(
             }
 
             val products = runCatching {
-                HjelpemiddeldatabaseClient.hentProdukter(hmdbRows)
+                hjelpemiddeldatabaseClient.hentProdukter(hmdbRows)
             }.getOrElse { e ->
                 logg.error("updateCache: HMDB: Failed to fetch products due to: $e")
                 e.printStackTrace()
@@ -628,7 +630,7 @@ internal class SuggestionEnginePostgres(
             }
 
             val products = runCatching {
-                Oebs.getTitleForHmsNrs(oebsRows)
+                oebs.getTitleForHmsNrs(oebsRows)
             }.getOrElse { e ->
                 logg.error("updateCache: OEBS: Failed to fetch products due to: $e")
                 e.printStackTrace()

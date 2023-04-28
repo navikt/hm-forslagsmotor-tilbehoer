@@ -1,4 +1,4 @@
-package no.nav.hjelpemidler.github
+package no.nav.hjelpemidler
 
 import javax.cache.Cache
 import javax.cache.CacheManager

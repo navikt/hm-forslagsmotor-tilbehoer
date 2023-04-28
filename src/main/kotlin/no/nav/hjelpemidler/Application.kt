@@ -14,11 +14,14 @@ import io.ktor.server.routing.routing
 import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
+import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.db.dataSourceFrom
 import no.nav.hjelpemidler.db.migrate
 import no.nav.hjelpemidler.db.waitForDB
+import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
+import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.rivers.NySøknadInnsendt
 import no.nav.hjelpemidler.suggestions.SuggestionEnginePostgres
 import no.nav.hjelpemidler.suggestions.SuggestionService
@@ -42,12 +45,14 @@ fun main() {
     migrate(Configuration)
 
     val aivenMetrics = AivenMetrics()
+    val hjelpemiddeldatabaseClient = HjelpemiddeldatabaseClient()
+    val githubClient = CachedGithubClient()
+    val oebs = Oebs()
 
     // Set up our database connection
-    val store = SuggestionEnginePostgres(dataSourceFrom(Configuration), aivenMetrics)
-    val suggestionService = SuggestionService(store)
+    val store = SuggestionEnginePostgres(dataSourceFrom(Configuration), aivenMetrics, hjelpemiddeldatabaseClient, oebs)
 
-    // InitialDataset.fetchInitialDatasetFor(store)
+    val suggestionService = SuggestionService(store, aivenMetrics, hjelpemiddeldatabaseClient, githubClient, oebs)
 
     RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(Configuration.aivenConfig))
         .withKtorModule {

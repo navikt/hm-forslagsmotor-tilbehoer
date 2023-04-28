@@ -143,6 +143,10 @@ class AivenMetrics {
         writeEvent(PRODUCT_WAS_NOT_SUGGESTED_AT_ALL, fields = mapOf("count" to 1L), tags = emptyMap())
     }
 
+    fun hmsnrErReservedel(hmsnr: String) {
+        writeEvent(HMSNR_ER_RESERVEDEL, fields = mapOf("count" to 1L, "hmsnr" to hmsnr), tags = emptyMap())
+    }
+
     companion object {
         private val DEFAULT_TAGS: Map<String, String> = mapOf(
             "application" to (Configuration.application["NAIS_APP_NAME"] ?: "hm-forslagsmotor-tilbehoer"),
@@ -172,5 +176,6 @@ class AivenMetrics {
         const val PRODUCT_MANUALLY_ADDED_WITH_AUTO_NAMELOOKUP = "$PREFIX.product.manually.added.with.auto.namelookup"
         const val PRODUCT_WAS_SUGGESTED = "$PREFIX.product.was.suggested"
         const val PRODUCT_WAS_NOT_SUGGESTED_AT_ALL = "$PREFIX.product.was.not.suggested.at.all"
+        const val HMSNR_ER_RESERVEDEL = "$PREFIX.hmsnr.er.reservedel"
     }
 }

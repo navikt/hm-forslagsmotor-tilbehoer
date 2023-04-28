@@ -3,10 +3,10 @@ package no.nav.hjelpemidler.suggestions
 import mu.KotlinLogging
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
-import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
-import no.nav.hjelpemidler.github.Rammeavtaler
+import no.nav.hjelpemidler.github.Delelister
+import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
@@ -20,20 +20,23 @@ private val logg = KotlinLogging.logger { }
 
 class SuggestionService(
     private val store: SuggestionEngine,
-    private val githubClient: GithubClient = CachedGithubClient()
+    private val aivenMetrics: AivenMetrics,
+    private val hjelpemiddeldatabaseClient: HjelpemiddeldatabaseClient,
+    private val githubClient: GithubClient,
+    private val oebs: Oebs,
 ) {
 
     suspend fun suggestions(hmsnr: String): SuggestionsFrontendFiltered {
-        val hovedprodukt = HjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
+        val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
         val forslag = store.suggestions(hmsnr)
 
-        val rammeavtaleTilbehør = githubClient.hentRammeavtalerForTilbehør()
+        val tilbehørslister = githubClient.hentTilbehørslister()
 
         val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
             .partition {
-                tilbehørErPåRammeavtalenTilHovedprodukt(
-                    tilbehør = it.hmsNr,
-                    rammeavtaleTilbehør,
+                hmsnrFinnesPåDelelisteForHovedprodukt(
+                    it.hmsNr,
+                    tilbehørslister,
                     hovedprodukt
                 ) && it.hmsNr !in denyList
             }
@@ -63,9 +66,9 @@ class SuggestionService(
 
         logg.info("Fant tilbehør <$hjelpemiddelTilbehørIBestillingsliste> for $hmsnr i bestillingsordningsortimentet")
 
-        val tilbehør = hjelpemiddelTilbehørIBestillingsliste.map { it to hentTilbehørNavn(it) }
+        val tilbehør = hjelpemiddelTilbehørIBestillingsliste.map { it to hentTilbehør(it, null) }
             .filter { (_, nameLookup) ->
-                nameLookup.name != null && nameLookup.error.isNullOrEmpty()
+                nameLookup.name != null && nameLookup.error == null
             }
             .map { (hmsnr, nameLookup) ->
                 SuggestionFrontendFiltered(
@@ -77,41 +80,50 @@ class SuggestionService(
         return SuggestionsFrontendFiltered(LocalDate.now(), tilbehør)
     }
 
-    suspend fun hentTilbehørNavn(hmsnr: String): LookupAccessoryName {
+    suspend fun hentTilbehør(hmsnr: String, hmsnrHovedprodukt: String?): Tilbehør {
+        try {
+            if (hmsnrHovedprodukt != null) {
+                logg.info { "reservedelsjekk: hmsnr <$hmsnr>, hovedprodukt <$hmsnrHovedprodukt>" }
+                val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt).first()
+                val reservedelslister = githubClient.hentReservedelslister()
+                val tilbehørslister = githubClient.hentTilbehørslister()
+                val hmsnrFinnesITilbehørsliste =
+                    hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, tilbehørslister, hovedprodukt)
+                val hmsnrFinnesIReservedelsliste =
+                    hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, reservedelslister, hovedprodukt)
+
+                if (hmsnrFinnesIReservedelsliste && !hmsnrFinnesITilbehørsliste) {
+                    logg.info { "hmsnr <$hmsnr> finnes på reservedelsliste, men ikke i tilbehørsliste" }
+                    aivenMetrics.hmsnrErReservedel(hmsnr)
+                    // return Tilbehør(hmsnr, null, TilbehørError.RESERVEDEL)
+                }
+            }
+        } catch (e: Exception) {
+            // Logger feilen, men går videre uten å gjøre noe. Saksbehandler kan evt. saksbehandle dersom hmsnr er standardutstyr
+            logg.error(e) { "Sjekk om hmsnr er reservedel feilet for hmsnr <$hmsnr>." }
+        }
+
+
         runCatching {
             // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
-            var feilmelding: String? = null
-            val hmdbResults = HjelpemiddeldatabaseClient.hentProdukter(hmsnr)
+            var feilmelding: TilbehørError? = null
+            val hmdbResults = hjelpemiddeldatabaseClient.hentProdukter(hmsnr)
             if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
-                feilmelding = "ikke et tilbehør" // men tilgjengelig som hovedprodukt
+                feilmelding = TilbehørError.IKKE_ET_TILBEHØR // men tilgjengelig som hovedprodukt
             } else if (hmdbResults.any { it.produkttype == Produkttype.HOVEDPRODUKT }) {
-                feilmelding = "ikke tilgjengelig digitalt" // hovedprodukt som må søkes på papir
+                feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT // hovedprodukt som må søkes på papir
             } else if (hmsnr in denyList) {
-                feilmelding = "ikke tilgjengelig digitalt"
+                feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT
             }
 
-            val titleFromSuggestionEngineCache = store.cachedTitleAndTypeFor(hmsnr)
-            var oebsTitleAndType: Pair<String, String>? = null
-            if (titleFromSuggestionEngineCache?.title == null) {
-                oebsTitleAndType = Oebs.getTitleForHmsNr(hmsnr)
-                logg.info("DEBUG: Fetched title for $hmsnr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
-                if (oebsTitleAndType.second != "Del") {
-                    logg.info("DEBUG: $hmsnr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
-                    // accessory = false
-                }
-            } else {
-                logg.info("DEBUG: Using cached oebs title from suggestion engine for $hmsnr: $titleFromSuggestionEngineCache")
-            }
+            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
 
-            return LookupAccessoryName(
-                oebsTitleAndType?.first ?: titleFromSuggestionEngineCache?.title,
-                feilmelding
-            )
+            return Tilbehør(hmsnr, delnavn, feilmelding)
         }.getOrElse { e ->
             logg.error(e) { "failed to find title for hmsNr=$hmsnr" }
-            return LookupAccessoryName(null, "produkt ikke funnet")
+            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
         }
     }
 
@@ -129,7 +141,7 @@ class SuggestionService(
                 }.toSet()
 
             // Talk to hm-grunndata about a skip list
-            val hmsNrsSkipList = HjelpemiddeldatabaseClient
+            val hmsNrsSkipList = hjelpemiddeldatabaseClient
                 .hentProdukter(allSuggestionHmsnrs)
                 .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
                 .map { it.hmsnr!! }
@@ -151,17 +163,42 @@ class SuggestionService(
         logg.info("Request for introspection of suggestions (timeElapsed=${timeElapsed}ms)")
         return result
     }
+
+    private fun hentDelnavn(hmsnr: String): String? {
+        val titleFromSuggestionEngineCache = store.cachedTitleAndTypeFor(hmsnr)
+        var oebsTitleAndType: Pair<String, String>? = null
+        if (titleFromSuggestionEngineCache?.title == null) {
+            oebsTitleAndType = oebs.getTitleForHmsNr(hmsnr)
+            logg.info("DEBUG: Fetched title for $hmsnr and oebs report it as having type: ${oebsTitleAndType.second}. Title: ${oebsTitleAndType.first}")
+            if (oebsTitleAndType.second != "Del") {
+                logg.info("DEBUG: $hmsnr is not a \"DEl\" according to OEBS (type=${oebsTitleAndType.second}; title=${oebsTitleAndType.first})")
+                // accessory = false
+            }
+        } else {
+            logg.info("DEBUG: Using cached oebs title from suggestion engine for $hmsnr: $titleFromSuggestionEngineCache")
+        }
+
+        return oebsTitleAndType?.first ?: titleFromSuggestionEngineCache?.title
+    }
 }
 
-data class LookupAccessoryName(
+data class Tilbehør(
+    val hmsnr: String,
     val name: String?,
-    val error: String?,
+    val error: TilbehørError?,
 )
 
-private fun tilbehørErPåRammeavtalenTilHovedprodukt(
-    tilbehør: Hmsnr,
-    rammeavtaler: Rammeavtaler,
+enum class TilbehørError() {
+    RESERVEDEL,
+    IKKE_FUNNET,
+    IKKE_ET_TILBEHØR,
+    IKKE_TILGJENGELIG_DIGITALT,
+}
+
+private fun hmsnrFinnesPåDelelisteForHovedprodukt(
+    hmsnr: Hmsnr,
+    delelister: Delelister,
     hovedprodukt: Produkt,
 ): Boolean =
-    rammeavtaler[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(tilbehør) ?: false
+    delelister[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(hmsnr) ?: false
 

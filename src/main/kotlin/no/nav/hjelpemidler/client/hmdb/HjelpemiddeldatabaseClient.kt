@@ -10,7 +10,7 @@ import no.nav.hjelpemidler.service.hmdb.HentProdukter
 import no.nav.hjelpemidler.service.hmdb.hentprodukter.Produkt
 import java.net.URL
 
-object HjelpemiddeldatabaseClient {
+class HjelpemiddeldatabaseClient {
     private val logg = KotlinLogging.logger {}
     private val client =
         GraphQLKtorClient(
