@@ -83,7 +83,6 @@ class SuggestionService(
     suspend fun hentTilbehør(hmsnr: String, hmsnrHovedprodukt: String?): Tilbehør {
         try {
             if (hmsnrHovedprodukt != null) {
-                logg.info { "reservedelsjekk: hmsnr <$hmsnr>, hovedprodukt <$hmsnrHovedprodukt>" }
                 val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt).first()
                 val reservedelslister = githubClient.hentReservedelslister()
                 val tilbehørslister = githubClient.hentTilbehørslister()
@@ -92,6 +91,7 @@ class SuggestionService(
                 val hmsnrFinnesIReservedelsliste =
                     hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, reservedelslister, hovedprodukt)
 
+                logg.info { "reservedelsjekk: hmsnr <$hmsnr>, hovedprodukt <$hmsnrHovedprodukt>, hmsnrFinnesITilbehørsliste <$hmsnrFinnesITilbehørsliste>, hmsnrFinnesIReservedelsliste <$hmsnrFinnesIReservedelsliste>" }
                 if (hmsnrFinnesIReservedelsliste && !hmsnrFinnesITilbehørsliste) {
                     logg.info { "hmsnr <$hmsnr> finnes på reservedelsliste, men ikke i tilbehørsliste" }
                     aivenMetrics.hmsnrErReservedel(hmsnr)
