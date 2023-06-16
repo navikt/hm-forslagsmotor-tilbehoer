@@ -6,5 +6,4 @@ val denyList = setOf(
     "292412", // Rensevæske personløfter badekar Bellavita el (forbruksvare som ikke dekkes av NAV)
     "189518", // Gripo Spesial for takhøyde <210cm. Finnes ikke på rammeavtale og blir dermed ikke stoppet som hovedhjelpemiddel
     "244433", // 'Monteringssett toalett Aquatec 9000 vegghengt' Aquatec forhøyer som ikke er på avtale lenger
-    "176090", // Midlertidig for å fjerne fra forslag (Antisklimatte for serveringsbrett rullator 4hjul/gåbord Topro Troja Classic/Original/Walker2 M/S/Topro Olympos M/ATR M)
 )
