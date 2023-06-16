@@ -8,6 +8,7 @@ import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.github.GithubClient
+import no.nav.hjelpemidler.github.GithubHttpClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
@@ -92,6 +93,58 @@ internal class SuggestionServiceTest {
         val tilbehør = suggestionService.hentTilbehør(denyList.first(), hmsnrHovedprodukt)
         assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
     }
+
+    @Test
+    fun tmpTest() = runBlocking {
+        val ghClient = GithubHttpClient()
+        val tilbehør = ghClient.hentTilbehørslister()
+        val reservedeler = ghClient.hentReservedelslister()
+        val reservedelerInv = mutableMapOf<String, MutableList<String>>()
+
+        reservedeler.forEach { (rammeavtaleId, leverandør) ->
+            leverandør.forEach { (leverandørId, hmsnrs) ->
+                val overlappendeHmsnr = mutableListOf<String>()
+                hmsnrs.forEach { hmsnr ->
+                    if (tilbehør[rammeavtaleId]?.get(leverandørId)?.contains(hmsnr) == true) {
+                        overlappendeHmsnr.add(hmsnr)
+                    }
+                }
+                if (overlappendeHmsnr.isNotEmpty()) {
+                    if (leverandørNavn[leverandørId] == null) {
+                        println("Mangler leverandør $leverandørId")
+                    }
+
+                    if (rammeavtaleNavn[rammeavtaleId] == null) {
+                        println("Mangler rammeavtale $rammeavtaleId")
+                    }
+
+                    println()
+                    println("Hmsnr som er både tilbehør og reservedel for leverandør '${leverandørNavn[leverandørId]}' ($leverandørId) på rammeavtale '${rammeavtaleNavn[rammeavtaleId]}' ($rammeavtaleId):")
+                    overlappendeHmsnr.forEach {
+                        println(it)
+                    }
+                }
+            }
+        }
+    }
+
+    private val leverandørNavn = mapOf(
+        "5003" to "Varodd Velferdsteknologi AS",
+        "5142" to "Made for Movement AS",
+        "5001" to "Invacare AS",
+        "5169" to "Sonova Norway AS",
+        "58220" to "Inpo AS",
+        "5171" to "Vestfold Audio AS"
+    )
+
+    private val rammeavtaleNavn = mapOf(
+        "8590" to "Senger, madrasser, hjertebrett, sengebord og hjelpemidler for overflytting og vending",
+        "8594" to "Ganghjelpemidler",
+        "8617" to "Manuelle rullestoler, drivhjul med elektrisk motor og drivaggregat",
+        "8654" to "Hørselshjelpemidler",
+        "8710" to "Elektriske rullestoler",
+        "8712" to "Kalendere, dagsplanleggere og tidtakere"
+    )
 
     /** Kommentert ut inntil vi gjør mer enn å bare logge når det forsøkes å legge til reservedel som tilbehør
     @Test
