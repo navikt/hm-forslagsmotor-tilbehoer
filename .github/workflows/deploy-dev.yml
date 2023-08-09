@@ -35,6 +35,7 @@ jobs:
       - uses: gradle/gradle-build-action@v2.7.0
         env: # Eksluder test dependencies
           DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: compileClasspath|runtimeClasspath
+          TESTCONTAINERS_RYUK_DISABLED: true
         with:
           dependency-graph: generate-and-submit
           arguments: build
