@@ -1,7 +1,7 @@
 name: deploy-prod
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 jobs:
   deploy-prod:
@@ -10,7 +10,8 @@ jobs:
       id-token: "write"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
       - uses: nais/login@v0
         name: get image registry
         id: nais-login
@@ -18,6 +19,7 @@ jobs:
           team: teamdigihot
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+
       - name: get image
         env:
           VERSION_TAG: ${{ github.event.release.tag_name }}
@@ -27,12 +29,14 @@ jobs:
           IMAGE=$REGISTRY/$APP:$VERSION_TAG
           echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
           echo $IMAGE
+
       - uses: nais/deploy/actions/deploy@v1
         name: deploy to prod-gcp
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-gcp
           RESOURCE: .nais/nais-prod.yml
+
       - name: post-production
         uses: navikt/digihot-deploy/actions/post-production@v2
         env:

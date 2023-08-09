@@ -1,4 +1,5 @@
 name: deploy-dev
+
 on:
   push:
     paths-ignore:
@@ -8,32 +9,37 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - reservedel
 
 jobs:
   build:
+    name: Build app, docker image and  push docker image
     permissions:
       contents: write
       id-token: write
-    name: Build, deploy to dev, and draft release
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout latest code
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
           cache: gradle
+
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
-      - name: Build and Run tests
-        run: ./gradlew clean build
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: true
 
-      - name: pre-deploy
+      - uses: gradle/gradle-build-action@v2.7.0
+        env: # Eksluder test dependencies
+          DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: compileClasspath|runtimeClasspath
+        with:
+          dependency-graph: generate-and-submit
+          arguments: build
+
+      - name: Pre-deploy
         uses: navikt/digihot-deploy/actions/pre-deploy@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -42,12 +48,13 @@ jobs:
         uses: nais/docker-build-push@v0
         id: docker-build-push
         with:
+          byosbom: dependency-graph-reports/deploy-dev-build.json
           team: teamdigihot
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
           tag: ${{ env.VERSION_TAG }}
 
-      - name: deploy to dev-gcp
+      - name: Deploy to dev-gcp
         uses: nais/deploy/actions/deploy@v1
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
@@ -60,6 +67,7 @@ jobs:
         uses: navikt/digihot-deploy/actions/post-deploy@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: draft release
         if: github.ref == 'refs/heads/main'
         uses: actions/create-release@latest
@@ -71,6 +79,7 @@ jobs:
           body: ${{ env.CHANGE_LOG }}
           draft: true
           prerelease: false
+
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
 
@@ -90,6 +99,7 @@ jobs:
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           team: teamdigihot
+
       - name: Run Trivy vulnerability scanner on docker image
         uses: aquasecurity/trivy-action@master
         with:
@@ -97,6 +107,8 @@ jobs:
           ignore-unfixed: true
           format: 'sarif'
           output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
