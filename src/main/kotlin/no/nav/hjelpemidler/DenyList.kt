@@ -8,4 +8,5 @@ val denyList = setOf(
     "244433", // 'Monteringssett toalett Aquatec 9000 vegghengt' Aquatec forhøyer som ikke er på avtale lenger
     "296408", // 'Ryggsekk ers Eloflex' - Dette er en standard sekk NAV ikke dekker.
     "144149", // Hjelpemiddel: Glidelaken Arcus Vita glideflate
+    "214262", // Krevert tilleggsskjema. Individuell tilpasning timespris ny/brukt varmehjm Multishell/Dartex/Tynset/Mikko/HeliSki/Roller/Tolga/Tallberg/Handy Aktiv/HeliSki jr./ Goretex jr. /Budor/Trysil/Herkules/Monty/Splitt
 )
