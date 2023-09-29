@@ -54,6 +54,10 @@ internal class NySøknadInnsendt(
 
         val list = soknad.soknad.hjelpemidler.hjelpemiddelListe.toList()
 
+        list.forEach { hm ->
+            logg.info { "Mottatt hjm. ${hm.hmsNr} med tilbehør ${hm.tilbehorListe.map { it.hmsnr }}" }
+        }
+
         val totalAccessoriesInApplication =
             list.map { it.tilbehorListe.map { it.antall }.fold(0) { a, b -> a + b } }.fold(0) { a, b -> a + b }
         val partialOrFullUseOfSuggestionsOrLookup = list.any {
