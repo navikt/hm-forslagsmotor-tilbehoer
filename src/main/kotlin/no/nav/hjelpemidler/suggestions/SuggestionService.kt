@@ -49,7 +49,10 @@ class SuggestionService(
         logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
 
         // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
-        store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
+        // store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
+        if (forslagIkkePåRammeavtale.isNotEmpty()){
+            logg.info { "Forslag ikke på rammeavtale for $hmsnr: $forslagIkkePåRammeavtale" }
+        }
 
         return results
     }
