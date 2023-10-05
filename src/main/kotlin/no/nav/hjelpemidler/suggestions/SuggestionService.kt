@@ -202,6 +202,9 @@ private fun hmsnrFinnesPåDelelisteForHovedprodukt(
     hmsnr: Hmsnr,
     delelister: Delelister,
     hovedprodukt: Produkt,
-): Boolean =
-    delelister[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(hmsnr) ?: false
+): Boolean {
+    logg.info { "hmsnrFinnesPåDelelisteForHovedprodukt hmsnr $hmsnr, hovedprodukt: $hovedprodukt" }
+    return delelister[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(hmsnr) ?: false
+}
+
 
