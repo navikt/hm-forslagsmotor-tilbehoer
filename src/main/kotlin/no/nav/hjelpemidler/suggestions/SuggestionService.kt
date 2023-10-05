@@ -48,10 +48,11 @@ class SuggestionService(
 
         logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
 
-        // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
-        // store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
+
         if (forslagIkkePåRammeavtale.isNotEmpty()){
-            logg.info { "Forslag ikke på rammeavtale for $hmsnr: $forslagIkkePåRammeavtale" }
+            // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
+            logg.info { "Sletter forslag ikke på rammeavtale for $hmsnr: $forslagIkkePåRammeavtale" }
+            store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
         }
 
         return results
@@ -203,7 +204,6 @@ private fun hmsnrFinnesPåDelelisteForHovedprodukt(
     delelister: Delelister,
     hovedprodukt: Produkt,
 ): Boolean {
-    logg.info { "hmsnrFinnesPåDelelisteForHovedprodukt hmsnr $hmsnr, hovedprodukt: $hovedprodukt" }
     return delelister[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(hmsnr) ?: false
 }
 
