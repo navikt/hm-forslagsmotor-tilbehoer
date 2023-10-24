@@ -9,5 +9,6 @@ val denyList = setOf(
     "296408", // 'Ryggsekk ers Eloflex' - Dette er en standard sekk NAV ikke dekker.
     "144149", // Hjelpemiddel: Glidelaken Arcus Vita glideflate
     "214262", // Krevert tilleggsskjema. Individuell tilpasning timespris ny/brukt varmehjm Multishell/Dartex/Tynset/Mikko/HeliSki/Roller/Tolga/Tallberg/Handy Aktiv/HeliSki jr./ Goretex jr. /Budor/Trysil/Herkules/Monty/Splitt
-    "311284", "311285", "311286", "301593" // Avtalt med KBA da de ikke er godkjent i avtalen for ers.
+    "311284", "311285", "311286", "301593", // Avtalt med KBA da de ikke er godkjent i avtalen for ers.
+    "199692", // Tilhører forrige avtale. Sete ergonomisk ekstra mykt dusjtoastol Aquatec Ocean/Ocean VIP/Ocean VIP XL/Ocean XL/Ocean E-Vip
 )
