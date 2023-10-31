@@ -326,7 +326,7 @@ internal class SuggestionEnginePostgres(
             Thread.sleep((1_000 * startupRandomDelaySeconds).toLong())
 
             var standardInterval = 60 * 60
-            if (Configuration.application["APP_PROFILE"]!! == "dev") standardInterval = 60
+            // if (Configuration.application["APP_PROFILE"]!! == "dev") standardInterval = 60
 
             var firstRun = true
             while (true) {
