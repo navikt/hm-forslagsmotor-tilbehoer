@@ -190,7 +190,7 @@ data class Tilbehør(
     val error: TilbehørError?,
 )
 
-enum class TilbehørError() {
+enum class TilbehørError {
     RESERVEDEL,
     IKKE_FUNNET,
     IKKE_ET_TILBEHØR,

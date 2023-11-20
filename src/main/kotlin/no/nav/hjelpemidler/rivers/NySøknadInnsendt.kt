@@ -104,7 +104,7 @@ internal class NySøknadInnsendt(
                     }
                 }
 
-                if (wasSuggested >= 0) {
+                if (wasSuggested != -1) {
                     val forslagsmotorBrukt = accessory.brukAvForslagsmotoren?.lagtTilFraForslagsmotoren ?: false
                     aivenMetrics.productWasSuggested(wasSuggested, forslagsmotorBrukt)
                 } else {
