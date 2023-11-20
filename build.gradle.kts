@@ -48,7 +48,6 @@ dependencies {
     // Ktor
     val ktor_version = "2.3.3"
     implementation("io.ktor:ktor-server-core:$ktor_version")
-    implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-server-auth:$ktor_version")
     implementation("io.ktor:ktor-client-core:$ktor_version")
@@ -57,6 +56,13 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
     implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
+
+    implementation("io.ktor:ktor-server-netty:$ktor_version")
+    constraints {
+        implementation("io.netty:netty-codec-http2:4.1.100.Final") {
+            because("io.netty:netty-codec-http2 vulnerable to HTTP/2 Rapid Reset Attack, before 4.1.100.Final")
+        }
+    }
 
     implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
     constraints {
@@ -93,7 +99,14 @@ dependencies {
 
     implementation("com.natpryce:konfig:1.6.10.0")
     implementation("org.apache.kafka:kafka-clients:3.4.0")
-    implementation("org.influxdb:influxdb-java:2.22")
+
+    implementation("org.influxdb:influxdb-java:2.23")
+    constraints {
+        implementation("com.squareup.okio:okio:3.4.0") {
+            because("Okio Signed to Unsigned Conversion Error vulnerability, before 3.4.0")
+        }
+    }
+
     implementation("com.influxdb:influxdb-client-kotlin:4.2.0")
     constraints {
         implementation("com.google.code.gson:gson:2.8.9") {
