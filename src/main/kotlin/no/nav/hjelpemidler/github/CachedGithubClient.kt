@@ -4,7 +4,6 @@ import no.nav.hjelpemidler.CacheConfig
 import no.nav.hjelpemidler.withCache
 import javax.cache.Cache
 
-
 class CachedGithubClient(private val githubClient: GithubClient = GithubHttpClient()) : GithubClient {
 
     override fun hentBestillingsordningSortiment(): List<BestillingsHjelpemiddel> {
@@ -24,7 +23,7 @@ class CachedGithubClient(private val githubClient: GithubClient = GithubHttpClie
             githubClient.hentReservedelslister()
         }
     }
-    
+
     private val BESTILLINGSORDNINGSORTIMENT_CACHE: Cache<String, List<BestillingsHjelpemiddel>> =
         CacheConfig.cacheManager.createCache(
             "bestillingsordningsortiment",

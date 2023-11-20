@@ -86,7 +86,6 @@ internal class SuggestionServiceTest {
             assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
         }
 
-
     @Test
     fun `hentTilbehør skal returnere IKKE_TILGJENGELIG_DIGITALT dersom hmsnr ligger i denyList`() = runBlocking {
         val tilbehør = suggestionService.hentTilbehør(denyList.first(), hmsnrHovedprodukt)
@@ -94,26 +93,26 @@ internal class SuggestionServiceTest {
     }
 
     /** Kommentert ut inntil vi gjør mer enn å bare logge når det forsøkes å legge til reservedel som tilbehør
-    @Test
-    fun `hentTilbehør skal returnere RESERVEDEL dersom hmsnr er i reservedelsliste, men ikke i tilbehørsliste`() =
-    runBlocking {
-    coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrReservedel) } returns listOf(produkt(hmsnrReservedel))
-    val tilbehør = suggestionService.hentTilbehør(hmsnrReservedel)
-    assertEquals(TilbehørError.RESERVEDEL, tilbehør.error)
-    }
+     @Test
+     fun `hentTilbehør skal returnere RESERVEDEL dersom hmsnr er i reservedelsliste, men ikke i tilbehørsliste`() =
+     runBlocking {
+     coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrReservedel) } returns listOf(produkt(hmsnrReservedel))
+     val tilbehør = suggestionService.hentTilbehør(hmsnrReservedel)
+     assertEquals(TilbehørError.RESERVEDEL, tilbehør.error)
+     }
 
-    @Test
-    fun `hentTilbehør skal returnere tilbehør dersom hmsnr er både i reservedelsliste og i tilbehørsliste`() =
-    runBlocking {
-    coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrTilbehørOgReservedel) } returns listOf(
-    produkt(
-    hmsnrTilbehørOgReservedel
-    )
-    )
-    val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehørOgReservedel)
-    assertNull(tilbehør.error)
-    assertTrue(tilbehør.name!!.isNotBlank())
-    }
+     @Test
+     fun `hentTilbehør skal returnere tilbehør dersom hmsnr er både i reservedelsliste og i tilbehørsliste`() =
+     runBlocking {
+     coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrTilbehørOgReservedel) } returns listOf(
+     produkt(
+     hmsnrTilbehørOgReservedel
+     )
+     )
+     val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehørOgReservedel)
+     assertNull(tilbehør.error)
+     assertTrue(tilbehør.name!!.isNotBlank())
+     }
      */
 
     private fun deleliste(vararg hmsnrs: String): Delelister =

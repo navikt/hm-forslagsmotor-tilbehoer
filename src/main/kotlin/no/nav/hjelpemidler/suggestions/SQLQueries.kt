@@ -14,7 +14,7 @@ internal val querySuggestionsBase =
     LEFT JOIN v1_cache_oebs AS o ON o.hmsnr = sc.hmsnr_tilbehoer
     WHERE
         {{WHERE}}
-        
+
         -- Remove illegal accessory hmsnr 000000, it exists only for historical reasons (applies to all products)
         sc.hmsnr_tilbehoer <> '000000'
 
@@ -45,10 +45,10 @@ internal val querySuggestions =
             """
                 -- Looking for suggestions for a specific product
                 sc.hmsnr_hjelpemiddel = ?
-                
+
                 -- We do not include results where we do not have a cached title for it (yet)
                 AND o.title IS NOT NULL
-                
+
                 -- The rest of the where clauses
                 AND
             """.trimIndent()
@@ -67,7 +67,7 @@ internal val queryIntrospectAllSuggestions =
         """
             -- We do not include results where we do not have a cached title for it (yet)
             o.title IS NOT NULL
-            
+
             -- The rest of the where clauses
             AND
         """.trimIndent()
@@ -95,10 +95,10 @@ internal val queryNumberOfSuggestionsWithNoTitleYetForAllProducts =
         """
             -- Do not include results where oebs didnt know about the accessory hmsnr
             o.hmsnr IS NOT NULL
-           
+
             -- Lets only look for those with no title yet in the oebs cache
-		    AND o.title IS NULL
-            
+            AND o.title IS NULL
+
             -- The rest of the where clauses
             AND
         """.trimIndent()
@@ -117,10 +117,10 @@ internal val queryAllSuggestionsForStatsBuilding =
     FROM v1_score_card
     WHERE
         hmsnr_hjelpemiddel = ?
-        
+
         -- Remove illegal accessory hmsnr 000000, it exists only for historical reasons (applies to all products)
         AND hmsnr_tilbehoer <> '000000'
-        
+
     GROUP BY hmsnr_tilbehoer
     ORDER BY occurances DESC, hmsnr_tilbehoer
     ;

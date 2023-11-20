@@ -9,7 +9,7 @@ import javax.cache.expiry.Duration
 
 object CacheConfig {
     val cacheManager: CacheManager = Caching.getCachingProvider().cacheManager
-    
+
     inline fun <reified K, reified V> oneHour() = MutableConfiguration<K, V>()
         .setTypes(K::class.java, V::class.java)
         .setStoreByValue(true)

@@ -524,7 +524,7 @@ internal class SuggestionEnginePostgres(
                                 -- If the initial prefetch was not completed we pick them up the next time the background
                                 -- runner updates the cache
                                 cached_at IS NULL
-                                
+
                                 -- or else lets check every 30 days in case something has changed.
                                 OR cached_at < NOW() - interval '30 days'
                             ;
@@ -550,7 +550,7 @@ internal class SuggestionEnginePostgres(
                                 -- If the initial prefetch was not completed we pick them up the next time the background
                                 -- runner updates the cache
                                 cached_at IS NULL
-                                
+
                                 -- or else lets check every 30 days in case something has changed.
                                 OR cached_at < NOW() - interval '30 days'
                             ;

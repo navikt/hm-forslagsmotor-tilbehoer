@@ -3,9 +3,9 @@ package no.nav.hjelpemidler.suggestions
 import mu.KotlinLogging
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
+import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
-import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
@@ -48,8 +48,7 @@ class SuggestionService(
 
         logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
 
-
-        if (forslagIkkePåRammeavtale.isNotEmpty()){
+        if (forslagIkkePåRammeavtale.isNotEmpty()) {
             // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
             logg.info { "Sletter forslag ikke på rammeavtale for $hmsnr: $forslagIkkePåRammeavtale" }
             store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
@@ -106,7 +105,6 @@ class SuggestionService(
             // Logger feilen, men går videre uten å gjøre noe. Saksbehandler kan evt. saksbehandle dersom hmsnr er standardutstyr
             logg.error(e) { "Sjekk om hmsnr er reservedel feilet for hmsnr <$hmsnr>." }
         }
-
 
         runCatching {
             // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
@@ -206,5 +204,3 @@ private fun hmsnrFinnesPåDelelisteForHovedprodukt(
 ): Boolean {
     return delelister[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(hmsnr) ?: false
 }
-
-

@@ -8,7 +8,8 @@ version = "1.0-SNAPSHOT"
 
 plugins {
     application
-    kotlin("jvm") version "1.8.10"
+    kotlin("jvm") version "1.9.0"
+    id("com.diffplug.spotless") version "6.2.1"
     id("com.expediagroup.graphql") version "6.4.0"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
@@ -33,7 +34,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
 
     // R&R
-    implementation("com.github.navikt:rapids-and-rivers:2023042611061682500003.f24c0756e00a") {
+    implementation("com.github.navikt:rapids-and-rivers:2023101613431697456627.0cdd93eb696f") {
         exclude(group = "ch.qos.logback", module = "logback-classic")
         exclude(group = "net.logstash.logback", module = "logstash-logback-encoder")
     }
@@ -45,18 +46,24 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
 
     // Ktor
-    val ktor_version = "2.3.0"
+    val ktor_version = "2.3.3"
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-server-auth:$ktor_version")
-    implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-apache:$ktor_version")
     implementation("io.ktor:ktor-client-jackson:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-client-auth-jvm:$ktor_version")
     implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
+
+    implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
+    constraints {
+        implementation("com.auth0:jwks-rsa:0.22.1") {
+            because("Guava vulnerable to insecure use of temporary directory (<32.0.0)")
+        }
+    }
 
     // Logging
     api("ch.qos.logback:logback-classic:1.4.6")
@@ -106,6 +113,20 @@ dependencies {
     val junit_version = "5.9.2"
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
+}
+
+val ktlint_version = "0.43.2"
+spotless {
+    kotlin {
+        trimTrailingWhitespace()
+        indentWithSpaces()
+        ktlint(ktlint_version)
+        targetExclude("build/**/*")
+    }
+    kotlinGradle {
+        target("*.gradle.kts")
+        ktlint(ktlint_version)
+    }
 }
 
 tasks.withType<KotlinCompile> {
