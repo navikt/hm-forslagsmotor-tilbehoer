@@ -11,4 +11,5 @@ val denyList = setOf(
     "214262", // Krevert tilleggsskjema. Individuell tilpasning timespris ny/brukt varmehjm Multishell/Dartex/Tynset/Mikko/HeliSki/Roller/Tolga/Tallberg/Handy Aktiv/HeliSki jr./ Goretex jr. /Budor/Trysil/Herkules/Monty/Splitt
     "311284", "311285", "311286", "301593", // Avtalt med KBA da de ikke er godkjent i avtalen for ers.
     "199692", // Tilhører forrige avtale. Sete ergonomisk ekstra mykt dusjtoastol Aquatec Ocean/Ocean VIP/Ocean VIP XL/Ocean XL/Ocean E-Vip
+    "243389", "196626" // Roger høyrselshjelpemiddel som er hovedprodukt
 )
