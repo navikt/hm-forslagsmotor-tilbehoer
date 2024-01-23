@@ -180,6 +180,6 @@ graphql {
 }
 
 val graphqlIntrospectSchema by tasks.getting(GraphQLIntrospectSchemaTask::class) {
-    endpoint.set("https://hm-grunndata-api.dev.intern.nav.no/graphql")
+    endpoint.set("https://hm-grunndata-api.intern.dev.nav.no/graphql")
     outputFile.set(file("src/main/resources/hmdb/schema.graphql"))
 }

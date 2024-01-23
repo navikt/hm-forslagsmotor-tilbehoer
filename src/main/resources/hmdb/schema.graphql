@@ -14,7 +14,7 @@ directive @include(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
@@ -96,7 +96,6 @@ type Produkt {
   isokortnavn: String
   isotekst: String!
   isotittel: String!
-  kanSokesTilInstitusjon: Boolean!
   kategori: String
   leverandor: Leverandor
   leverandorId: String
@@ -136,6 +135,8 @@ type Query {
   kategorier(navn: [String!]): [Kategori!]!
   "Finn produkter"
   produkter(filter: ProdukterFilterInput): [Produkt!]!
+  "Finn produkter (paginert)"
+  produkterPaginert(filter: ProdukterPaginertFilterInput): ProduktPage!
   "Hent produkter som er tilgjengelige for digital søknad"
   sortiment: [Produkt!]! @deprecated(reason : "Bruk produkter i stedet, replace with produkter(filter)")
   tilbehor(filter: TilbehorFilterInput): [Tilbehor!]!
@@ -176,6 +177,12 @@ input ProdukterFilterInput {
   kategori: [String!]
   produktId: [String!]
   tilgjengeligForDigitalSoknad: Boolean
+}
+
+input ProdukterPaginertFilterInput {
+  filter: ProdukterFilterInput
+  limit: Int
+  offset: Int
 }
 
 input ProduktfilterInput {
