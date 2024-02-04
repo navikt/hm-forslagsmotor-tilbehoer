@@ -51,7 +51,7 @@ spec:
   gcp:
     sqlInstances:
       - name: hm-forslagsmotor-tilbehoer-db-dev
-        type: POSTGRES_12
+        type: POSTGRES_15
         tier: db-f1-micro
         diskType: SSD
         highAvailability: false
