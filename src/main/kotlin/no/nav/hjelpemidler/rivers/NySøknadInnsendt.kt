@@ -40,6 +40,11 @@ internal class NySøknadInnsendt(
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
         logg.info("onPacket: nySoknad: received (signatur=${packet["signatur"].textValue()})")
 
+        val behovsmeldingType = packet["soknad"]["behovsmeldingType"].textValue()
+        if (behovsmeldingType == "BRUKERPASSBYTTE") {
+            return // Ikke relevant. Inneholder ikke tilbehør, og har annen datastruktur.
+        }
+
         // Parse packet to relevant data
         val rawJson: String = packet["soknad"].toString()
         val soknad = objectMapper.readValue<Soknad>(rawJson)
