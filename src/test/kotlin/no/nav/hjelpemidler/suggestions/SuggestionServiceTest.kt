@@ -126,14 +126,8 @@ internal class SuggestionServiceTest {
         tilgjengeligForDigitalSoknad: Boolean = false,
         produkttype: Produkttype? = null
     ) = Product(
-        id = "",
-        identifier = "", // artikkelId
         hmsArtNr = hmsnr,
-        articleName = "",
-        seriesId = "", // produktId
-        attributes = AttributesDoc(text = "", digitalSoknad = tilgjengeligForDigitalSoknad, produkttype = produkttype),
-        isoCategoryTitle = "",
-        media = listOf(),
+        attributes = AttributesDoc(digitalSoknad = tilgjengeligForDigitalSoknad, produkttype = produkttype),
         supplier = ProductSupplier(id = leverandørId),
         agreements = listOf(
             AgreementInfoDoc(
