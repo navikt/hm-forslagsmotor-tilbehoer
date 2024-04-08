@@ -12,7 +12,7 @@ import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
-import no.nav.hjelpemidler.service.hmdb.hentprodukter.Produkt
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.Product
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
@@ -111,10 +111,10 @@ class SuggestionService(
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
             var feilmelding: TilbehørError? = null
             val hmdbResults = hjelpemiddeldatabaseClient.hentProdukter(hmsnr)
-            if (hmdbResults.any { it.tilgjengeligForDigitalSoknad }) {
+            if (hmdbResults.any { it.attributes.digitalSoknad == true }) {
                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                 feilmelding = TilbehørError.IKKE_ET_TILBEHØR // men tilgjengelig som hovedprodukt
-            } else if (hmdbResults.any { it.produkttype == Produkttype.HOVEDPRODUKT }) {
+            } else if (hmdbResults.any { it.attributes.produkttype == Produkttype.HOVEDPRODUKT }) {
                 feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT // hovedprodukt som må søkes på papir
             } else if (hmsnr in denyList) {
                 feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT
@@ -145,8 +145,8 @@ class SuggestionService(
             // Talk to hm-grunndata about a skip list
             val hmsNrsSkipList = hjelpemiddeldatabaseClient
                 .hentProdukter(allSuggestionHmsnrs)
-                .filter { it.hmsnr != null && (it.tilgjengeligForDigitalSoknad || it.produkttype == Produkttype.HOVEDPRODUKT) }
-                .map { it.hmsnr!! }
+                .filter { it.hmsArtNr != null && (it.attributes.digitalSoknad == true || it.attributes.produkttype == Produkttype.HOVEDPRODUKT) }
+                .map { it.hmsArtNr!! }
 
             // Filter out illegal suggestions because they are not accessories (they can be applied to digitally as products)
             result = result!!.map {
@@ -200,7 +200,10 @@ enum class TilbehørError {
 private fun hmsnrFinnesPåDelelisteForHovedprodukt(
     hmsnr: Hmsnr,
     delelister: Delelister,
-    hovedprodukt: Produkt,
+    hovedprodukt: Product,
 ): Boolean {
-    return delelister[hovedprodukt.rammeavtaleId]?.get(hovedprodukt.leverandorId)?.contains(hmsnr) ?: false
+    return hovedprodukt.agreements.any { agreement ->
+        // TODO: Oppdater delelister med korrekte ider!
+        delelister[agreement.id]?.get(hovedprodukt.supplier.id)?.contains(hmsnr) ?: false
+    }
 }

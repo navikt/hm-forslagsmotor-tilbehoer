@@ -11,7 +11,10 @@ import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
-import no.nav.hjelpemidler.service.hmdb.hentprodukter.Produkt
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.AgreementInfoDoc
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.AttributesDoc
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.Product
+import no.nav.hjelpemidler.service.hmdb.hentprodukter.ProductSupplier
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -122,20 +125,20 @@ internal class SuggestionServiceTest {
         hmsnr: String,
         tilgjengeligForDigitalSoknad: Boolean = false,
         produkttype: Produkttype? = null
-    ) = Produkt(
+    ) = Product(
         id = "",
-        hmsnr = hmsnr,
-        artikkelId = "",
-        artikkelnavn = "",
-        produktId = "",
-        produktbeskrivelse = "",
-        isotittel = "",
-        blobUrlLite = "",
-        rammeavtaleStart = "",
-        rammeavtaleSlutt = "",
-        tilgjengeligForDigitalSoknad = tilgjengeligForDigitalSoknad,
-        produkttype = produkttype,
-        rammeavtaleId = rammeavtaleId,
-        leverandorId = leverandørId,
+        identifier = "", // artikkelId
+        hmsArtNr = hmsnr,
+        articleName = "",
+        seriesId = "", // produktId
+        attributes = AttributesDoc(text = "", digitalSoknad = tilgjengeligForDigitalSoknad, produkttype = produkttype),
+        isoCategoryTitle = "",
+        media = listOf(),
+        supplier = ProductSupplier(id = leverandørId),
+        agreements = listOf(
+            AgreementInfoDoc(
+                id = "",
+            )
+        ),
     )
 }

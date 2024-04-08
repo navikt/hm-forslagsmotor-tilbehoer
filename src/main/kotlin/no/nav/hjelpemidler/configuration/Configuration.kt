@@ -34,7 +34,7 @@ internal object Configuration {
             "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "api://prod-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://prod-fss.teamdigihot.hm-oebs-api-proxy/.default",
 
-            "GRUNNDATA_API_URL" to "http://hm-grunndata-api",
+            "GRUNNDATA_SEARCH_URL" to "http://hm-grunndata-search",
         )
     )
 
@@ -55,7 +55,7 @@ internal object Configuration {
             "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "api://dev-gcp.teamdigihot.hm-soknadsbehandling-db/.default",
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://dev-fss.teamdigihot.hm-oebs-api-proxy/.default",
 
-            "GRUNNDATA_API_URL" to "http://hm-grunndata-api",
+            "GRUNNDATA_SEARCH_URL" to "http://hm-grunndata-search",
         )
     )
 
@@ -101,7 +101,7 @@ internal object Configuration {
             "DB_USERNAME" to "",
             "DB_PASSWORD" to "",
 
-            "GRUNNDATA_API_URL" to "http://host.docker.internal",
+            "GRUNNDATA_SEARCH_URL" to "http://host.docker.internal",
         )
     )
 
@@ -154,6 +154,6 @@ internal object Configuration {
         "APP_PROFILE" to config()[Key("application.profile", stringType)],
         "SENSU_URL" to config()[Key("SENSU_URL", stringType)],
         "OEBS_API_PROXY_URL" to config()[Key("OEBS_API_PROXY_URL", stringType)],
-        "GRUNNDATA_API_URL" to config()[Key("GRUNNDATA_API_URL", stringType)],
+        "GRUNNDATA_SEARCH_URL" to config()[Key("GRUNNDATA_SEARCH_URL", stringType)],
     ) + System.getenv().filter { it.key.startsWith("NAIS_") }
 }

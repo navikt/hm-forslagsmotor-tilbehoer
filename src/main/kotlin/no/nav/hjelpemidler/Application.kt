@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -70,6 +72,13 @@ fun main() {
                     call.respondRedirect("/isready")
                 }
                 ktorRoutes(suggestionService)
+                // FIXME: Remove again
+                get("/testitest") {
+                    val res = runCatching { hjelpemiddeldatabaseClient.hentAlleAvtaler() }.getOrElse { e ->
+                        return@get call.respond(HttpStatusCode.InternalServerError, "${e.message}: ${e.stackTraceToString()}")
+                    }
+                    call.respond(res)
+                }
             }
         }
         .build().apply {
