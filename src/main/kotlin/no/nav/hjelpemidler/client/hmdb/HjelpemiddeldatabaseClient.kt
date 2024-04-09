@@ -67,7 +67,7 @@ class HjelpemiddeldatabaseClient {
         val response = httpClient.post("${Configuration.application["GRUNNDATA_SEARCH_URL"]!!}/agreements/_search") {
             header(HttpHeaders.ContentType, HttpHeaderValues.APPLICATION_JSON)
             header(HttpHeaders.Accept, HttpHeaderValues.APPLICATION_JSON)
-            setBody("""{ "query": { "bool": { "must": [ { "match": { "status": "ACTIVE" } } ] } } }""")
+            setBody("""{ "query": { "bool": { "must": [ { "match": { "status": "ACTIVE" } } ] } }, "from": 0, "size": 1000 }""")
         }
         val result = response.body<OSResponse>()
         return result.hits?.hits?.map { it.avtale } ?: listOf()
