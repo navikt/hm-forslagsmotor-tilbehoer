@@ -203,7 +203,6 @@ private fun hmsnrFinnesPåDelelisteForHovedprodukt(
     hovedprodukt: Product,
 ): Boolean {
     return hovedprodukt.agreements.any { agreement ->
-        // TODO: Oppdater delelister med korrekte ider!
         delelister[agreement.id]?.get(hovedprodukt.supplier.id)?.contains(hmsnr) ?: false
     }
 }

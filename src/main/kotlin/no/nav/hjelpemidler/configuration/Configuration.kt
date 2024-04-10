@@ -35,6 +35,8 @@ internal object Configuration {
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://prod-fss.teamdigihot.hm-oebs-api-proxy/.default",
 
             "GRUNNDATA_SEARCH_URL" to "http://hm-grunndata-search",
+            "GITHUB_TILBEHOR_LISTE" to "https://navikt.github.io/hm-utils/tilbehor_2_prod.json",
+            "GITHUB_RESERVEDELER_LISTE" to "https://navikt.github.io/hm-utils/reservedeler_2_prod.json",
         )
     )
 
@@ -56,6 +58,8 @@ internal object Configuration {
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "api://dev-fss.teamdigihot.hm-oebs-api-proxy/.default",
 
             "GRUNNDATA_SEARCH_URL" to "http://hm-grunndata-search",
+            "GITHUB_TILBEHOR_LISTE" to "https://navikt.github.io/hm-utils/tilbehor_2_dev.json",
+            "GITHUB_RESERVEDELER_LISTE" to "https://navikt.github.io/hm-utils/reservedeler_2_dev.json",
         )
     )
 
@@ -102,6 +106,8 @@ internal object Configuration {
             "DB_PASSWORD" to "",
 
             "GRUNNDATA_SEARCH_URL" to "http://host.docker.internal",
+            "GITHUB_TILBEHOR_LISTE" to "https://navikt.github.io/hm-utils/tilbehor_2_dev.json",
+            "GITHUB_RESERVEDELER_LISTE" to "https://navikt.github.io/hm-utils/reservedeler_2_dev.json",
         )
     )
 
@@ -155,5 +161,7 @@ internal object Configuration {
         "SENSU_URL" to config()[Key("SENSU_URL", stringType)],
         "OEBS_API_PROXY_URL" to config()[Key("OEBS_API_PROXY_URL", stringType)],
         "GRUNNDATA_SEARCH_URL" to config()[Key("GRUNNDATA_SEARCH_URL", stringType)],
+        "GITHUB_TILBEHOR_LISTE" to config()[Key("GITHUB_TILBEHOR_LISTE", stringType)],
+        "GITHUB_RESERVEDELER_LISTE" to config()[Key("GITHUB_RESERVEDELER_LISTE", stringType)],
     ) + System.getenv().filter { it.key.startsWith("NAIS_") }
 }
