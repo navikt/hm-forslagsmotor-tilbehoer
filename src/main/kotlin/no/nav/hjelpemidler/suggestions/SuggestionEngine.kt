@@ -600,10 +600,17 @@ internal class SuggestionEnginePostgres(
                         // Filters those not avtive today
                         .filter { a ->
                             val now = LocalDateTime.now()
-                            a.expired > now && a.published < now
+                            a.expired >= now && a.published <= now
                         }.firstOrNull()
                     val frameworkAgreementStart: LocalDate? = avtale?.published?.toLocalDate()
-                    val frameworkAgreementEnd: LocalDate? = avtale?.expired?.toLocalDate()
+                    val frameworkAgreementEnd: LocalDate? = avtale?.expired?.let { dt ->
+                        // Convert to LocalDate, since it's an expiration date we change from a non-inclusive to an inclusive end-date
+                        if (dt.toLocalTime().toString() == "00:00") {
+                            dt.toLocalDate().minusDays(1)
+                        } else {
+                            dt.toLocalDate()
+                        }
+                    }
                     session.run(
                         queryOf(
                             """
