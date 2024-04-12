@@ -579,8 +579,7 @@ internal class SuggestionEnginePostgres(
             val avtaler = kotlin.runCatching {
                 hjelpemiddeldatabaseClient.hentAlleAvtaler()
             }.getOrElse { e ->
-                logg.error("updateCache: HMDB: Failed to fetch agreements due to: $e")
-                e.printStackTrace()
+                logg.error(e) { "updateCache: HMDB: Failed to fetch agreements" }
                 return@runBlocking
             }.groupBy { it.id }.mapValues { it.value.first() }
 
