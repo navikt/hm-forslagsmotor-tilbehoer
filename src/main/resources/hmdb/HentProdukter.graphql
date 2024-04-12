@@ -1,18 +1,15 @@
-query HentProdukter($hmsnr: [String!]!) {
-  produkter(filter: { hmsnr: $hmsnr }) {
-    id
-    hmsnr
-    artikkelId
-    artikkelnavn
-    produktId
-    produktbeskrivelse
-    isotittel
-    blobUrlLite
-    rammeavtaleStart
-    rammeavtaleSlutt
-    tilgjengeligForDigitalSoknad
-    produkttype
-    rammeavtaleId
-    leverandorId
+query HentProdukter($hmsnrs: [String!]!) {
+  products(hmsnrs: $hmsnrs) {
+    hmsArtNr # hmsnr
+    attributes {
+      digitalSoknad # tilgjengeligForDigitalSoknad
+      produkttype # produkttype
+    }
+    supplier {
+      id # leverandorId
+    }
+    agreements {
+      id # rammeavtaleId
+    }
   }
 }

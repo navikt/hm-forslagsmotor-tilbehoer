@@ -9,7 +9,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - brukerpassbytte
+      - grunndata-search
 
 jobs:
   build:

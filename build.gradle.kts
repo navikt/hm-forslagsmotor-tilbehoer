@@ -173,13 +173,13 @@ tasks.named("jar") {
 
 graphql {
     client {
-        schemaFile = file("src/main/resources/hmdb/schema.graphql")
+        schemaFile = file("src/main/resources/hmdb/schema.graphqls")
         queryFileDirectory = "src/main/resources/hmdb"
         packageName = "no.nav.hjelpemidler.service.hmdb"
     }
 }
 
 val graphqlIntrospectSchema by tasks.getting(GraphQLIntrospectSchemaTask::class) {
-    endpoint.set("https://hm-grunndata-api.intern.dev.nav.no/graphql")
-    outputFile.set(file("src/main/resources/hmdb/schema.graphql"))
+    endpoint.set("https://hm-grunndata-search.intern.dev.nav.no/graphql")
+    outputFile.set(file("src/main/resources/hmdb/schema.graphqls"))
 }

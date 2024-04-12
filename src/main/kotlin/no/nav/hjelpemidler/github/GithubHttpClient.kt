@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import no.nav.hjelpemidler.configuration.Configuration
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -20,8 +21,8 @@ interface GithubClient {
 
 class GithubHttpClient(
     private val digihotSortimentUrl: String = "https://navikt.github.io/digihot-sortiment",
-    private val tilbehørslisterUrl: String = "https://navikt.github.io/hm-utils/tilbehor.json",
-    private val reservedelslisterUrl: String = "https://navikt.github.io/hm-utils/reservedeler.json"
+    private val tilbehørslisterUrl: String = Configuration.application["GITHUB_TILBEHOR_LISTE"]!!,
+    private val reservedelslisterUrl: String = Configuration.application["GITHUB_RESERVEDELER_LISTE"]!!,
 ) : GithubClient {
 
     override fun hentBestillingsordningSortiment(): List<BestillingsHjelpemiddel> {

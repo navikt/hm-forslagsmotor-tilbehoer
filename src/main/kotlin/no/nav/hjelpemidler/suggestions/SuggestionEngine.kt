@@ -576,6 +576,13 @@ internal class SuggestionEnginePostgres(
                 return@runBlocking
             }
 
+            val avtaler = kotlin.runCatching {
+                hjelpemiddeldatabaseClient.hentAlleAvtaler()
+            }.getOrElse { e ->
+                logg.error(e) { "updateCache: HMDB: Failed to fetch agreements" }
+                return@runBlocking
+            }.groupBy { it.id }.mapValues { it.value.first() }
+
             val products = runCatching {
                 hjelpemiddeldatabaseClient.hentProdukter(hmdbRows)
             }.getOrElse { e ->
@@ -586,8 +593,23 @@ internal class SuggestionEnginePostgres(
 
             using(sessionOf(ds)) { session ->
                 products.forEach { product ->
-                    val frameworkAgreementStart: LocalDate? = product.rammeavtaleStart?.run { LocalDate.parse(this) }
-                    val frameworkAgreementEnd: LocalDate? = product.rammeavtaleSlutt?.run { LocalDate.parse(this) }
+                    val avtale = product.agreements
+                        // Identify relevant agreements
+                        .mapNotNull { a -> avtaler[a.id] }
+                        // Filters those not avtive today
+                        .filter { a ->
+                            val now = LocalDateTime.now()
+                            a.expired >= now && a.published <= now
+                        }.firstOrNull()
+                    val frameworkAgreementStart: LocalDate? = avtale?.published?.toLocalDate()
+                    val frameworkAgreementEnd: LocalDate? = avtale?.expired?.let { dt ->
+                        // Convert to LocalDate, since it's an expiration date we change from a non-inclusive to an inclusive end-date
+                        if (dt.toLocalTime().toString() == "00:00") {
+                            dt.toLocalDate().minusDays(1)
+                        } else {
+                            dt.toLocalDate()
+                        }
+                    }
                     session.run(
                         queryOf(
                             """
@@ -598,14 +620,14 @@ internal class SuggestionEnginePostgres(
                             """.trimIndent(),
                             frameworkAgreementStart,
                             frameworkAgreementEnd,
-                            product.hmsnr,
+                            product.hmsArtNr,
                         ).asUpdate
                     )
-                    logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsnr}, set framework_agreement_start=$frameworkAgreementStart, framework_agreement_end=$frameworkAgreementEnd")
+                    logg.info("DEBUG: updateCache: HMDB: Updated hmsnr=${product.hmsArtNr}, set framework_agreement_start=$frameworkAgreementStart, framework_agreement_end=$frameworkAgreementEnd")
                 }
 
                 // Remove non-existing products from the v1_cache_hmdb-database (people applied for products that doesnt exist according to HMDB)
-                val productsHmsnrs = products.filter { it.hmsnr != null }.map { it.hmsnr!! }
+                val productsHmsnrs = products.filter { it.hmsArtNr != null }.map { it.hmsArtNr!! }
                 val toRemove = hmdbRows.filter { !productsHmsnrs.contains(it) }
                 if (toRemove.isNotEmpty()) {
                     logg.info("DEBUG: updateCache: HMDB: Removing invalid hmsnrs: ${toRemove.count()}")

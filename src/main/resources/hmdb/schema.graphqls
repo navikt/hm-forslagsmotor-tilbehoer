@@ -1,0 +1,180 @@
+schema {
+  query: Query
+}
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type AgreementInfoDoc {
+  expired: String!
+  id: String!
+  identifier: String
+  label: String!
+  postId: String
+  postIdentifier: String
+  postNr: Int!
+  postTitle: String
+  rank: Int!
+  reference: String!
+  title: String
+}
+
+type AttributesDoc {
+  bestillingsordning: Boolean
+  compatibleWith: CompatibleWith
+  digitalSoknad: Boolean
+  hasTender: Boolean
+  keywords: [String!]
+  manufacturer: String
+  pakrevdGodkjenningskurs: PakrevdGodkjenningskurs
+  produkttype: Produkttype
+  series: String
+  shortdescription: String
+  sortimentKategori: String
+  tenderId: String
+  text: String
+  url: String
+}
+
+type Bestillingsordning {
+  bestillingsordning: Boolean!
+  hmsnr: String!
+}
+
+type CompatibleWith {
+  seriesIds: [String!]!
+}
+
+type MediaDoc {
+  priority: Int!
+  source: MediaSourceType!
+  text: String
+  type: MediaType!
+  uri: String!
+}
+
+type PakrevdGodkjenningskurs {
+  isokode: String!
+  kursId: Int!
+  tittel: String!
+}
+
+type Product {
+  accessory: Boolean!
+  agreements: [AgreementInfoDoc!]!
+  articleName: String!
+  attributes: AttributesDoc!
+  created: String!
+  createdBy: String!
+  data: [TechData!]!
+  dataAsText: String!
+  expired: String!
+  filters: TechDataFilters!
+  hasAgreement: Boolean!
+  hmsArtNr: String
+  id: String!
+  identifier: String!
+  isoCategory: String!
+  isoCategoryText: String
+  isoCategoryTextShort: String
+  isoCategoryTitle: String
+  isoCategoryTitleShort: String
+  media: [MediaDoc!]!
+  productURL: String!
+  productVariantURL: String!
+  seriesId: String
+  sparePart: Boolean!
+  status: ProductStatus!
+  supplier: ProductSupplier!
+  supplierRef: String!
+  title: String!
+  updated: String!
+  updatedBy: String!
+}
+
+type ProductSupplier {
+  id: String!
+  identifier: String!
+  name: String!
+}
+
+type Query {
+  bestillingsordning(hmsnrs: [String!]!): [Bestillingsordning!]!
+  " Get products by hmsArtNr (max 500 results)"
+  products(hmsnrs: [String!]!): [Product!]!
+}
+
+type TechData {
+  key: String!
+  unit: String!
+  value: String!
+}
+
+type TechDataFilters {
+  beregnetBarn: String
+  breddeCM: Int
+  brukervektMaksKG: Int
+  brukervektMinKG: Int
+  fyllmateriale: String
+  lengdeCM: Int
+  materialeTrekk: String
+  setebreddeMaksCM: Int
+  setebreddeMinCM: Int
+  setedybdeMaksCM: Int
+  setedybdeMinCM: Int
+  setehoydeMaksCM: Int
+  setehoydeMinCM: Int
+  totalVektKG: Int
+}
+
+enum MediaSourceType {
+  EXTERNALURL
+  HMDB
+  IMPORT
+  REGISTER
+  UNKNOWN
+}
+
+enum MediaType {
+  IMAGE
+  OTHER
+  PDF
+  VIDEO
+  XLS
+}
+
+enum ProductStatus {
+  ACTIVE
+  DELETED
+  INACTIVE
+}
+
+enum Produkttype {
+  Del
+  Hovedprodukt
+  Tilbehoer
+}
