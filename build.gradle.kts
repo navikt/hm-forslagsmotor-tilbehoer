@@ -72,7 +72,7 @@ dependencies {
     }
 
     // Logging
-    api("ch.qos.logback:logback-classic:1.4.6")
+    api("ch.qos.logback:logback-classic:1.4.12")
     api("net.logstash.logback:logstash-logback-encoder:7.3") {
         exclude("com.fasterxml.jackson.core")
     }
