@@ -6,7 +6,7 @@ data class BestillingsHjelpemiddel(
     val hmsnr: String,
     val navn: String,
     val tilbehor: List<String>?
-): Serializable
+) : Serializable
 
 typealias Delelister = Map<RammeavtaleId, Leverandører>
 
