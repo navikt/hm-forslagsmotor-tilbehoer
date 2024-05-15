@@ -9,6 +9,8 @@ import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
+import no.nav.hjelpemidler.model.ProductFrontendFiltered
+import no.nav.hjelpemidler.model.Suggestion
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
 import no.nav.hjelpemidler.service.hmdb.hentprodukter.AgreementInfoDoc
@@ -16,6 +18,7 @@ import no.nav.hjelpemidler.service.hmdb.hentprodukter.AttributesDoc
 import no.nav.hjelpemidler.service.hmdb.hentprodukter.Product
 import no.nav.hjelpemidler.service.hmdb.hentprodukter.ProductSupplier
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -95,6 +98,30 @@ internal class SuggestionServiceTest {
         assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
     }
 
+    @Test
+    fun `introspection skal returnere riktig sortering`() = runBlocking {
+        coEvery { suggestionEngine.introspect() } returns listOf(
+            productFrontendFiltered(
+                "123456",
+                listOf(
+                    suggestion("333333", 234),
+                    suggestion("222222", 12),
+                    suggestion("111111", 5),
+                )
+            )
+        )
+        coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<Set<String>>()) } returns listOf(
+            produkt(
+                "222222",
+                tilgjengeligForDigitalSoknad = true
+            )
+        )
+        val introspecton = suggestionService.introspect()!!
+        assertEquals(2, introspecton.first().suggestions.size)
+        assertEquals(234, introspecton.first().suggestions[0].occurancesInSoknader)
+        assertEquals(5, introspecton.first().suggestions[1].occurancesInSoknader)
+    }
+
     /** Kommentert ut inntil vi gjør mer enn å bare logge når det forsøkes å legge til reservedel som tilbehør
      @Test
      fun `hentTilbehør skal returnere RESERVEDEL dersom hmsnr er i reservedelsliste, men ikke i tilbehørsliste`() =
@@ -135,4 +162,15 @@ internal class SuggestionServiceTest {
             )
         ),
     )
+
+    private fun productFrontendFiltered(hmsnr: String, suggestions: List<Suggestion> = emptyList()) =
+        ProductFrontendFiltered(
+            hmsnr = hmsnr,
+            title = hmsnr,
+            suggestions = suggestions,
+            frameworkAgreementStartDate = LocalDate.now(),
+        )
+
+    private fun suggestion(hmsnr: String, occurences: Int) =
+        Suggestion(hmsNr = hmsnr, title = hmsnr, occurancesInSoknader = occurences)
 }

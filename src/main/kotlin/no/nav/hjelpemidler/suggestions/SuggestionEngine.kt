@@ -139,10 +139,7 @@ internal class SuggestionEnginePostgres(
             ProductFrontendFiltered(
                 hmsnr = it.key,
                 title = it.value.firstOrNull()?.second?.first ?: "",
-                suggestions = it.value.fold(mutableListOf<Suggestion>()) { a, b ->
-                    a.add(b.second.third)
-                    a
-                }.sortedByDescending(Suggestion::occurancesInSoknader).take(MAX_NUMBER_OR_RESULTS),
+                suggestions = it.value.map { it.second.third }.sortedByDescending(Suggestion::occurancesInSoknader).take(MAX_NUMBER_OR_RESULTS),
                 frameworkAgreementStartDate = it.value.firstOrNull()?.second?.second,
             )
         }.sortedBy { it.hmsnr }

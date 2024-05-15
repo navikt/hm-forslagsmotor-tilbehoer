@@ -135,17 +135,12 @@ class SuggestionService(
             result = store.introspect()
 
             // Filter out a distinct list of hmsnrs for accessories that could be suggested by the suggestion engine
-            val allSuggestionHmsnrs = result!!
-                .map { it.suggestions }
-                .fold(mutableListOf<String>()) { a, b ->
-                    a.addAll(b.map { it.hmsNr })
-                    a
-                }.toSet()
+            val allSuggestionHmsnrs = result!!.flatMap { it.suggestions }.map { it.hmsNr }.toSet()
 
             // Talk to hm-grunndata about a skip list
             val hmsNrsSkipList = hjelpemiddeldatabaseClient
                 .hentProdukter(allSuggestionHmsnrs)
-                .filter { it.hmsArtNr != null && (it.attributes.digitalSoknad == true || it.attributes.produkttype == Produkttype.HOVEDPRODUKT) }
+                .filter { it.attributes.digitalSoknad == true || it.attributes.produkttype == Produkttype.HOVEDPRODUKT }
                 .map { it.hmsArtNr!! }
 
             // Filter out illegal suggestions because they are not accessories (they can be applied to digitally as products)

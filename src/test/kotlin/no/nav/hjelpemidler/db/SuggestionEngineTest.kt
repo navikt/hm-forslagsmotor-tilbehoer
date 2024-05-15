@@ -422,6 +422,10 @@ internal class SuggestionEngineTest {
                 assertEquals("Tilbehør 2", suggestions.suggestions[0].title)
                 assertEquals(6, suggestions.suggestions[0].occurancesInSoknader)
 
+                val intropsection = this.introspect()
+                assertEquals(2, intropsection.first().suggestions.size)
+                assertEquals(6, intropsection.first().suggestions.first().occurancesInSoknader)
+
                 // Clean up background runner
                 this.close()
             }

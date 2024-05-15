@@ -171,6 +171,11 @@ tasks.named("jar") {
     dependsOn("test")
 }
 
+tasks.named("compileKotlin") {
+    dependsOn("spotlessApply")
+    dependsOn("spotlessCheck")
+}
+
 graphql {
     client {
         schemaFile = file("src/main/resources/hmdb/schema.graphqls")
