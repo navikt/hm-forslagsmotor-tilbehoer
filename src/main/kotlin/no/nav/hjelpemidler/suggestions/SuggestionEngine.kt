@@ -142,7 +142,7 @@ internal class SuggestionEnginePostgres(
                 suggestions = it.value.fold(mutableListOf<Suggestion>()) { a, b ->
                     a.add(b.second.third)
                     a
-                }.takeLast(MAX_NUMBER_OR_RESULTS).reversed(),
+                }.sortedByDescending(Suggestion::occurancesInSoknader).take(MAX_NUMBER_OR_RESULTS),
                 frameworkAgreementStartDate = it.value.firstOrNull()?.second?.second,
             )
         }.sortedBy { it.hmsnr }
