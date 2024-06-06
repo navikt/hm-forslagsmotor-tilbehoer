@@ -1,6 +1,8 @@
 package no.nav.hjelpemidler
 
-val denyList = setOf(
+import no.nav.hjelpemidler.model.Suggestion
+
+private val blockedArtNrs = setOf(
     "215124", "215125", // Standardgrinder til Opus 90 og 120 bredde, som følger med hovedhjelpemiddelet
     "167689", "203278", // Standardutstyr Holder krykke ers Orion Pro 4W/Comet Alpine+/Comet Ultra
     "292412", // Rensevæske personløfter badekar Bellavita el (forbruksvare som ikke dekkes av NAV)
@@ -14,3 +16,15 @@ val denyList = setOf(
     "243389", "196626", // Roger høyrselshjelpemiddel som er hovedprodukt
     "288941", // Toalettsete. Dusj -og toalettstoler som har dette setet som tilbehør, får det også levert med det som standard. Trengs derfor ikke å foreslås som tilbehør.
 )
+
+private val titleBlockRules: List<(String) -> Boolean> = listOf(
+    { it.lowercase().startsWith("pute sete") }, // https://nav-it.slack.com/archives/C021JPAAYRH/p1716987381796569?thread_ts=1716295812.022369&cid=C021JPAAYRH
+)
+
+fun isBlocked(suggestion: Suggestion): Boolean = isBlocked(suggestion.hmsNr, suggestion.title ?: "")
+
+fun isBlocked(artNr: String, title: String): Boolean {
+    val artnrIsBlocked = artNr in blockedArtNrs
+    val titleIsBlocked = titleBlockRules.any { it(title) }
+    return artnrIsBlocked || titleIsBlocked
+}

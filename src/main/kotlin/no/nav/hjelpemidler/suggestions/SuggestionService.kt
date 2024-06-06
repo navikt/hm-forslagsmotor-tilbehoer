@@ -2,10 +2,10 @@ package no.nav.hjelpemidler.suggestions
 
 import mu.KotlinLogging
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
+import no.nav.hjelpemidler.isBlocked
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
@@ -38,7 +38,7 @@ class SuggestionService(
                     it.hmsNr,
                     tilbehørslister,
                     hovedprodukt
-                ) && it.hmsNr !in denyList
+                ) && !isBlocked(it)
             }
 
         val results = SuggestionsFrontendFiltered(
@@ -111,16 +111,16 @@ class SuggestionService(
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
             var feilmelding: TilbehørError? = null
             val hmdbResults = hjelpemiddeldatabaseClient.hentProdukter(hmsnr)
+            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
+
             if (hmdbResults.any { it.attributes.digitalSoknad == true }) {
                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                 feilmelding = TilbehørError.IKKE_ET_TILBEHØR // men tilgjengelig som hovedprodukt
             } else if (hmdbResults.any { it.attributes.produkttype == Produkttype.HOVEDPRODUKT }) {
                 feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT // hovedprodukt som må søkes på papir
-            } else if (hmsnr in denyList) {
+            } else if (isBlocked(hmsnr, delnavn)) {
                 feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT
             }
-
-            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
 
             return Tilbehør(hmsnr, delnavn, feilmelding)
         }.getOrElse { e ->

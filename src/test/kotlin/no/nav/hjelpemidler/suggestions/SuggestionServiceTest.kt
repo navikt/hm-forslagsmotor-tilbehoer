@@ -5,7 +5,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
-import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
@@ -40,6 +39,7 @@ internal class SuggestionServiceTest {
     private val hmsnrTilbehørOgReservedel = "255911"
     private val rammeavtaleId = "8590"
     private val leverandørId = "5010"
+    private val blockedArtnr = "215124"
 
     init {
         every { githubClient.hentTilbehørslister() } returns deleliste(hmsnrTilbehørOgReservedel, hmsnrTilbehør)
@@ -94,7 +94,7 @@ internal class SuggestionServiceTest {
 
     @Test
     fun `hentTilbehør skal returnere IKKE_TILGJENGELIG_DIGITALT dersom hmsnr ligger i denyList`() = runBlocking {
-        val tilbehør = suggestionService.hentTilbehør(denyList.first(), hmsnrHovedprodukt)
+        val tilbehør = suggestionService.hentTilbehør(blockedArtnr, hmsnrHovedprodukt)
         assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
     }
 
