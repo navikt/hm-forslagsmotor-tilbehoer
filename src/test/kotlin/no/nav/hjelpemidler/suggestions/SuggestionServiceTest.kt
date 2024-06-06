@@ -41,11 +41,15 @@ internal class SuggestionServiceTest {
     private val leverandørId = "5010"
     private val blockedArtnr = "215124"
 
+    private val universalPuteArtnr = "004491"
+    private val universalPuteTittel = "Pute sete Universal mrs Crissy Swing Away/Cross 6 sb43grå"
+
     init {
         every { githubClient.hentTilbehørslister() } returns deleliste(hmsnrTilbehørOgReservedel, hmsnrTilbehør)
         every { githubClient.hentReservedelslister() } returns deleliste(hmsnrTilbehørOgReservedel, hmsnrReservedel)
         every { suggestionEngine.cachedTitleAndTypeFor(any()) } returns null
         every { oebs.getTitleForHmsNr(any()) } returns Pair("tittel", "type")
+        every { oebs.getTitleForHmsNr(universalPuteArtnr) } returns Pair(universalPuteTittel, "type")
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<String>()) } returns emptyList()
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt) } returns listOf(produkt(hmsnrHovedprodukt))
     }
@@ -93,8 +97,14 @@ internal class SuggestionServiceTest {
         }
 
     @Test
-    fun `hentTilbehør skal returnere IKKE_TILGJENGELIG_DIGITALT dersom hmsnr ligger i denyList`() = runBlocking {
+    fun `hentTilbehør skal returnere IKKE_TILGJENGELIG_DIGITALT dersom hmsnr er blokkert`() = runBlocking {
         val tilbehør = suggestionService.hentTilbehør(blockedArtnr, hmsnrHovedprodukt)
+        assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
+    }
+
+    @Test
+    fun `hentTilbehør skal returnere IKKE_TILGJENGELIG_DIGITALT dersom tittel er blokkert`() = runBlocking {
+        val tilbehør = suggestionService.hentTilbehør(universalPuteArtnr, hmsnrHovedprodukt)
         assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
     }
 
