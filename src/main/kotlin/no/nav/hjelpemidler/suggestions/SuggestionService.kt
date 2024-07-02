@@ -31,19 +31,20 @@ class SuggestionService(
         val forslag = store.suggestions(hmsnr)
 
         val tilbehørslister = githubClient.hentTilbehørslister()
+        val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
 
         val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
             .partition {
                 hmsnrFinnesPåDelelisteForHovedprodukt(
                     it.hmsNr,
                     tilbehørslister,
-                    hovedprodukt
+                    hovedprodukt,
                 ) && it.hmsNr !in denyList
             }
 
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
-            forslagPåRammeAvtale.map { it.toFrontendFiltered() }
+            forslagPåRammeAvtale.map { it.toFrontendFiltered(erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null) },
         )
 
         logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
@@ -76,7 +77,8 @@ class SuggestionService(
             .map { (hmsnr, nameLookup) ->
                 SuggestionFrontendFiltered(
                     hmsNr = hmsnr,
-                    title = nameLookup.name!!
+                    title = nameLookup.name!!,
+                    erPåBestillingsordning = true,
                 )
             }
 

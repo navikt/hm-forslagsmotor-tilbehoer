@@ -9,7 +9,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
-      - grunndata-search
+      - erPåBestillingsordning
 
 jobs:
   build:

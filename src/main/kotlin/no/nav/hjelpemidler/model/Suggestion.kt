@@ -6,18 +6,18 @@ import java.time.LocalDate
 data class Suggestion(
     val hmsNr: String,
     val title: String? = null,
-
     var occurancesInSoknader: Int = 0,
 ) {
     @JsonIgnore
-    fun toFrontendFiltered(): SuggestionFrontendFiltered {
-        return SuggestionFrontendFiltered(hmsNr, title ?: "")
+    fun toFrontendFiltered(erPåBestillingsordning: Boolean): SuggestionFrontendFiltered {
+        return SuggestionFrontendFiltered(hmsNr, title ?: "", erPåBestillingsordning)
     }
 }
 
 data class SuggestionFrontendFiltered(
     val hmsNr: String,
     val title: String,
+    val erPåBestillingsordning: Boolean,
 )
 
 data class Suggestions(
