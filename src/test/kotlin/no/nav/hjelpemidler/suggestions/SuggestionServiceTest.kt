@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
+import no.nav.hjelpemidler.github.BestillingsHjelpemiddel
 import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
@@ -20,6 +21,7 @@ import no.nav.hjelpemidler.service.hmdb.hentprodukter.ProductSupplier
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -44,6 +46,13 @@ internal class SuggestionServiceTest {
     init {
         every { githubClient.hentTilbehørslister() } returns deleliste(hmsnrTilbehørOgReservedel, hmsnrTilbehør)
         every { githubClient.hentReservedelslister() } returns deleliste(hmsnrTilbehørOgReservedel, hmsnrReservedel)
+        every { githubClient.hentBestillingsordningSortiment() } returns listOf(
+            BestillingsHjelpemiddel(
+                "255912",
+                "Ispigg krykke albue Classic",
+                null,
+            ),
+        )
         every { suggestionEngine.cachedTitleAndTypeFor(any()) } returns null
         every { oebs.getTitleForHmsNr(any()) } returns Pair("tittel", "type")
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<String>()) } returns emptyList()
@@ -55,7 +64,16 @@ internal class SuggestionServiceTest {
         val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt)
         assertNull(tilbehør.error)
         assertTrue(tilbehør.name!!.isNotBlank())
+        assertTrue(tilbehør.erPåBestillingsordning!!)
     }
+
+    @Test
+    fun `hentTilbehør skal returnere tilbehør med erPåBestillingsordning=false hvis det ikke er i bestillingssortiment`() =
+        runBlocking {
+            val tilbehør = suggestionService.hentTilbehør("000000", hmsnrHovedprodukt)
+            assertNull(tilbehør.error)
+            assertFalse(tilbehør.erPåBestillingsordning!!)
+        }
 
     @Test
     fun `hentTilbehør skal returnere IKKE_FUNNET dersom noe feiler`() = runBlocking {
@@ -70,8 +88,8 @@ internal class SuggestionServiceTest {
             coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrTilbehør) } returns listOf(
                 produkt(
                     hmsnrTilbehør,
-                    tilgjengeligForDigitalSoknad = true
-                )
+                    tilgjengeligForDigitalSoknad = true,
+                ),
             )
 
             val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt)
@@ -84,8 +102,8 @@ internal class SuggestionServiceTest {
             coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrTilbehør) } returns listOf(
                 produkt(
                     hmsnrTilbehør,
-                    produkttype = Produkttype.HOVEDPRODUKT
-                )
+                    produkttype = Produkttype.HOVEDPRODUKT,
+                ),
             )
 
             val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt)
@@ -107,14 +125,14 @@ internal class SuggestionServiceTest {
                     suggestion("333333", 234),
                     suggestion("222222", 12),
                     suggestion("111111", 5),
-                )
-            )
+                ),
+            ),
         )
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<Set<String>>()) } returns listOf(
             produkt(
                 "222222",
-                tilgjengeligForDigitalSoknad = true
-            )
+                tilgjengeligForDigitalSoknad = true,
+            ),
         )
         val introspecton = suggestionService.introspect()!!
         assertEquals(2, introspecton.first().suggestions.size)
@@ -151,7 +169,7 @@ internal class SuggestionServiceTest {
     private fun produkt(
         hmsnr: String,
         tilgjengeligForDigitalSoknad: Boolean = false,
-        produkttype: Produkttype? = null
+        produkttype: Produkttype? = null,
     ) = Product(
         hmsArtNr = hmsnr,
         attributes = AttributesDoc(digitalSoknad = tilgjengeligForDigitalSoknad, produkttype = produkttype),
@@ -159,7 +177,7 @@ internal class SuggestionServiceTest {
         agreements = listOf(
             AgreementInfoDoc(
                 id = "",
-            )
+            ),
         ),
     )
 

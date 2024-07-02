@@ -122,12 +122,16 @@ class SuggestionService(
                 feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT
             }
 
-            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
+            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
 
-            return Tilbehør(hmsnr, delnavn, feilmelding)
+            // TODO: bør denne spørringen caches? Evt legges i en minnecache når appen starter opp.
+            val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
+            val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == hmsnr } != null
+
+            return Tilbehør(hmsnr, delnavn, feilmelding, erPåBestillingsordning)
         }.getOrElse { e ->
             logg.error(e) { "failed to find title for hmsNr=$hmsnr" }
-            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
+            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
         }
     }
 
@@ -185,6 +189,7 @@ data class Tilbehør(
     val hmsnr: String,
     val name: String?,
     val error: TilbehørError?,
+    val erPåBestillingsordning: Boolean?,
 )
 
 enum class TilbehørError {
