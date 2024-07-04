@@ -124,7 +124,6 @@ class SuggestionService(
 
             val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
 
-            // TODO: bør denne spørringen caches? Evt legges i en minnecache når appen starter opp.
             val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
             val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == hmsnr } != null
 
