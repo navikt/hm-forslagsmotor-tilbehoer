@@ -31,19 +31,20 @@ class SuggestionService(
         val forslag = store.suggestions(hmsnr)
 
         val tilbehørslister = githubClient.hentTilbehørslister()
+        val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
 
         val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
             .partition {
                 hmsnrFinnesPåDelelisteForHovedprodukt(
                     it.hmsNr,
                     tilbehørslister,
-                    hovedprodukt
+                    hovedprodukt,
                 ) && it.hmsNr !in denyList
             }
 
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
-            forslagPåRammeAvtale.map { it.toFrontendFiltered() }
+            forslagPåRammeAvtale.map { it.toFrontendFiltered(erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null) },
         )
 
         logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
@@ -76,7 +77,8 @@ class SuggestionService(
             .map { (hmsnr, nameLookup) ->
                 SuggestionFrontendFiltered(
                     hmsNr = hmsnr,
-                    title = nameLookup.name!!
+                    title = nameLookup.name!!,
+                    erPåBestillingsordning = true,
                 )
             }
 
@@ -120,12 +122,15 @@ class SuggestionService(
                 feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT
             }
 
-            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
+            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
 
-            return Tilbehør(hmsnr, delnavn, feilmelding)
+            val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
+            val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == hmsnr } != null
+
+            return Tilbehør(hmsnr, delnavn, feilmelding, erPåBestillingsordning)
         }.getOrElse { e ->
             logg.error(e) { "failed to find title for hmsNr=$hmsnr" }
-            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET)
+            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
         }
     }
 
@@ -183,6 +188,7 @@ data class Tilbehør(
     val hmsnr: String,
     val name: String?,
     val error: TilbehørError?,
+    val erPåBestillingsordning: Boolean?,
 )
 
 enum class TilbehørError {
