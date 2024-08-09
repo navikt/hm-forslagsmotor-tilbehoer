@@ -13,4 +13,5 @@ val denyList = setOf(
     "199692", // Tilhører forrige avtale. Sete ergonomisk ekstra mykt dusjtoastol Aquatec Ocean/Ocean VIP/Ocean VIP XL/Ocean XL/Ocean E-Vip
     "243389", "196626", // Roger høyrselshjelpemiddel som er hovedprodukt
     "288941", // Toalettsete. Dusj -og toalettstoler som har dette setet som tilbehør, får det også levert med det som standard. Trengs derfor ikke å foreslås som tilbehør.
+    "214199", // Seil Molift Evosling hygiene medium. Ikke på rammeavtale
 )
