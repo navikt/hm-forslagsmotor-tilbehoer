@@ -14,4 +14,5 @@ val denyList = setOf(
     "243389", "196626", // Roger høyrselshjelpemiddel som er hovedprodukt
     "288941", // Toalettsete. Dusj -og toalettstoler som har dette setet som tilbehør, får det også levert med det som standard. Trengs derfor ikke å foreslås som tilbehør.
     "214199", // Seil Molift Evosling hygiene medium. Ikke på rammeavtale
+    "323586", // Fremdriftshjelp stol Vela. "Til informasjon har vi nå mottatt beskjed om at NAV har trukket 323586 Fremdriftshjelp stol Vela  tilbake som et tilbehør"
 )
