@@ -3,7 +3,9 @@ package no.nav.hjelpemidler.suggestions
 import io.kotest.common.runBlocking
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.BestillingsHjelpemiddel
@@ -12,6 +14,7 @@ import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.Suggestion
+import no.nav.hjelpemidler.model.Suggestions
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
 import no.nav.hjelpemidler.service.hmdb.hentprodukter.AgreementInfoDoc
@@ -117,6 +120,21 @@ internal class SuggestionServiceTest {
     }
 
     @Test
+    fun `hentTilbehør skal sette erStandardTilbehør true for standard tilbehør`() = runBlocking {
+        every { suggestionEngine.suggestions(hmsnrHovedprodukt) } returns Suggestions(
+            dataStartDate = null,
+            suggestions = listOf(
+                Suggestion(hmsNr = hmsnrTilbehør, title = "Trekk inko Hypnos X"),
+                Suggestion(hmsNr = hmsnrTilbehørOgReservedel, title = "Ispigg krykke xxx")
+            )
+        )
+        every { suggestionEngine.deleteSuggestions(any()) } just runs
+        val suggestionsFrontendFiltered = suggestionService.suggestions(hmsnrHovedprodukt)
+        assertEquals(true, suggestionsFrontendFiltered.suggestions[0].erStandardTilbehør)
+        assertEquals(false, suggestionsFrontendFiltered.suggestions[1].erStandardTilbehør)
+    }
+
+    @Test
     fun `introspection skal returnere riktig sortering`() = runBlocking {
         coEvery { suggestionEngine.introspect() } returns listOf(
             productFrontendFiltered(
@@ -176,7 +194,7 @@ internal class SuggestionServiceTest {
         supplier = ProductSupplier(id = leverandørId),
         agreements = listOf(
             AgreementInfoDoc(
-                id = "",
+                id = rammeavtaleId,
             ),
         ),
     )
