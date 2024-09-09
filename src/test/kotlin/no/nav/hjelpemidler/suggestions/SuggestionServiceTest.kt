@@ -120,7 +120,7 @@ internal class SuggestionServiceTest {
     }
 
     @Test
-    fun `hentTilbehør skal sette erStandardTilbehør true for standard tilbehør`() = runBlocking {
+    fun `hentTilbehør skal sette erSelvforklarendeTilbehør true for standard tilbehør`() = runBlocking {
         every { suggestionEngine.suggestions(hmsnrHovedprodukt) } returns Suggestions(
             dataStartDate = null,
             suggestions = listOf(
@@ -130,8 +130,8 @@ internal class SuggestionServiceTest {
         )
         every { suggestionEngine.deleteSuggestions(any()) } just runs
         val suggestionsFrontendFiltered = suggestionService.suggestions(hmsnrHovedprodukt)
-        assertEquals(true, suggestionsFrontendFiltered.suggestions[0].erStandardTilbehør)
-        assertEquals(false, suggestionsFrontendFiltered.suggestions[1].erStandardTilbehør)
+        assertEquals(true, suggestionsFrontendFiltered.suggestions[0].erSelvforklarendeTilbehør)
+        assertEquals(false, suggestionsFrontendFiltered.suggestions[1].erSelvforklarendeTilbehør)
     }
 
     @Test

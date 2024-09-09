@@ -18,13 +18,8 @@ data class SuggestionFrontendFiltered(
     val hmsNr: String,
     val title: String,
     val erPåBestillingsordning: Boolean,
-    val erStandardTilbehør: Boolean = sjekkErStandardTilbehør(title)
-)
-
-fun sjekkErStandardTilbehør(title: String): Boolean {
-    val standardTilbehørTitles = listOf("trekk inko", "løftebøyle seng", "krykkeholder")
-    val lowerCaseTitle = title.lowercase()
-    return standardTilbehørTitles.any { lowerCaseTitle.startsWith(it) }
+) {
+    val erSelvforklarendeTilbehør: Boolean = sjekkErSelvforklarende(title)
 }
 
 data class Suggestions(

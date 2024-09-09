@@ -10,7 +10,7 @@ import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
-import no.nav.hjelpemidler.model.sjekkErStandardTilbehør
+import no.nav.hjelpemidler.model.sjekkErSelvforklarende
 import no.nav.hjelpemidler.oebs.Oebs
 import no.nav.hjelpemidler.service.hmdb.enums.Produkttype
 import no.nav.hjelpemidler.service.hmdb.hentprodukter.Product
@@ -190,8 +190,9 @@ data class Tilbehør(
     val name: String?,
     val error: TilbehørError?,
     val erPåBestillingsordning: Boolean?,
-    val erStandardTilbehør: Boolean? = if (name != null) sjekkErStandardTilbehør(name) else null
-)
+) {
+    val erSelvforklarendeTilbehør: Boolean? = if (name != null) sjekkErSelvforklarende(name) else null
+}
 
 enum class TilbehørError {
     RESERVEDEL,
