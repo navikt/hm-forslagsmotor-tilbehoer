@@ -1,6 +1,7 @@
 package no.nav.hjelpemidler.suggestions
 
 import mu.KotlinLogging
+import no.nav.hjelpemidler.blockedSuggestions
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.Delelister
@@ -40,7 +41,8 @@ class SuggestionService(
                     it.hmsNr,
                     tilbehørslister,
                     hovedprodukt,
-                ) && it.hmsNr !in denyList
+                ) && it.hmsNr !in denyList &&
+                    it.hmsNr !in blockedSuggestions
             }
 
         val results = SuggestionsFrontendFiltered(

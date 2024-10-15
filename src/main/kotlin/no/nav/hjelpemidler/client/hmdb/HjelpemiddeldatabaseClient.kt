@@ -23,6 +23,8 @@ import no.nav.hjelpemidler.service.hmdb.hentprodukter.Product
 import java.net.URL
 import java.time.LocalDateTime
 
+private val HJELPEMIDDELDATABASEN_MAX_HMSNR_FETCH_SIZE = 500
+
 class HjelpemiddeldatabaseClient {
     private val logg = KotlinLogging.logger {}
     private val client =
@@ -47,6 +49,12 @@ class HjelpemiddeldatabaseClient {
 
     suspend fun hentProdukter(hmsnrs: Set<String>): List<Product> {
         if (hmsnrs.isEmpty()) return emptyList()
+        return hmsnrs.chunked(HJELPEMIDDELDATABASEN_MAX_HMSNR_FETCH_SIZE)
+            .map { hentProduktbatch(it.toSet()) }
+            .flatten()
+    }
+
+    private suspend fun hentProduktbatch(hmsnrs: Set<String>): List<Product> {
         val request = HentProdukter(variables = HentProdukter.Variables(hmsnrs = hmsnrs.toList()))
         return try {
             val response = client.execute(request)
