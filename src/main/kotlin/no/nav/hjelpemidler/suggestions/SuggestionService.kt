@@ -122,7 +122,7 @@ class SuggestionService(
             } else if (hmdbResults.any { it.attributes.produkttype == Produkttype.HOVEDPRODUKT }) {
                 feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT // hovedprodukt som må søkes på papir
             } else if (hmsnr in denyList) {
-                feilmelding = TilbehørError.IKKE_TILGJENGELIG_DIGITALT
+                feilmelding = denyList[hmsnr]
             }
 
             val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
@@ -201,6 +201,11 @@ enum class TilbehørError {
     IKKE_FUNNET,
     IKKE_ET_TILBEHØR,
     IKKE_TILGJENGELIG_DIGITALT,
+    HOVEDHJELPEMIDDEL,
+    IKKE_PÅ_RAMMEAVTALE,
+    LEVERES_SOM_DEL_AV_HJELPEMIDDELET,
+    DEKKES_IKKE_AV_NAV,
+    TJENESTE,
 }
 
 private fun hmsnrFinnesPåDelelisteForHovedprodukt(

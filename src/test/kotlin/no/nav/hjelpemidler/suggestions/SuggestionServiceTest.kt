@@ -114,9 +114,10 @@ internal class SuggestionServiceTest {
         }
 
     @Test
-    fun `hentTilbehør skal returnere IKKE_TILGJENGELIG_DIGITALT dersom hmsnr ligger i denyList`() = runBlocking {
-        val tilbehør = suggestionService.hentTilbehør(denyList.first(), hmsnrHovedprodukt)
-        assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
+    fun `hentTilbehør skal returnere error fra denyList dersom tilbehør ligger i denyList`() = runBlocking {
+        val hmsnrIkkePåRammeavtale = denyList.entries.first { it.value == TilbehørError.IKKE_PÅ_RAMMEAVTALE }.key
+        val tilbehør = suggestionService.hentTilbehør(hmsnrIkkePåRammeavtale, hmsnrHovedprodukt)
+        assertEquals(TilbehørError.IKKE_PÅ_RAMMEAVTALE, tilbehør.error)
     }
 
     @Test
