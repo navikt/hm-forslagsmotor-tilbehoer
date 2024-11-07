@@ -16,4 +16,5 @@ private val selvforklarendeTilbehørTittler = listOf(
     "seil",
     "serveringsbrett",
     "trekk inko",
+    "bekken",
 )
