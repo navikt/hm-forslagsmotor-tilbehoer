@@ -25,6 +25,7 @@ val denyList: Map<Hmsnr, TilbehørError> = mapOf(
         "199692", // Tilhører forrige avtale. Sete ergonomisk ekstra mykt dusjtoastol Aquatec Ocean/Ocean VIP/Ocean VIP XL/Ocean XL/Ocean E-Vip
         "214199", // Seil Molift Evosling hygiene medium. Ikke på rammeavtale
         "323586", // Fremdriftshjelp stol Vela. "Til informasjon har vi nå mottatt beskjed om at NAV har trukket 323586 Fremdriftshjelp stol Vela  tilbake som et tilbehør"
+        "100863", // Lasal Bananpute 1 m/trekk. Ikke på rammeavtale
     ),
 
     TilbehørError.TJENESTE to setOf(
