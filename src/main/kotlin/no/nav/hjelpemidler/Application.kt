@@ -74,7 +74,7 @@ fun main() {
         }
         .build().apply {
             aivenMetrics.initMetabaseProducer(this)
-            NySøknadInnsendt(this, store, aivenMetrics)
+            NySøknadInnsendt(this, store, aivenMetrics, githubClient)
             register(
                 object : RapidsConnection.StatusListener {
                     override fun onStartup(rapidsConnection: RapidsConnection) {

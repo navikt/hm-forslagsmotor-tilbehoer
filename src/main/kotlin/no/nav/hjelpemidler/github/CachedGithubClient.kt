@@ -24,6 +24,12 @@ class CachedGithubClient(private val githubClient: GithubClient = GithubHttpClie
         }
     }
 
+    fun tilbehørPåRammeavtale(): HashSet<Hmsnr> {
+        return withCache(TILBEHØR_PÅ_RAMMEAVTALE_CACHE) {
+            this.hentTilbehørslister().flatMap { it.value.flatMap { it.value } }.toHashSet()
+        }
+    }
+
     private val BESTILLINGSORDNINGSORTIMENT_CACHE: Cache<String, List<BestillingsHjelpemiddel>> =
         CacheConfig.cacheManager.createCache(
             "bestillingsordningsortiment",
@@ -40,5 +46,11 @@ class CachedGithubClient(private val githubClient: GithubClient = GithubHttpClie
         CacheConfig.cacheManager.createCache(
             "reservedelslister",
             CacheConfig.oneHour<String, Delelister>()
+        )
+
+    private val TILBEHØR_PÅ_RAMMEAVTALE_CACHE: Cache<String, HashSet<Hmsnr>> =
+        CacheConfig.cacheManager.createCache(
+            "tilbehørPåRammeavtale",
+            CacheConfig.oneHour<String, HashSet<Hmsnr>>()
         )
 }

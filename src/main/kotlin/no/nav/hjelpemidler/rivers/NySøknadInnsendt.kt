@@ -10,6 +10,7 @@ import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
+import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.Soknad
 import no.nav.hjelpemidler.suggestions.SuggestionEngine
@@ -21,7 +22,8 @@ private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 internal class NySøknadInnsendt(
     rapidsConnection: RapidsConnection,
     private val store: SuggestionEngine,
-    private val aivenMetrics: AivenMetrics
+    private val aivenMetrics: AivenMetrics,
+    private val githubClient: CachedGithubClient,
 ) : PacketListenerWithOnError {
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -123,15 +125,15 @@ internal class NySøknadInnsendt(
     }
 
     fun collectNewMetrics(soknad: Soknad) {
-        val list = soknad.soknad.hjelpemidler.hjelpemiddelListe
-        if (list.isEmpty()) return
+        val hjelpemidler = soknad.soknad.hjelpemidler.hjelpemiddelListe
+        if (hjelpemidler.isEmpty()) return
 
         // Totalt antall søknader med tilbehør vs uten
-        val soknadHasAccessories = list.any { it.tilbehorListe.isNotEmpty() }
+        val soknadHasAccessories = hjelpemidler.any { it.tilbehorListe.isNotEmpty() }
         aivenMetrics.soknadHasAccessories(soknadHasAccessories)
 
         // Gjennomsnittelig bruk av forslagene (full/delvis) vs. manuell inntasting av hmsnr for tilbehør (ukesintervall?)
-        val fullUseOfSuggestions = soknadHasAccessories && list.all {
+        val fullUseOfSuggestions = soknadHasAccessories && hjelpemidler.all {
             it.tilbehorListe.all {
                 if (it.brukAvForslagsmotoren == null) {
                     false
@@ -142,7 +144,7 @@ internal class NySøknadInnsendt(
         }
         if (fullUseOfSuggestions) aivenMetrics.fullUseOfSuggestions()
 
-        val partialUseOfSuggestions = soknadHasAccessories && !fullUseOfSuggestions && list.any {
+        val partialUseOfSuggestions = soknadHasAccessories && !fullUseOfSuggestions && hjelpemidler.any {
             it.tilbehorListe.any {
                 if (it.brukAvForslagsmotoren == null) {
                     false
@@ -157,7 +159,7 @@ internal class NySøknadInnsendt(
         if (noUseOfSuggestions) aivenMetrics.noUseOfSuggestions()
 
         // Totalt antall valg av forslag vs. totalt antall manuell inntasting av hmsnr
-        val totalAccessoriesAddedUsingSuggestions = list.map {
+        val totalAccessoriesAddedUsingSuggestions = hjelpemidler.map {
             it.tilbehorListe.fold(0) { sum, t ->
                 if (t.brukAvForslagsmotoren != null && t.brukAvForslagsmotoren.lagtTilFraForslagsmotoren) {
                     sum + t.antall
@@ -168,7 +170,7 @@ internal class NySøknadInnsendt(
         }.fold(0) { a, b -> a + b }
         if (soknadHasAccessories) aivenMetrics.totalAccessoriesAddedUsingSuggestions(totalAccessoriesAddedUsingSuggestions)
 
-        val totaAccessorieslNotAddedUsingSuggestions = list.map {
+        val totaAccessorieslNotAddedUsingSuggestions = hjelpemidler.map {
             it.tilbehorListe.fold(0) { sum, t ->
                 if (t.brukAvForslagsmotoren == null || !t.brukAvForslagsmotoren.lagtTilFraForslagsmotoren) {
                     sum + t.antall
@@ -178,5 +180,17 @@ internal class NySøknadInnsendt(
             }
         }.fold(0) { a, b -> a + b }
         if (soknadHasAccessories) aivenMetrics.totaAccessorieslNotAddedUsingSuggestions(totaAccessorieslNotAddedUsingSuggestions)
+
+        val tilbehørPåRammeavtale = githubClient.tilbehørPåRammeavtale()
+        hjelpemidler.forEach { hjelpemiddel ->
+            hjelpemiddel.tilbehorListe.forEach { tilbehør ->
+                aivenMetrics.rammeavtale(
+                    hmsnr = tilbehør.hmsnr,
+                    navn = tilbehør.navn,
+                    antall = tilbehør.antall,
+                    erPåRammeavtale = tilbehør.hmsnr in tilbehørPåRammeavtale
+                )
+            }
+        }
     }
 }

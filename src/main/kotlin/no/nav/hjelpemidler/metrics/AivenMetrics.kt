@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.hjelpemidler.configuration.Configuration
+import no.nav.hjelpemidler.github.Hmsnr
 import java.time.Instant
 
 private val logg = KotlinLogging.logger {}
@@ -88,6 +89,14 @@ class AivenMetrics {
         writeEvent(TOTAL_MISSING_FRAMEWORK_AGREEMENT_START_DATES, fields = mapOf("total" to total), tags = emptyMap())
     }
 
+    fun rammeavtale(hmsnr: Hmsnr, navn: String, antall: Int, erPåRammeavtale: Boolean) {
+        writeEvent(
+            TILBEHØR_RAMMEAVTALE,
+            fields = mapOf("hmsnr" to hmsnr, "navn" to navn, "antall" to antall, "rammeavtale" to erPåRammeavtale),
+            tags = emptyMap(),
+        )
+    }
+
     // Old
 
     fun totalProductsWithAccessorySuggestions(antall: Long) {
@@ -165,6 +174,7 @@ class AivenMetrics {
         const val TOTAL_MISSING_OEBS_TITLES = "$PREFIX.total.missing.oebs.titles"
         const val TOTAL_MISSING_FRAMEWORK_AGREEMENT_START_DATES =
             "$PREFIX.total.missing.framework.agreement.start.dates"
+        const val TILBEHØR_RAMMEAVTALE = "$PREFIX.rammeavtale"
 
         const val TOTAL_PRODUCTS_WITH_ACCESSORY_SUGGESTIONS = "$PREFIX.total.products.with.accessory.suggestions"
         const val TOTAL_ACCESSORY_SUGGESTIONS = "$PREFIX.total.accessory.suggestions"
