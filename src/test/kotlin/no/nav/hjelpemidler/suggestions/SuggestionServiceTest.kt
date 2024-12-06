@@ -193,6 +193,7 @@ internal class SuggestionServiceTest {
         hmsArtNr = hmsnr,
         attributes = AttributesDoc(digitalSoknad = tilgjengeligForDigitalSoknad, produkttype = produkttype),
         supplier = ProductSupplier(id = leverandørId),
+        main = true,
         agreements = listOf(
             AgreementInfoDoc(
                 id = rammeavtaleId,
