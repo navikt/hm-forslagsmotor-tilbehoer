@@ -103,6 +103,7 @@ type Product {
   isoCategoryTextShort: String
   isoCategoryTitle: String
   isoCategoryTitleShort: String
+  main: Boolean!
   media: [MediaDoc!]!
   productURL: String!
   productVariantURL: String!

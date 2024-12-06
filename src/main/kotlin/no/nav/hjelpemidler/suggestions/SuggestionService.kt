@@ -116,7 +116,7 @@ class SuggestionService(
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
             var feilmelding: TilbehørError? = null
             val hmdbResults = hjelpemiddeldatabaseClient.hentProdukter(hmsnr)
-            if (hmdbResults.any { it.attributes.digitalSoknad == true }) {
+            if (hmdbResults.any { it.attributes.digitalSoknad == true && it.main }) {
                 logg.info("DEBUG: product looked up with /lookup-accessory-name was not really an accessory")
                 feilmelding = TilbehørError.IKKE_ET_TILBEHØR // men tilgjengelig som hovedprodukt
             } else if (hmdbResults.any { it.attributes.produkttype == Produkttype.HOVEDPRODUKT }) {

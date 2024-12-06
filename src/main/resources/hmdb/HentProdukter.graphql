@@ -1,6 +1,7 @@
 query HentProdukter($hmsnrs: [String!]!) {
   products(hmsnrs: $hmsnrs) {
     hmsArtNr # hmsnr
+    main # Produkt, ikke tilbehør/reservedel
     attributes {
       digitalSoknad # tilgjengeligForDigitalSoknad
       produkttype # produkttype
