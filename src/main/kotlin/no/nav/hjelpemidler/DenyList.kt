@@ -17,7 +17,7 @@ val denyList: Map<Hmsnr, TilbehørError> = mapOf(
     TilbehørError.DEKKES_IKKE_AV_NAV to setOf(
         "292412", // Rensevæske personløfter badekar Bellavita el (forbruksvare som ikke dekkes av NAV)
         "296408", // 'Ryggsekk ers Eloflex' - Dette er en standard sekk NAV ikke dekker.
-        "241521", // Batteribackup stol oppreis Nova 20/30. Vi gir generelt ikke batteribackup
+        "241521", "240794", "295936", // Batteribackup oppreisningsstoler. Vi gir generelt ikke batteribackup
     ),
 
     TilbehørError.IKKE_PÅ_RAMMEAVTALE to setOf(
