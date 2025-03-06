@@ -100,14 +100,12 @@ dependencies {
     implementation("com.natpryce:konfig:1.6.10.0")
     implementation("org.apache.kafka:kafka-clients:3.4.0")
 
-    implementation("org.influxdb:influxdb-java:2.23")
     constraints {
         implementation("com.squareup.okio:okio:3.4.0") {
             because("Okio Signed to Unsigned Conversion Error vulnerability, before 3.4.0")
         }
     }
 
-    implementation("com.influxdb:influxdb-client-kotlin:4.2.0")
     constraints {
         implementation("com.google.code.gson:gson:2.8.9") {
             because("Snyk reported High Severity issue- Deserialization of Untrusted Data ")

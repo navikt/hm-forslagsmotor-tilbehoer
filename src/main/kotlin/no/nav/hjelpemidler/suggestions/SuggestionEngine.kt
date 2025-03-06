@@ -759,7 +759,7 @@ internal class SuggestionEnginePostgres(
                 ).sum()
             }
 
-            // Report what we found to influxdb / grafana
+            // Report what we found to BigQuery
             logg.info("Suggestion engine stats calculated (totalProductsWithAccessorySuggestions=$totalProductsWithAccessorySuggestions, totalAccessorySuggestions=$totalAccessorySuggestions, totalAccessoriesWithoutADescription=$totalAccessoriesWithoutADescription, timeElapsed=${timeElapsed}ms)")
 
             if (Configuration.application["APP_PROFILE"]!! != "local") {

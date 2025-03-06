@@ -1,31 +1,14 @@
 package no.nav.hjelpemidler.metrics
 
-import com.influxdb.client.InfluxDBClientFactory
-import com.influxdb.client.domain.WritePrecision
-import com.influxdb.client.write.Point
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.hjelpemidler.configuration.Configuration
 import no.nav.hjelpemidler.github.Hmsnr
-import java.time.Instant
 
 private val logg = KotlinLogging.logger {}
 
 class AivenMetrics {
-    private val influxHost = Configuration.influxDB["INFLUX_HOST"] ?: "http://localhost"
-    private val influxPort = Configuration.influxDB["INFLUX_PORT"] ?: "1234"
-    private val influxDatabaseName = Configuration.influxDB["INFLUX_DATABASE_NAME"] ?: "defaultdb"
-    private val influxUser = Configuration.influxDB["INFLUX_USER"] ?: "user"
-    private val influxPassword = Configuration.influxDB["INFLUX_PASSWORD"] ?: "password"
-
-    private val client = InfluxDBClientFactory.createV1(
-        "$influxHost:$influxPort",
-        influxUser,
-        influxPassword.toCharArray(),
-        influxDatabaseName,
-        null
-    )
 
     private var metabaseProducer: MetabaseMetricsProducer? = null
 
@@ -38,19 +21,11 @@ class AivenMetrics {
     }
 
     private fun writeEvent(measurement: String, fields: Map<String, Any>, tags: Map<String, String>) = runBlocking {
-        // TODO: Get nanoseconds
-        val point = Point(measurement)
-            .addTags(DEFAULT_TAGS)
-            .addTags(tags)
-            .addFields(fields)
-            .time(Instant.now().toEpochMilli(), WritePrecision.MS)
-
         if (metabaseProducer != null) {
             metabaseProducer!!.hendelseOpprettet(measurement, fields, tags)
         } else {
             logg.error { "metabaseProducer har ikke blitt initialisert" }
         }
-        client.writeApiBlocking.writePoint(point)
     }
 
     fun soknadHasAccessories(hasAccessories: Boolean) {

@@ -46,8 +46,6 @@ spec:
       external:
         - host: hm-oebs-api-proxy.dev-fss-pub.nais.io
         - host: navikt.github.io
-  envFrom:
-    - secret: hm-influxdb-secret
   gcp:
     sqlInstances:
       - name: hm-forslagsmotor-tilbehoer-db-dev

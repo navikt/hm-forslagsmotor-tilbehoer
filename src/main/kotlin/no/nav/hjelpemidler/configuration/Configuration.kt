@@ -20,7 +20,6 @@ internal object Configuration {
     private val prodProperties = ConfigurationMap(
         mapOf(
             "application.profile" to "prod",
-            "SENSU_URL" to "https://digihot-proxy.prod-fss-pub.nais.io/sensu",
             "OEBS_API_PROXY_URL" to "hm-oebs-api-proxy.prod-fss-pub.nais.io",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-prod",
@@ -43,7 +42,6 @@ internal object Configuration {
     private val devProperties = ConfigurationMap(
         mapOf(
             "application.profile" to "dev",
-            "SENSU_URL" to "https://digihot-proxy.dev-fss-pub.nais.io/sensu",
             "OEBS_API_PROXY_URL" to "hm-oebs-api-proxy.dev-fss-pub.nais.io",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-dev",
@@ -66,7 +64,6 @@ internal object Configuration {
     private val localProperties = ConfigurationMap(
         mapOf(
             "application.profile" to "local",
-            "SENSU_URL" to "http://localhost:8456/sensu",
             "OEBS_API_PROXY_URL" to "http://localhost:8456/oebs-api-proxy",
 
             "kafka.client.id" to "hm-forslagsmotor-tilbehoer-local",
@@ -89,12 +86,6 @@ internal object Configuration {
             "AZURE_AD_SCOPE_SOKNADSBEHANDLINGDB" to "123",
             "AZURE_AD_SCOPE_OEBSAPIPROXY" to "123",
             "AZURE_APP_WELL_KNOWN_URL" to "123",
-
-            "INFLUX_HOST" to "abc",
-            "INFLUX_PORT" to "abc",
-            "INFLUX_DATABASE_NAME" to "abc",
-            "INFLUX_USER" to "abc",
-            "INFLUX_PASSWORD" to "abc",
 
             "TOKEN_X_WELL_KNOWN_URL" to "abc",
             "TOKEN_X_CLIENT_ID" to "abc",
@@ -140,14 +131,6 @@ internal object Configuration {
         "TOKEN_X_WELL_KNOWN_URL" to config()[Key("TOKEN_X_WELL_KNOWN_URL", stringType)],
     )
 
-    val influxDB: Map<String, String> = mapOf(
-        "INFLUX_HOST" to config()[Key("INFLUX_HOST", stringType)],
-        "INFLUX_PORT" to config()[Key("INFLUX_PORT", stringType)],
-        "INFLUX_DATABASE_NAME" to config()[Key("INFLUX_DATABASE_NAME", stringType)],
-        "INFLUX_USER" to config()[Key("INFLUX_USER", stringType)],
-        "INFLUX_PASSWORD" to config()[Key("INFLUX_PASSWORD", stringType)],
-    )
-
     val db: Map<String, String> = mapOf(
         "DB_HOST" to config()[Key("DB_HOST", stringType)],
         "DB_PORT" to config()[Key("DB_PORT", stringType)],
@@ -158,7 +141,6 @@ internal object Configuration {
 
     val application: Map<String, String> = mapOf(
         "APP_PROFILE" to config()[Key("application.profile", stringType)],
-        "SENSU_URL" to config()[Key("SENSU_URL", stringType)],
         "OEBS_API_PROXY_URL" to config()[Key("OEBS_API_PROXY_URL", stringType)],
         "GRUNNDATA_SEARCH_URL" to config()[Key("GRUNNDATA_SEARCH_URL", stringType)],
         "GITHUB_TILBEHOR_LISTE" to config()[Key("GITHUB_TILBEHOR_LISTE", stringType)],
