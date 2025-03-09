@@ -35,6 +35,10 @@ val denyList: Map<Hmsnr, TilbehørError> = mapOf(
 
     TilbehørError.LEVERES_SOM_DEL_AV_HJELPEMIDDELET to setOf(
         "288941", // Toalettsete. Dusj -og toalettstoler som har dette setet som tilbehør, får det også levert med det som standard. Trengs derfor ikke å foreslås som tilbehør.
+    ),
+
+    TilbehørError.IKKE_TILGJENGELIG_DIGITALT to setOf(
+        "277400", "277399", // sikkerhetsdeksel (til belte ERS ifbm. tvang). Krever papirsøknader på disse inntil vi etterspør nødvendig info digitalt
     )
 ).inverter() // Inverter fra redigeringsvennlig format til programmeringsvennlig format
 
