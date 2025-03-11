@@ -130,6 +130,7 @@ internal class SuggestionServiceTest {
             )
         )
         every { suggestionEngine.deleteSuggestions(any()) } just runs
+        coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<Set<String>>()) } returns listOf()
         val suggestionsFrontendFiltered = suggestionService.suggestions(hmsnrHovedprodukt)
         assertEquals(true, suggestionsFrontendFiltered.suggestions[0].erSelvforklarendeTilbehør)
         assertEquals(false, suggestionsFrontendFiltered.suggestions[1].erSelvforklarendeTilbehør)

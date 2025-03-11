@@ -32,7 +32,8 @@ class SuggestionService(
         val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
         val forslag = store.suggestions(hmsnr)
 
-        val grunndataTilbehør = hjelpemiddeldatabaseClient.hentProdukter(forslag.suggestions.map { it.hmsNr }.toSet())
+        val grundataTilbehørprodukter =
+            hjelpemiddeldatabaseClient.hentProdukter(forslag.suggestions.map { it.hmsNr }.toSet())
         val tilbehørslister = githubClient.hentTilbehørslister()
         val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
 
@@ -42,15 +43,16 @@ class SuggestionService(
                     return@partition false
                 }
 
-                if (grunndataTilbehør.find { it.hmsArtNr == tilbehør.hmsNr }?.hasAgreement == true) {
-                    return@partition true
+                val grunndataTilbehør = grundataTilbehørprodukter.find { it.hmsArtNr == tilbehør.hmsNr }
+                if (grunndataTilbehør != null) {
+                    grunndataTilbehør.hasAgreement
+                } else {
+                    hmsnrFinnesPåDelelisteForHovedprodukt(
+                        tilbehør.hmsNr,
+                        tilbehørslister,
+                        hovedprodukt,
+                    )
                 }
-
-                hmsnrFinnesPåDelelisteForHovedprodukt(
-                    tilbehør.hmsNr,
-                    tilbehørslister,
-                    hovedprodukt,
-                )
             }
 
         val results = SuggestionsFrontendFiltered(
