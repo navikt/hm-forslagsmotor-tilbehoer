@@ -79,8 +79,12 @@ class SuggestionService(
             forslag.dataStartDate,
             forslagSomKanVises.map {
                 val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null
-                val erPåAktivRammeavtale =
-                    grunndataTilbehørprodukter.find { gd -> gd.hmsArtNr == it.hmsNr }?.hasAgreement
+                val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(
+                    it.hmsNr,
+                    grunndataTilbehørprodukter.find { gd -> gd.hmsArtNr == it.hmsNr },
+                    tilbehørslister,
+                    hovedprodukt
+                )
 
                 it.toFrontendFiltered(
                     erPåBestillingsordning = erPåBestillingsordning,
@@ -112,7 +116,7 @@ class SuggestionService(
 
         logg.info("Fant tilbehør <$hjelpemiddelTilbehørIBestillingsliste> for $hmsnr i bestillingsordningsortimentet")
 
-        val tilbehør = hjelpemiddelTilbehørIBestillingsliste.map { it to hentTilbehør(it, null) }
+        val tilbehør = hjelpemiddelTilbehørIBestillingsliste.map { it to hentTilbehør(it, hmsnr) }
             .filter { (_, nameLookup) ->
                 nameLookup.name != null && nameLookup.error == null
             }
@@ -128,29 +132,7 @@ class SuggestionService(
         return SuggestionsFrontendFiltered(LocalDate.now(), tilbehør)
     }
 
-    suspend fun hentTilbehør(hmsnr: String, hmsnrHovedprodukt: String?): Tilbehør {
-        try {
-            if (hmsnrHovedprodukt != null) {
-                val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt).first()
-                val reservedelslister = githubClient.hentReservedelslister()
-                val tilbehørslister = githubClient.hentTilbehørslister()
-                val hmsnrFinnesITilbehørsliste =
-                    hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, tilbehørslister, hovedprodukt)
-                val hmsnrFinnesIReservedelsliste =
-                    hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, reservedelslister, hovedprodukt)
-
-                logg.info { "reservedelsjekk: hmsnr <$hmsnr>, hovedprodukt <$hmsnrHovedprodukt>, hmsnrFinnesITilbehørsliste <$hmsnrFinnesITilbehørsliste>, hmsnrFinnesIReservedelsliste <$hmsnrFinnesIReservedelsliste>" }
-                if (hmsnrFinnesIReservedelsliste && !hmsnrFinnesITilbehørsliste) {
-                    logg.info { "hmsnr <$hmsnr> finnes på reservedelsliste, men ikke i tilbehørsliste" }
-                    aivenMetrics.hmsnrErReservedel(hmsnr)
-                    // return Tilbehør(hmsnr, null, TilbehørError.RESERVEDEL)
-                }
-            }
-        } catch (e: Exception) {
-            // Logger feilen, men går videre uten å gjøre noe. Saksbehandler kan evt. saksbehandle dersom hmsnr er standardutstyr
-            logg.error(e) { "Sjekk om hmsnr er reservedel feilet for hmsnr <$hmsnr>." }
-        }
-
+    suspend fun hentTilbehør(hmsnr: String, hmsnrHovedprodukt: String): Tilbehør {
         runCatching {
             // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
@@ -165,15 +147,25 @@ class SuggestionService(
                 feilmelding = denyList[hmsnr]
             }
 
-            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
+            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null, null)
 
             val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
             val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == hmsnr } != null
+            val tilbehørproduct = hmdbResults.find { it.hmsArtNr == hmsnr }
+            val tilbehørslister = githubClient.hentTilbehørslister()
+            val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt).first()
+            val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(hmsnr, tilbehørproduct, tilbehørslister, hovedprodukt)
 
-            return Tilbehør(hmsnr, delnavn, feilmelding, erPåBestillingsordning)
+            return Tilbehør(
+                hmsnr,
+                delnavn,
+                feilmelding,
+                erPåBestillingsordning = erPåBestillingsordning,
+                erPåAktivRammeavtale = erPåAktivRammeavtale
+            )
         }.getOrElse { e ->
             logg.error(e) { "failed to find title for hmsNr=$hmsnr" }
-            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
+            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null, null)
         }
     }
 
@@ -225,6 +217,15 @@ class SuggestionService(
 
         return oebsTitleAndType?.first ?: titleFromSuggestionEngineCache?.title
     }
+
+    private fun sjekkErPåAktivRammeavtale(
+        hmsnr: Hmsnr,
+        tilbehør: Product?,
+        tilbehørslister: Delelister,
+        hovedprodukt: Product
+    ): Boolean {
+        return tilbehør?.hasAgreement ?: hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, tilbehørslister, hovedprodukt)
+    }
 }
 
 data class Tilbehør(
@@ -232,6 +233,7 @@ data class Tilbehør(
     val name: String?,
     val error: TilbehørError?,
     val erPåBestillingsordning: Boolean?,
+    val erPåAktivRammeavtale: Boolean?,
 ) {
     val erSelvforklarendeTilbehør: Boolean? = if (name != null) sjekkErSelvforklarende(name) else null
 }
