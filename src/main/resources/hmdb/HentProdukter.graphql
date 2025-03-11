@@ -2,6 +2,7 @@ query HentProdukter($hmsnrs: [String!]!) {
   products(hmsnrs: $hmsnrs) {
     hmsArtNr # hmsnr
     main # Produkt, ikke tilbehør/reservedel
+    accessory
     attributes {
       digitalSoknad # tilgjengeligForDigitalSoknad
       produkttype # produkttype
@@ -12,5 +13,6 @@ query HentProdukter($hmsnrs: [String!]!) {
     agreements {
       id # rammeavtaleId
     }
+    hasAgreement
   }
 }

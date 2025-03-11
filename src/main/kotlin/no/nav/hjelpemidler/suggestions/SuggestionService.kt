@@ -32,30 +32,38 @@ class SuggestionService(
         val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
         val forslag = store.suggestions(hmsnr)
 
+        val grunndataTilbehør = hjelpemiddeldatabaseClient.hentProdukter(forslag.suggestions.map { it.hmsNr }.toSet())
         val tilbehørslister = githubClient.hentTilbehørslister()
         val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
 
-        val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
-            .partition {
+        val (forslagSomKanVises, forslagSomIkkeSkalVises) = forslag.suggestions
+            .partition { tilbehør ->
+                if (tilbehør.hmsNr in blockedSuggestions || tilbehør.hmsNr in denyList) {
+                    return@partition false
+                }
+
+                if (grunndataTilbehør.find { it.hmsArtNr == tilbehør.hmsNr }?.hasAgreement == true) {
+                    return@partition true
+                }
+
                 hmsnrFinnesPåDelelisteForHovedprodukt(
-                    it.hmsNr,
+                    tilbehør.hmsNr,
                     tilbehørslister,
                     hovedprodukt,
-                ) && it.hmsNr !in denyList &&
-                    it.hmsNr !in blockedSuggestions
+                )
             }
 
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
-            forslagPåRammeAvtale.map { it.toFrontendFiltered(erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null) },
+            forslagSomKanVises.map { it.toFrontendFiltered(erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null) },
         )
 
-        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
+        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagSomKanVises <$forslagSomKanVises>, forslagSomIkkeSkalVises <$forslagSomIkkeSkalVises>, results <$results>" }
 
-        if (forslagIkkePåRammeavtale.isNotEmpty()) {
+        if (forslagSomIkkeSkalVises.isNotEmpty()) {
             // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
-            logg.info { "Sletter forslag ikke på rammeavtale for $hmsnr: $forslagIkkePåRammeavtale" }
-            store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
+            logg.info { "Sletter forslag ikke på rammeavtale for $hmsnr: $forslagSomIkkeSkalVises" }
+            store.deleteSuggestions(forslagSomIkkeSkalVises.map { it.hmsNr })
         }
 
         return results

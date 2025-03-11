@@ -199,6 +199,8 @@ internal class SuggestionServiceTest {
                 id = rammeavtaleId,
             ),
         ),
+        accessory = false,
+        hasAgreement = true
     )
 
     private fun productFrontendFiltered(hmsnr: String, suggestions: List<Suggestion> = emptyList()) =
