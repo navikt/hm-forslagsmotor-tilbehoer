@@ -9,8 +9,8 @@ import io.mockk.runs
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.BestillingsHjelpemiddel
+import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.github.Delelister
-import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.Suggestion
@@ -33,7 +33,7 @@ internal class SuggestionServiceTest {
     private val suggestionEngine = mockk<SuggestionEngine>()
     private val aivenMetrics = mockk<AivenMetrics>(relaxed = true)
 
-    private val githubClient = mockk<GithubClient>()
+    private val githubClient = mockk<CachedGithubClient>()
     private val hjelpemiddeldatabaseClient = mockk<HjelpemiddeldatabaseClient>()
     private val oebs = mockk<Oebs>()
     private val suggestionService =
@@ -56,6 +56,7 @@ internal class SuggestionServiceTest {
                 null,
             ),
         )
+        every { githubClient.tilbehørPåRammeavtale() } returns emptySet()
         every { suggestionEngine.cachedTitleAndTypeFor(any()) } returns null
         every { oebs.getTitleForHmsNr(any()) } returns Pair("tittel", "type")
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<String>()) } returns emptyList()

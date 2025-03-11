@@ -4,8 +4,8 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.blockedSuggestions
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
+import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.github.Delelister
-import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
@@ -26,7 +26,7 @@ class SuggestionService(
     private val store: SuggestionEngine,
     private val aivenMetrics: AivenMetrics,
     private val hjelpemiddeldatabaseClient: HjelpemiddeldatabaseClient,
-    private val githubClient: GithubClient,
+    private val githubClient: CachedGithubClient,
     private val oebs: Oebs,
 ) {
 
@@ -82,8 +82,6 @@ class SuggestionService(
                 val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(
                     it.hmsNr,
                     grunndataTilbehørprodukter.find { gd -> gd.hmsArtNr == it.hmsNr },
-                    tilbehørslister,
-                    hovedprodukt
                 )
 
                 it.toFrontendFiltered(
@@ -133,6 +131,28 @@ class SuggestionService(
     }
 
     suspend fun hentTilbehør(hmsnr: String, hmsnrHovedprodukt: String): Tilbehør {
+        try {
+            if (hmsnrHovedprodukt != null) {
+                val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt).first()
+                val reservedelslister = githubClient.hentReservedelslister()
+                val tilbehørslister = githubClient.hentTilbehørslister()
+                val hmsnrFinnesITilbehørsliste =
+                    hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, tilbehørslister, hovedprodukt)
+                val hmsnrFinnesIReservedelsliste =
+                    hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, reservedelslister, hovedprodukt)
+
+                logg.info { "reservedelsjekk: hmsnr <$hmsnr>, hovedprodukt <$hmsnrHovedprodukt>, hmsnrFinnesITilbehørsliste <$hmsnrFinnesITilbehørsliste>, hmsnrFinnesIReservedelsliste <$hmsnrFinnesIReservedelsliste>" }
+                if (hmsnrFinnesIReservedelsliste && !hmsnrFinnesITilbehørsliste) {
+                    logg.info { "hmsnr <$hmsnr> finnes på reservedelsliste, men ikke i tilbehørsliste" }
+                    aivenMetrics.hmsnrErReservedel(hmsnr)
+                    // return Tilbehør(hmsnr, null, TilbehørError.RESERVEDEL)
+                }
+            }
+        } catch (e: Exception) {
+            // Logger feilen, men går videre uten å gjøre noe. Saksbehandler kan evt. saksbehandle dersom hmsnr er standardutstyr
+            logg.error(e) { "Sjekk om hmsnr er reservedel feilet for hmsnr <$hmsnr>." }
+        }
+
         runCatching {
             // Søknaden er avhengig av denne gamle sjekken, da den egentlig sjekker om produktet eksisterer i hmdb
             // og hvis så om den er tilgjengelig for å legges til igjennom digital søknad som hovedprodukt.
@@ -152,9 +172,7 @@ class SuggestionService(
             val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
             val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == hmsnr } != null
             val tilbehørproduct = hmdbResults.find { it.hmsArtNr == hmsnr }
-            val tilbehørslister = githubClient.hentTilbehørslister()
-            val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt).first()
-            val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(hmsnr, tilbehørproduct, tilbehørslister, hovedprodukt)
+            val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(hmsnr, tilbehørproduct)
 
             return Tilbehør(
                 hmsnr,
@@ -221,10 +239,8 @@ class SuggestionService(
     private fun sjekkErPåAktivRammeavtale(
         hmsnr: Hmsnr,
         tilbehør: Product?,
-        tilbehørslister: Delelister,
-        hovedprodukt: Product
     ): Boolean {
-        return tilbehør?.hasAgreement ?: hmsnrFinnesPåDelelisteForHovedprodukt(hmsnr, tilbehørslister, hovedprodukt)
+        return tilbehør?.hasAgreement ?: githubClient.tilbehørPåRammeavtale().contains(hmsnr)
     }
 }
 
