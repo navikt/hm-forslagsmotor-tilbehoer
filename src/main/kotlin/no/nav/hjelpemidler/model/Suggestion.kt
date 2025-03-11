@@ -9,8 +9,16 @@ data class Suggestion(
     var occurancesInSoknader: Int = 0,
 ) {
     @JsonIgnore
-    fun toFrontendFiltered(erPåBestillingsordning: Boolean): SuggestionFrontendFiltered {
-        return SuggestionFrontendFiltered(hmsNr, title ?: "", erPåBestillingsordning)
+    fun toFrontendFiltered(
+        erPåBestillingsordning: Boolean,
+        erPåAktivRammeavtale: Boolean?
+    ): SuggestionFrontendFiltered {
+        return SuggestionFrontendFiltered(
+            hmsNr,
+            title ?: "",
+            erPåBestillingsordning = erPåBestillingsordning,
+            erPåAktivRammeavtale = erPåAktivRammeavtale
+        )
     }
 }
 
@@ -18,6 +26,7 @@ data class SuggestionFrontendFiltered(
     val hmsNr: String,
     val title: String,
     val erPåBestillingsordning: Boolean,
+    val erPåAktivRammeavtale: Boolean?,
 ) {
     val erSelvforklarendeTilbehør: Boolean = sjekkErSelvforklarende(title)
 }

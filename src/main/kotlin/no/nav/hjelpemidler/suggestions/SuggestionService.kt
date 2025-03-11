@@ -77,7 +77,16 @@ class SuggestionService(
 
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
-            forslagSomKanVises.map { it.toFrontendFiltered(erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null) },
+            forslagSomKanVises.map {
+                val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null
+                val erPåAktivRammeavtale =
+                    grunndataTilbehørprodukter.find { gd -> gd.hmsArtNr == it.hmsNr }?.hasAgreement
+
+                it.toFrontendFiltered(
+                    erPåBestillingsordning = erPåBestillingsordning,
+                    erPåAktivRammeavtale = erPåAktivRammeavtale
+                )
+            },
         )
 
         logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagSomKanVises <$forslagSomKanVises>, forslagSomIkkeSkalVises <$forslagSomIkkeSkalVises>, results <$results>" }
@@ -112,6 +121,7 @@ class SuggestionService(
                     hmsNr = hmsnr,
                     title = nameLookup.name!!,
                     erPåBestillingsordning = true,
+                    erPåAktivRammeavtale = true,
                 )
             }
 
