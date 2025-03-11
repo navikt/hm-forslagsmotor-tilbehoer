@@ -9,7 +9,9 @@ import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
+import no.nav.hjelpemidler.model.Suggestion
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
+import no.nav.hjelpemidler.model.Suggestions
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.model.sjekkErSelvforklarende
 import no.nav.hjelpemidler.oebs.Oebs
@@ -28,25 +30,26 @@ class SuggestionService(
     private val oebs: Oebs,
 ) {
 
-    suspend fun suggestions(hmsnr: String): SuggestionsFrontendFiltered {
-        val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
-        val forslag = store.suggestions(hmsnr)
-
-        val grundataTilbehørprodukter =
-            hjelpemiddeldatabaseClient.hentProdukter(forslag.suggestions.map { it.hmsNr }.toSet())
-        val tilbehørslister = githubClient.hentTilbehørslister()
-        val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
-
-        val (forslagSomKanVises, forslagSomIkkeSkalVises) = forslag.suggestions
+    // Splitter til [forslagSomSkalVises, forslagSomIkkeSkalVises]
+    fun splittForslagbasertPåVisning(
+        forslag: Suggestions,
+        grundataTilbehørprodukter: List<Product>,
+        tilbehørslister: Delelister,
+        hovedprodukt: Product
+    ): Pair<List<Suggestion>, List<Suggestion>> {
+        return forslag.suggestions
             .partition { tilbehør ->
                 if (tilbehør.hmsNr in blockedSuggestions || tilbehør.hmsNr in denyList) {
+                    // Ikke vis blokkerte eller svartelistede forslag
                     return@partition false
                 }
 
                 val grunndataTilbehør = grundataTilbehørprodukter.find { it.hmsArtNr == tilbehør.hmsNr }
                 if (grunndataTilbehør != null) {
-                    grunndataTilbehør.hasAgreement
+                    // Vis kun forslag som er tilbehør og på rammeavtale
+                    grunndataTilbehør.accessory && grunndataTilbehør.hasAgreement
                 } else {
+                    // Fallback til gamle tilbehørslister
                     hmsnrFinnesPåDelelisteForHovedprodukt(
                         tilbehør.hmsNr,
                         tilbehørslister,
@@ -54,6 +57,23 @@ class SuggestionService(
                     )
                 }
             }
+    }
+
+    suspend fun suggestions(hmsnr: String): SuggestionsFrontendFiltered {
+        val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
+        val forslag = store.suggestions(hmsnr)
+
+        val grunndataTilbehørprodukter =
+            hjelpemiddeldatabaseClient.hentProdukter(forslag.suggestions.map { it.hmsNr }.toSet())
+        val tilbehørslister = githubClient.hentTilbehørslister()
+        val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
+
+        val (forslagSomKanVises, forslagSomIkkeSkalVises) = splittForslagbasertPåVisning(
+            forslag,
+            grunndataTilbehørprodukter,
+            tilbehørslister,
+            hovedprodukt
+        )
 
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
