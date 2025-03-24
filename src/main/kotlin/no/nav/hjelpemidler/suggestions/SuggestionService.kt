@@ -4,12 +4,14 @@ import mu.KotlinLogging
 import no.nav.hjelpemidler.blockedSuggestions
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
+import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.github.Delelister
-import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.github.Hmsnr
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
+import no.nav.hjelpemidler.model.Suggestion
 import no.nav.hjelpemidler.model.SuggestionFrontendFiltered
+import no.nav.hjelpemidler.model.Suggestions
 import no.nav.hjelpemidler.model.SuggestionsFrontendFiltered
 import no.nav.hjelpemidler.model.sjekkErSelvforklarende
 import no.nav.hjelpemidler.oebs.Oebs
@@ -24,38 +26,77 @@ class SuggestionService(
     private val store: SuggestionEngine,
     private val aivenMetrics: AivenMetrics,
     private val hjelpemiddeldatabaseClient: HjelpemiddeldatabaseClient,
-    private val githubClient: GithubClient,
+    private val githubClient: CachedGithubClient,
     private val oebs: Oebs,
 ) {
+
+    // Splitter til [forslagSomSkalVises, forslagSomIkkeSkalVises]
+    fun splittForslagbasertPåVisning(
+        forslag: Suggestions,
+        grundataTilbehørprodukter: List<Product>,
+        tilbehørslister: Delelister,
+        hovedprodukt: Product
+    ): Pair<List<Suggestion>, List<Suggestion>> {
+        return forslag.suggestions
+            .partition { tilbehør ->
+                if (tilbehør.hmsNr in blockedSuggestions || tilbehør.hmsNr in denyList) {
+                    // Ikke vis blokkerte eller svartelistede forslag
+                    return@partition false
+                }
+
+                val grunndataTilbehør = grundataTilbehørprodukter.find { it.hmsArtNr == tilbehør.hmsNr }
+                if (grunndataTilbehør != null) {
+                    // Vis kun forslag som er tilbehør og på rammeavtale
+                    grunndataTilbehør.accessory && grunndataTilbehør.hasAgreement
+                } else {
+                    // Fallback til gamle tilbehørslister
+                    hmsnrFinnesPåDelelisteForHovedprodukt(
+                        tilbehør.hmsNr,
+                        tilbehørslister,
+                        hovedprodukt,
+                    )
+                }
+            }
+    }
 
     suspend fun suggestions(hmsnr: String): SuggestionsFrontendFiltered {
         val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnr).first()
         val forslag = store.suggestions(hmsnr)
 
+        val grunndataTilbehørprodukter =
+            hjelpemiddeldatabaseClient.hentProdukter(forslag.suggestions.map { it.hmsNr }.toSet())
         val tilbehørslister = githubClient.hentTilbehørslister()
         val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
 
-        val (forslagPåRammeAvtale, forslagIkkePåRammeavtale) = forslag.suggestions
-            .partition {
-                hmsnrFinnesPåDelelisteForHovedprodukt(
-                    it.hmsNr,
-                    tilbehørslister,
-                    hovedprodukt,
-                ) && it.hmsNr !in denyList &&
-                    it.hmsNr !in blockedSuggestions
-            }
+        val (forslagSomKanVises, forslagSomIkkeSkalVises) = splittForslagbasertPåVisning(
+            forslag,
+            grunndataTilbehørprodukter,
+            tilbehørslister,
+            hovedprodukt
+        )
 
         val results = SuggestionsFrontendFiltered(
             forslag.dataStartDate,
-            forslagPåRammeAvtale.map { it.toFrontendFiltered(erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null) },
+            forslagSomKanVises.map {
+                val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == it.hmsNr } != null
+                val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(
+                    it.hmsNr,
+                    grunndataTilbehørprodukter.find { gd -> gd.hmsArtNr == it.hmsNr },
+                )
+
+                it.toFrontendFiltered(
+                    erPåBestillingsordning = erPåBestillingsordning,
+                    erPåAktivRammeavtale = erPåAktivRammeavtale
+                )
+            },
         )
 
-        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagPåRammeAvtale <$forslagPåRammeAvtale>, forslagIkkePåRammeavtale <$forslagIkkePåRammeavtale>, results <$results>" }
+        logg.info { "Forslagresultat: hmsnr <$hmsnr>, forslag <$forslag>, forslagSomKanVises <$forslagSomKanVises>, forslagSomIkkeSkalVises <$forslagSomIkkeSkalVises>, results <$results>" }
 
-        if (forslagIkkePåRammeavtale.isNotEmpty()) {
+        if (forslagSomIkkeSkalVises.isNotEmpty()) {
             // Sletter fra db slik at de ikke tar opp plassen til andre forslag i fremtiden
-            logg.info { "Sletter forslag ikke på rammeavtale for $hmsnr: $forslagIkkePåRammeavtale" }
-            store.deleteSuggestions(forslagIkkePåRammeavtale.map { it.hmsNr })
+            logg.info { "Sletter forslag ikke på rammeavtale for $hmsnr: $forslagSomIkkeSkalVises" }
+            store.deleteSuggestions(forslagSomIkkeSkalVises.map { it.hmsNr })
         }
 
         return results
@@ -73,7 +114,7 @@ class SuggestionService(
 
         logg.info("Fant tilbehør <$hjelpemiddelTilbehørIBestillingsliste> for $hmsnr i bestillingsordningsortimentet")
 
-        val tilbehør = hjelpemiddelTilbehørIBestillingsliste.map { it to hentTilbehør(it, null) }
+        val tilbehør = hjelpemiddelTilbehørIBestillingsliste.map { it to hentTilbehør(it, hmsnr) }
             .filter { (_, nameLookup) ->
                 nameLookup.name != null && nameLookup.error == null
             }
@@ -82,13 +123,14 @@ class SuggestionService(
                     hmsNr = hmsnr,
                     title = nameLookup.name!!,
                     erPåBestillingsordning = true,
+                    erPåAktivRammeavtale = true,
                 )
             }
 
         return SuggestionsFrontendFiltered(LocalDate.now(), tilbehør)
     }
 
-    suspend fun hentTilbehør(hmsnr: String, hmsnrHovedprodukt: String?): Tilbehør {
+    suspend fun hentTilbehør(hmsnr: String, hmsnrHovedprodukt: String): Tilbehør {
         try {
             if (hmsnrHovedprodukt != null) {
                 val hovedprodukt = hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt).first()
@@ -125,15 +167,24 @@ class SuggestionService(
                 feilmelding = denyList[hmsnr]
             }
 
-            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
+            val delnavn = hentDelnavn(hmsnr) ?: return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null, null)
 
             val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
             val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == hmsnr } != null
+            val tilbehørproduct = hmdbResults.find { it.hmsArtNr == hmsnr }
+            logg.info {"Hentet produkt fra grunndata: $tilbehørproduct"}
+            val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(hmsnr, tilbehørproduct)
 
-            return Tilbehør(hmsnr, delnavn, feilmelding, erPåBestillingsordning)
+            return Tilbehør(
+                hmsnr,
+                delnavn,
+                feilmelding,
+                erPåBestillingsordning = erPåBestillingsordning,
+                erPåAktivRammeavtale = erPåAktivRammeavtale
+            )
         }.getOrElse { e ->
             logg.error(e) { "failed to find title for hmsNr=$hmsnr" }
-            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null)
+            return Tilbehør(hmsnr, null, TilbehørError.IKKE_FUNNET, null, null)
         }
     }
 
@@ -185,6 +236,13 @@ class SuggestionService(
 
         return oebsTitleAndType?.first ?: titleFromSuggestionEngineCache?.title
     }
+
+    private fun sjekkErPåAktivRammeavtale(
+        hmsnr: Hmsnr,
+        tilbehør: Product?,
+    ): Boolean {
+        return tilbehør?.hasAgreement ?: githubClient.tilbehørPåRammeavtale().contains(hmsnr)
+    }
 }
 
 data class Tilbehør(
@@ -192,6 +250,7 @@ data class Tilbehør(
     val name: String?,
     val error: TilbehørError?,
     val erPåBestillingsordning: Boolean?,
+    val erPåAktivRammeavtale: Boolean?,
 ) {
     val erSelvforklarendeTilbehør: Boolean? = if (name != null) sjekkErSelvforklarende(name) else null
 }

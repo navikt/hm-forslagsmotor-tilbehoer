@@ -26,13 +26,6 @@ fun Route.ktorRoutes(suggestionService: SuggestionService) {
         call.respond(response)
     }
 
-    // @Deprecated: Bruk variant med både hmsnr for hovedprodukt og del
-    get("/lookup-accessory-name/{hmsNr}") {
-        val hmsnr = call.parameters["hmsNr"]!!
-        logg.info("Request for name lookup for hmsnr=$hmsnr.")
-        call.respond(suggestionService.hentTilbehør(hmsnr, null))
-    }
-
     get("/lookup-accessory-name/{hmsnrHovedprodukt}/{hmsnrTilbehor}") {
         val hmsnrHovedprodukt = call.parameters["hmsnrHovedprodukt"]!!
         val hmsnrTilbehør = call.parameters["hmsnrTilbehor"]!!

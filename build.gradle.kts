@@ -120,7 +120,7 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("io.mockk:mockk:1.13.4")
-    testImplementation("org.testcontainers:postgresql:1.17.6")
+    testImplementation("org.testcontainers:postgresql:1.20.6")
     val junit_version = "5.9.2"
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")

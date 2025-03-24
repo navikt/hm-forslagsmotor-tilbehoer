@@ -9,8 +9,8 @@ import io.mockk.runs
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.BestillingsHjelpemiddel
+import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.github.Delelister
-import no.nav.hjelpemidler.github.GithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.Suggestion
@@ -33,7 +33,7 @@ internal class SuggestionServiceTest {
     private val suggestionEngine = mockk<SuggestionEngine>()
     private val aivenMetrics = mockk<AivenMetrics>(relaxed = true)
 
-    private val githubClient = mockk<GithubClient>()
+    private val githubClient = mockk<CachedGithubClient>()
     private val hjelpemiddeldatabaseClient = mockk<HjelpemiddeldatabaseClient>()
     private val oebs = mockk<Oebs>()
     private val suggestionService =
@@ -56,6 +56,7 @@ internal class SuggestionServiceTest {
                 null,
             ),
         )
+        every { githubClient.tilbehørPåRammeavtale() } returns emptySet()
         every { suggestionEngine.cachedTitleAndTypeFor(any()) } returns null
         every { oebs.getTitleForHmsNr(any()) } returns Pair("tittel", "type")
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<String>()) } returns emptyList()
@@ -130,6 +131,7 @@ internal class SuggestionServiceTest {
             )
         )
         every { suggestionEngine.deleteSuggestions(any()) } just runs
+        coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<Set<String>>()) } returns listOf()
         val suggestionsFrontendFiltered = suggestionService.suggestions(hmsnrHovedprodukt)
         assertEquals(true, suggestionsFrontendFiltered.suggestions[0].erSelvforklarendeTilbehør)
         assertEquals(false, suggestionsFrontendFiltered.suggestions[1].erSelvforklarendeTilbehør)
@@ -159,28 +161,35 @@ internal class SuggestionServiceTest {
         assertEquals(5, introspecton.first().suggestions[1].occurancesInSoknader)
     }
 
-    /** Kommentert ut inntil vi gjør mer enn å bare logge når det forsøkes å legge til reservedel som tilbehør
-     @Test
-     fun `hentTilbehør skal returnere RESERVEDEL dersom hmsnr er i reservedelsliste, men ikke i tilbehørsliste`() =
-     runBlocking {
-     coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrReservedel) } returns listOf(produkt(hmsnrReservedel))
-     val tilbehør = suggestionService.hentTilbehør(hmsnrReservedel)
-     assertEquals(TilbehørError.RESERVEDEL, tilbehør.error)
-     }
-
-     @Test
-     fun `hentTilbehør skal returnere tilbehør dersom hmsnr er både i reservedelsliste og i tilbehørsliste`() =
-     runBlocking {
-     coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrTilbehørOgReservedel) } returns listOf(
-     produkt(
-     hmsnrTilbehørOgReservedel
-     )
-     )
-     val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehørOgReservedel)
-     assertNull(tilbehør.error)
-     assertTrue(tilbehør.name!!.isNotBlank())
-     }
-     */
+    @Test
+    fun `skal vise forslag basert på info fra grunndata`() {
+        val hmsnrTilbehørPåRammeavtale = "111111"
+        val hmsnrTilbehørIkkePåRammeavtale = "222222"
+        val hmsnrIkkeTilbehør = "333333"
+        val forslag =
+            Suggestions(
+                dataStartDate = null,
+                suggestions = listOf(
+                    Suggestion(hmsnrTilbehørPåRammeavtale),
+                    Suggestion(hmsnrTilbehørIkkePåRammeavtale),
+                    Suggestion(hmsnrIkkeTilbehør)
+                )
+            )
+        val grunndataTilbehørprodukter = listOf(
+            produkt(hmsnrTilbehørPåRammeavtale, accessory = true, hasAgreement = true),
+            produkt(hmsnrTilbehørIkkePåRammeavtale, accessory = true, hasAgreement = false),
+            produkt(hmsnrIkkeTilbehør, accessory = false, hasAgreement = true),
+        )
+        val (skalVises, skalIkkeVises) = suggestionService.splittForslagbasertPåVisning(
+            forslag,
+            grunndataTilbehørprodukter,
+            deleliste(),
+            produkt(hmsnrHovedprodukt)
+        )
+        assertEquals(hmsnrTilbehørPåRammeavtale, skalVises.first().hmsNr)
+        assertEquals(hmsnrTilbehørIkkePåRammeavtale, skalIkkeVises[0].hmsNr)
+        assertEquals(hmsnrIkkeTilbehør, skalIkkeVises[1].hmsNr)
+    }
 
     private fun deleliste(vararg hmsnrs: String): Delelister =
         mapOf(rammeavtaleId to mapOf(leverandørId to setOf(*hmsnrs)))
@@ -189,6 +198,8 @@ internal class SuggestionServiceTest {
         hmsnr: String,
         tilgjengeligForDigitalSoknad: Boolean = false,
         produkttype: Produkttype? = null,
+        accessory: Boolean = false,
+        hasAgreement: Boolean = true,
     ) = Product(
         hmsArtNr = hmsnr,
         attributes = AttributesDoc(digitalSoknad = tilgjengeligForDigitalSoknad, produkttype = produkttype),
@@ -199,6 +210,8 @@ internal class SuggestionServiceTest {
                 id = rammeavtaleId,
             ),
         ),
+        accessory = accessory,
+        hasAgreement = hasAgreement,
     )
 
     private fun productFrontendFiltered(hmsnr: String, suggestions: List<Suggestion> = emptyList()) =
