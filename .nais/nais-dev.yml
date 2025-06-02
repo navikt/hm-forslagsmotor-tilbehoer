@@ -41,6 +41,8 @@ spec:
       rules:
         - application: hm-soknadsbehandling-db
         - application: hm-grunndata-search
+        - application: logging
+          namespace: nais-system
       external:
         - host: hm-oebs-api-proxy.dev-fss-pub.nais.io
         - host: navikt.github.io
