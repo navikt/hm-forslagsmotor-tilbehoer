@@ -2,13 +2,13 @@ package no.nav.hjelpemidler.azure
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import mu.KotlinLogging
+import no.nav.hjelpemidler.teamInfo
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
 
 private val logg = KotlinLogging.logger {}
-private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 
 class AzureClient(private val tenantUrl: String, private val clientId: String, private val clientSecret: String) {
 
@@ -43,7 +43,7 @@ class AzureClient(private val tenantUrl: String, private val clientId: String, p
             responseCode to stream?.bufferedReader()?.readText()
         }
 
-        sikkerlogg.info("svar fra azure ad: responseCode=$responseCode responseBody=$responseBody")
+        logg.teamInfo { "svar fra azure ad: responseCode=$responseCode responseBody=$responseBody" }
 
         if (responseBody == null) {
             throw RuntimeException("ukjent feil fra azure ad (responseCode=$responseCode), responseBody er null")

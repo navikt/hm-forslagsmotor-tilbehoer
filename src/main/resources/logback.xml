@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="team-logs" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>team-logs.nais-system:5170</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"google_cloud_project":"${GOOGLE_CLOUD_PROJECT}","nais_namespace_name":"${NAIS_NAMESPACE}","nais_pod_name":"${HOSTNAME}","nais_container_name":"${NAIS_APP_NAME}"}</customFields>
+            <includeContext>false</includeContext>
+        </encoder>
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
+                <marker>TEAM_LOGS</marker>
+            </evaluator>
+            <OnMatch>ACCEPT</OnMatch>
+            <OnMismatch>DENY</OnMismatch>
+        </filter>
+    </appender>
+
+    <appender name="default-json" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
+                <marker>TEAM_LOGS</marker>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+            <OnMismatch>ACCEPT</OnMismatch>
+        </filter>
+    </appender>
+
+    <appender name="auditLoggerAppender" class="com.papertrailapp.logback.Syslog4jAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%m%n%xEx</pattern>
+        </layout>
+
+        <syslogConfig class="org.productivity.java.syslog4j.impl.net.tcp.TCPNetSyslogConfig">
+            <host>audit.nais</host>
+            <port>6514</port>
+            <ident>hm_soknad_api_audit</ident>
+            <maxMessageLength>128000</maxMessageLength>
+        </syslogConfig>
+    </appender>
+
+    <logger level="DEBUG" name="auditLogger" additivity="false">
+        <appender-ref ref="auditLoggerAppender" />
+    </logger>
+
+    <logger name="io.ktor.auth" level="TRACE" />
+
+    <logger name="team-logs-logger" level="INFO" additivity="false">
+        <appender-ref ref="team-logs" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="default-json" />
+        <appender-ref ref="team-logs" />
+    </root>
+
+</configuration>

@@ -172,7 +172,7 @@ class SuggestionService(
             val bestillingsordningSortiment = githubClient.hentBestillingsordningSortiment()
             val erPåBestillingsordning = bestillingsordningSortiment.find { b -> b.hmsnr == hmsnr } != null
             val tilbehørproduct = hmdbResults.find { it.hmsArtNr == hmsnr }
-            logg.info {"Hentet produkt fra grunndata: $tilbehørproduct"}
+            logg.info { "Hentet produkt fra grunndata: $tilbehørproduct" }
             val erPåAktivRammeavtale = sjekkErPåAktivRammeavtale(hmsnr, tilbehørproduct)
 
             return Tilbehør(

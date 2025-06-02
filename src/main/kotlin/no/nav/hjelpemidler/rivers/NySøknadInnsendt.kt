@@ -17,7 +17,6 @@ import no.nav.hjelpemidler.suggestions.SuggestionEngine
 import java.time.LocalDateTime
 
 private val logg = KotlinLogging.logger {}
-private val sikkerlogg = KotlinLogging.logger("tjenestekall")
 
 internal class NySøknadInnsendt(
     rapidsConnection: RapidsConnection,
