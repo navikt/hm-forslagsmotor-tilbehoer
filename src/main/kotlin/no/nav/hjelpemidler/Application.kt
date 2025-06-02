@@ -41,6 +41,9 @@ fun main() {
         throw Exception("database never became available withing the deadline")
     }
 
+    logg.teamInfo { "LOGG_TEST denne burde dukke opp i Team Logs." }
+    logg.info { "LOGG_TEST denne burde dukke opp i vanlig log." }
+
     // Make sure our database migrations are up to date
     migrate(Configuration)
 
