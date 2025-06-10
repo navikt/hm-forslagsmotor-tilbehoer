@@ -98,7 +98,7 @@ dependencies {
     implementation("com.github.seratch:kotliquery:1.9.0")
 
     implementation("com.natpryce:konfig:1.6.10.0")
-    implementation("org.apache.kafka:kafka-clients:3.4.0")
+    implementation("org.apache.kafka:kafka-clients:3.9.1")
 
     constraints {
         implementation("com.squareup.okio:okio:3.4.0") {
