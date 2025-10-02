@@ -1,6 +1,7 @@
 package no.nav.hjelpemidler.suggestions
 
 import mu.KotlinLogging
+import no.nav.hjelpemidler.blockedCombinations
 import no.nav.hjelpemidler.blockedSuggestions
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
@@ -39,7 +40,8 @@ class SuggestionService(
     ): Pair<List<Suggestion>, List<Suggestion>> {
         return forslag.suggestions
             .partition { tilbehør ->
-                if (tilbehør.hmsNr in blockedSuggestions || tilbehør.hmsNr in denyList) {
+                val erBlokkertKombinasjon = tilbehør.hmsNr in (blockedCombinations[hovedprodukt.hmsArtNr] ?: emptyList())
+                if (tilbehør.hmsNr in blockedSuggestions || tilbehør.hmsNr in denyList || erBlokkertKombinasjon) {
                     // Ikke vis blokkerte eller svartelistede forslag
                     return@partition false
                 }
