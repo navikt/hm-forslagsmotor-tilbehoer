@@ -63,7 +63,7 @@ internal class SuggestionServiceTest {
         every { suggestionEngine.cachedTitleAndTypeFor(any()) } returns null
         every { oebs.getTitleForHmsNr(any()) } returns Pair("tittel", "type")
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<String>()) } returns emptyList()
-        coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt) } returns listOf(produkt(hmsnrHovedprodukt, id = idHovedprodukt))
+        coEvery { hjelpemiddeldatabaseClient.hentProdukter(hmsnrHovedprodukt) } returns listOf(produkt(hmsnrHovedprodukt, produktId = idHovedprodukt))
     }
 
     @Test
@@ -139,12 +139,12 @@ internal class SuggestionServiceTest {
         } returns listOf(
             produkt(
                 hmsnr = hmsnrTilbehør,
-                kompatibelMed = idHovedprodukt,
+                kompatibelMedProduktId = idHovedprodukt,
                 accessory = true,
             ),
             produkt(
                 hmsnr = hmsnrTilbehørOgReservedel,
-                kompatibelMed = idHovedprodukt,
+                kompatibelMedProduktId = idHovedprodukt,
                 accessory = true,
             )
         )
@@ -179,33 +179,40 @@ internal class SuggestionServiceTest {
 
     @Test
     fun `skal vise forslag basert på info fra grunndata`() {
-        val hmsnrTilbehørPåRammeavtale = "111111"
-        val hmsnrTilbehørIkkePåRammeavtale = "222222"
-        val hmsnrIkkeTilbehør = "333333"
-        val hmsnrIkkeKompatibel = "444444"
+        val hmsnrTilbehørKompatibelProduktId = "111111"
+        val hmsnrTilbehørKompatibelSerieId = "222222"
+        val hmsnrTilbehørIkkePåRammeavtale = "333333"
+        val hmsnrIkkeTilbehør = "444444"
+        val hmsnrIkkeKompatibel = "555555"
+        val produktId = UUID.randomUUID().toString()
+        val serieId = UUID.randomUUID().toString()
         val forslag =
             Suggestions(
                 dataStartDate = null,
                 suggestions = listOf(
-                    Suggestion(hmsnrTilbehørPåRammeavtale),
+                    Suggestion(hmsnrTilbehørKompatibelProduktId),
+                    Suggestion(hmsnrTilbehørKompatibelSerieId),
                     Suggestion(hmsnrTilbehørIkkePåRammeavtale),
                     Suggestion(hmsnrIkkeTilbehør),
                     Suggestion(hmsnrIkkeKompatibel),
                 )
             )
         val grunndataTilbehørprodukter = listOf(
-            produkt(hmsnrTilbehørPåRammeavtale, accessory = true, hasAgreement = true, kompatibelMed = idHovedprodukt),
-            produkt(hmsnrTilbehørIkkePåRammeavtale, accessory = true, hasAgreement = false, kompatibelMed = idHovedprodukt),
-            produkt(hmsnrIkkeTilbehør, accessory = false, hasAgreement = true, kompatibelMed = idHovedprodukt),
-            produkt(hmsnrIkkeKompatibel, accessory = true, hasAgreement = true, kompatibelMed = UUID.randomUUID().toString()),
+            produkt(hmsnrTilbehørKompatibelProduktId, accessory = true, hasAgreement = true, kompatibelMedProduktId = produktId),
+            produkt(hmsnrTilbehørKompatibelSerieId, accessory = true, hasAgreement = true, kompatibelMedSerieId = serieId),
+            produkt(hmsnrTilbehørIkkePåRammeavtale, accessory = true, hasAgreement = false, kompatibelMedProduktId = produktId),
+            produkt(hmsnrIkkeTilbehør, accessory = false, hasAgreement = true, kompatibelMedProduktId = produktId),
+            produkt(hmsnrIkkeKompatibel, accessory = true, hasAgreement = true),
         )
         val (skalVises, skalIkkeVises) = suggestionService.splittForslagbasertPåVisning(
             forslag,
             grunndataTilbehørprodukter,
             deleliste(),
-            produkt(hmsnrHovedprodukt, id = idHovedprodukt)
+            produkt(hmsnrHovedprodukt, produktId = produktId, serieId = serieId),
         )
-        assertEquals(hmsnrTilbehørPåRammeavtale, skalVises.first().hmsNr)
+        assertEquals(hmsnrTilbehørKompatibelProduktId, skalVises[0].hmsNr)
+        assertEquals(hmsnrTilbehørKompatibelSerieId, skalVises[1].hmsNr)
+
         assertEquals(hmsnrTilbehørIkkePåRammeavtale, skalIkkeVises[0].hmsNr)
         assertEquals(hmsnrIkkeTilbehør, skalIkkeVises[1].hmsNr)
         assertEquals(hmsnrIkkeKompatibel, skalIkkeVises[2].hmsNr)
@@ -220,14 +227,16 @@ internal class SuggestionServiceTest {
         produkttype: Produkttype? = null,
         accessory: Boolean = false,
         hasAgreement: Boolean = true,
-        id: String = UUID.randomUUID().toString(),
-        kompatibelMed: String = UUID.randomUUID().toString(),
+        produktId: String = UUID.randomUUID().toString(),
+        serieId: String = UUID.randomUUID().toString(),
+        kompatibelMedProduktId: String = UUID.randomUUID().toString(),
+        kompatibelMedSerieId: String = UUID.randomUUID().toString(),
     ) = Product(
         hmsArtNr = hmsnr,
         attributes = AttributesDoc(
             digitalSoknad = tilgjengeligForDigitalSoknad, produkttype = produkttype,
             compatibleWith = CompatibleWith(
-                listOf(kompatibelMed), listOf(kompatibelMed)
+                listOf(kompatibelMedProduktId), listOf(kompatibelMedSerieId)
             )
         ),
         supplier = ProductSupplier(id = leverandørId),
@@ -239,8 +248,8 @@ internal class SuggestionServiceTest {
         ),
         accessory = accessory,
         hasAgreement = hasAgreement,
-        id = id,
-        seriesId = id,
+        id = produktId,
+        seriesId = serieId,
     )
 
     private fun productFrontendFiltered(hmsnr: String, suggestions: List<Suggestion> = emptyList()) =
