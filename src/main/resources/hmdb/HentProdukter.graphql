@@ -1,11 +1,17 @@
 query HentProdukter($hmsnrs: [String!]!) {
   products(hmsnrs: $hmsnrs) {
+    id
     hmsArtNr # hmsnr
+    seriesId
     main # Produkt, ikke tilbehør/reservedel
     accessory
     attributes {
       digitalSoknad # tilgjengeligForDigitalSoknad
       produkttype # produkttype
+      compatibleWith {
+        productIds
+        seriesIds
+      }
     }
     supplier {
       id # leverandorId

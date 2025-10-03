@@ -1,7 +1,6 @@
 package no.nav.hjelpemidler.suggestions
 
 import mu.KotlinLogging
-import no.nav.hjelpemidler.blockedCombinations
 import no.nav.hjelpemidler.blockedSuggestions
 import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
@@ -40,13 +39,20 @@ class SuggestionService(
     ): Pair<List<Suggestion>, List<Suggestion>> {
         return forslag.suggestions
             .partition { tilbehør ->
-                val erBlokkertKombinasjon = tilbehør.hmsNr in (blockedCombinations[hovedprodukt.hmsArtNr] ?: emptyList())
-                if (tilbehør.hmsNr in blockedSuggestions || tilbehør.hmsNr in denyList || erBlokkertKombinasjon) {
-                    // Ikke vis blokkerte eller svartelistede forslag
+                val grunndataTilbehør = grundataTilbehørprodukter.find { it.hmsArtNr == tilbehør.hmsNr }
+
+                val erKompatible =
+                    hovedprodukt.id in (grunndataTilbehør?.attributes?.compatibleWith?.productIds ?: emptyList()) ||
+                        hovedprodukt.seriesId in (
+                        grunndataTilbehør?.attributes?.compatibleWith?.seriesIds
+                            ?: emptyList()
+                        )
+
+                if (tilbehør.hmsNr in blockedSuggestions || tilbehør.hmsNr in denyList || !erKompatible) {
+                    // Ikke vis blokkerte eller svartelistede forslag, eller komboer som ikke er kompatible i Grunndata
                     return@partition false
                 }
 
-                val grunndataTilbehør = grundataTilbehørprodukter.find { it.hmsArtNr == tilbehør.hmsNr }
                 if (grunndataTilbehør != null) {
                     // Vis kun forslag som er tilbehør og på rammeavtale
                     grunndataTilbehør.accessory && grunndataTilbehør.hasAgreement
