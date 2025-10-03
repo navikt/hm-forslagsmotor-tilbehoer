@@ -8,6 +8,7 @@ on:
       - "CODEOWNERS"
     branches:
       - main
+      - ikke-vis-forslag-som-ikke-er-kompatible-i-grunndata
 jobs:
   build:
     name: Bygg, deploy til dev-gcp og lag release
