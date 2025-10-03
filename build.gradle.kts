@@ -59,8 +59,8 @@ dependencies {
 
     implementation("io.ktor:ktor-server-netty:$ktor_version")
     constraints {
-        implementation("io.netty:netty-codec-http2:4.1.100.Final") {
-            because("io.netty:netty-codec-http2 vulnerable to HTTP/2 Rapid Reset Attack, before 4.1.100.Final")
+        implementation("io.netty:netty-codec-http2:4.1.124.Final") {
+            because("io.netty:netty-codec-http2 vulnerable to HTTP/2 Rapid Reset Attack, before 4.1.124.Final")
         }
     }
 
