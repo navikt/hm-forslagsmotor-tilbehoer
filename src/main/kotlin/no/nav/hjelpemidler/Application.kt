@@ -41,7 +41,7 @@ fun main() {
         throw Exception("database never became available withing the deadline")
     }
 
-    // Make sure our database migrations are up to date
+    // Make sure our database migrations are up to date.
     migrate(Configuration)
 
     val aivenMetrics = AivenMetrics()
