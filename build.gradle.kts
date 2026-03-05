@@ -40,7 +40,7 @@ dependencies {
     }
 
     // Jackson
-    val jackson_version = "2.14.2"
+    val jackson_version = "2.21.1"
     implementation("com.fasterxml.jackson.core:jackson-core:$jackson_version")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
