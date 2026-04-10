@@ -10,7 +10,6 @@ import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
-import no.nav.hjelpemidler.github.CachedGithubClient
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.Soknad
 import no.nav.hjelpemidler.suggestions.SuggestionEngine
@@ -22,7 +21,6 @@ internal class NySøknadInnsendt(
     rapidsConnection: RapidsConnection,
     private val store: SuggestionEngine,
     private val aivenMetrics: AivenMetrics,
-    private val githubClient: CachedGithubClient,
 ) : PacketListenerWithOnError {
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -179,17 +177,5 @@ internal class NySøknadInnsendt(
             }
         }.fold(0) { a, b -> a + b }
         if (soknadHasAccessories) aivenMetrics.totaAccessorieslNotAddedUsingSuggestions(totaAccessorieslNotAddedUsingSuggestions)
-
-        val tilbehørPåRammeavtale = githubClient.tilbehørPåRammeavtale()
-        hjelpemidler.forEach { hjelpemiddel ->
-            hjelpemiddel.tilbehorListe.forEach { tilbehør ->
-                aivenMetrics.rammeavtale(
-                    hmsnr = tilbehør.hmsnr,
-                    navn = tilbehør.navn,
-                    antall = tilbehør.antall,
-                    erPåRammeavtale = tilbehør.hmsnr in tilbehørPåRammeavtale
-                )
-            }
-        }
     }
 }

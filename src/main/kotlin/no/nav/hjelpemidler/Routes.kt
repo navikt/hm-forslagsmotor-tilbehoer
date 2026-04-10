@@ -26,13 +26,6 @@ fun Route.ktorRoutes(suggestionService: SuggestionService) {
         call.respond(response)
     }
 
-    get("/lookup-accessory-name/{hmsnrHovedprodukt}/{hmsnrTilbehor}") {
-        val hmsnrHovedprodukt = call.parameters["hmsnrHovedprodukt"]!!
-        val hmsnrTilbehør = call.parameters["hmsnrTilbehor"]!!
-        logg.info("Request for name lookup for hmsnrHovedprodukt=$hmsnrHovedprodukt and hmsnrTilbehør=$hmsnrTilbehør.")
-        call.respond(suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt))
-    }
-
     get("/introspect") {
         call.respond(suggestionService.introspect()!!)
     }

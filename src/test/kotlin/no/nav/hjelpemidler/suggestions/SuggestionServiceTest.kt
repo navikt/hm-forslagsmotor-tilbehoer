@@ -10,7 +10,6 @@ import no.nav.hjelpemidler.client.hmdb.HjelpemiddeldatabaseClient
 import no.nav.hjelpemidler.denyList
 import no.nav.hjelpemidler.github.BestillingsHjelpemiddel
 import no.nav.hjelpemidler.github.CachedGithubClient
-import no.nav.hjelpemidler.github.Delelister
 import no.nav.hjelpemidler.metrics.AivenMetrics
 import no.nav.hjelpemidler.model.ProductFrontendFiltered
 import no.nav.hjelpemidler.model.Suggestion
@@ -44,14 +43,11 @@ internal class SuggestionServiceTest {
     private val hmsnrHovedprodukt = "123456"
     private val idHovedprodukt = UUID.randomUUID().toString()
     private val hmsnrTilbehør = "255912"
-    private val hmsnrReservedel = "255914"
     private val hmsnrTilbehørOgReservedel = "255911"
     private val rammeavtaleId = "8590"
     private val leverandørId = "5010"
 
     init {
-        every { githubClient.hentTilbehørslister() } returns deleliste(hmsnrTilbehørOgReservedel, hmsnrTilbehør)
-        every { githubClient.hentReservedelslister() } returns deleliste(hmsnrTilbehørOgReservedel, hmsnrReservedel)
         every { githubClient.hentBestillingsordningSortiment() } returns listOf(
             BestillingsHjelpemiddel(
                 "255912",
@@ -59,7 +55,6 @@ internal class SuggestionServiceTest {
                 null,
             ),
         )
-        every { githubClient.tilbehørPåRammeavtale() } returns emptySet()
         every { suggestionEngine.cachedTitleAndTypeFor(any()) } returns null
         every { oebs.getTitleForHmsNr(any()) } returns Pair("tittel", "type")
         coEvery { hjelpemiddeldatabaseClient.hentProdukter(any<String>()) } returns emptyList()
@@ -68,7 +63,7 @@ internal class SuggestionServiceTest {
 
     @Test
     fun `hentTilbehør skal returnere tilbehør`() = runBlocking {
-        val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt)
+        val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør)
         assertNull(tilbehør.error)
         assertTrue(tilbehør.name!!.isNotBlank())
         assertTrue(tilbehør.erPåBestillingsordning!!)
@@ -77,7 +72,7 @@ internal class SuggestionServiceTest {
     @Test
     fun `hentTilbehør skal returnere tilbehør med erPåBestillingsordning=false hvis det ikke er i bestillingssortiment`() =
         runBlocking {
-            val tilbehør = suggestionService.hentTilbehør("000000", hmsnrHovedprodukt)
+            val tilbehør = suggestionService.hentTilbehør("000000")
             assertNull(tilbehør.error)
             assertFalse(tilbehør.erPåBestillingsordning!!)
         }
@@ -85,7 +80,7 @@ internal class SuggestionServiceTest {
     @Test
     fun `hentTilbehør skal returnere IKKE_FUNNET dersom noe feiler`() = runBlocking {
         every { oebs.getTitleForHmsNr(any()) } throws RuntimeException("OEBS er nede for vedlikehold")
-        val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt)
+        val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør)
         assertEquals(TilbehørError.IKKE_FUNNET, tilbehør.error)
     }
 
@@ -99,7 +94,7 @@ internal class SuggestionServiceTest {
                 ),
             )
 
-            val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt)
+            val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør)
             assertEquals(TilbehørError.IKKE_ET_TILBEHØR, tilbehør.error)
         }
 
@@ -113,14 +108,14 @@ internal class SuggestionServiceTest {
                 ),
             )
 
-            val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør, hmsnrHovedprodukt)
+            val tilbehør = suggestionService.hentTilbehør(hmsnrTilbehør)
             assertEquals(TilbehørError.IKKE_TILGJENGELIG_DIGITALT, tilbehør.error)
         }
 
     @Test
     fun `hentTilbehør skal returnere error fra denyList dersom tilbehør ligger i denyList`() = runBlocking {
         val hmsnrIkkePåRammeavtale = denyList.entries.first { it.value == TilbehørError.IKKE_PÅ_RAMMEAVTALE }.key
-        val tilbehør = suggestionService.hentTilbehør(hmsnrIkkePåRammeavtale, hmsnrHovedprodukt)
+        val tilbehør = suggestionService.hentTilbehør(hmsnrIkkePåRammeavtale)
         assertEquals(TilbehørError.IKKE_PÅ_RAMMEAVTALE, tilbehør.error)
     }
 
@@ -207,7 +202,6 @@ internal class SuggestionServiceTest {
         val (skalVises, skalIkkeVises) = suggestionService.splittForslagbasertPåVisning(
             forslag,
             grunndataTilbehørprodukter,
-            deleliste(),
             produkt(hmsnrHovedprodukt, produktId = produktId, serieId = serieId),
         )
         assertEquals(hmsnrTilbehørKompatibelProduktId, skalVises[0].hmsNr)
@@ -217,9 +211,6 @@ internal class SuggestionServiceTest {
         assertEquals(hmsnrIkkeTilbehør, skalIkkeVises[1].hmsNr)
         assertEquals(hmsnrIkkeKompatibel, skalIkkeVises[2].hmsNr)
     }
-
-    private fun deleliste(vararg hmsnrs: String): Delelister =
-        mapOf(rammeavtaleId to mapOf(leverandørId to setOf(*hmsnrs)))
 
     private fun produkt(
         hmsnr: String,

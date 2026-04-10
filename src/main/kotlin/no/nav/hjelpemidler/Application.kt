@@ -3,7 +3,6 @@ package no.nav.hjelpemidler
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.call
 import io.ktor.server.application.install
@@ -29,11 +28,6 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 private val logg = KotlinLogging.logger {}
-
-private val objectMapper = jacksonObjectMapper()
-    .registerModule(JavaTimeModule())
-    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
 @ExperimentalTime
 fun main() {
@@ -74,7 +68,7 @@ fun main() {
         }
         .build().apply {
             aivenMetrics.initMetabaseProducer(this)
-            NySøknadInnsendt(this, store, aivenMetrics, githubClient)
+            NySøknadInnsendt(this, store, aivenMetrics)
             register(
                 object : RapidsConnection.StatusListener {
                     override fun onStartup(rapidsConnection: RapidsConnection) {
