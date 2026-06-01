@@ -31,8 +31,6 @@ spec:
   prometheus:
     enabled: false  # default: false. Pod will now be scraped for metrics by Prometheus.
     path: /metrics # Path where prometheus metrics are served.
-  cluster:
-    allowDeletion: true
   accessPolicy:
     inbound:
       rules:
