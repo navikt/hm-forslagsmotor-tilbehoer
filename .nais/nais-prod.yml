@@ -29,7 +29,7 @@ spec:
   tokenx:
     enabled: true
   prometheus:
-    enabled: true  # default: false. Pod will now be scraped for metrics by Prometheus.
+    enabled: false  # default: false. Pod will now be scraped for metrics by Prometheus.
     path: /metrics # Path where prometheus metrics are served.
   accessPolicy:
     inbound:
@@ -62,4 +62,4 @@ spec:
         databases:
           - name: hm-forslagsmotor-tilbehoer
             envVarPrefix: DB
-        cascadingDelete: false
+        cascadingDelete: true
